@@ -1,15 +1,17 @@
 [tool.poetry]
-name = "dyno"
-version = "0.1.0"
+name = "dynopy"
+version = "0.1.2"
 description = ""
 authors = ["Pablo Winant <pablo.winant@gmail.com>"]
 readme = "README.md"
+packages = [{include = "dyno"}]
+
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.12"
 dolang = "^0.0.20"
-numpy = "^1.26.2"
-xarray = "^2023.12.0"
+numpy = "^1.20"
+xarray = "^2023.8.0"
 
 
 [build-system]
