@@ -65,8 +65,8 @@ def solve_qz(A, B, C, tol=1e-15):
     # Generalised eigenvalue problem
     F = np.block([[Z, I], [-C, -B]])
     G = np.block([[I, Z], [Z, A]])
-    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a,b: np.abs(vgenev(a, b)) <= 1)
-    λ_all = vgenev(α, β)
+    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a,b: np.abs(vgenev(a, b, tol=tol)) <= 1)
+    λ_all = vgenev(α, β, tol=tol)
     λ = λ_all[np.abs(λ_all) <= 1]
     
     Λ  = np.diag(λ)
