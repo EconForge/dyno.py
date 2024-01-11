@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 from numpy.linalg import solve as linsolve
+from scipy.linalg import ordqz
 import xarray
+from colorama import Fore, Style
 
 def simulate(dr,T=40):
 
@@ -54,3 +56,92 @@ def solve(A,B,C, T=10000, tol=1e-10):
     #         return X0
         
     # raise Exception("No convergence")
+
+def solve_qz(A, B, C, tol=1e-15, verbose=False):
+    """Solves AX² + BX + C = 0 for X using a QZ decomposition."""
+    n  = A.shape[0]
+    I  = np.eye(n)
+    Z  = np.zeros((n, n))
+    
+    # Generalised eigenvalue problem
+    F  = block_matrix(Z, I, -C, -B)
+    G  = block_matrix(I, Z, Z, A)
+    T, S, α, β, Q, Z = ordqz(F, G, sort=select_eigenvalues_bool)
+    λ, ind, λ_all = select_eigenvalues(α, β, tol=tol)
+    
+    if verbose:
+        print_colored_tab(λ_all, select_eigenvalues_bool(α, β, tol=tol))
+        
+    Λ  = np.diag(λ)
+    Z11, Z12, Z21, Z22 = decompose_blocks(Z)
+    X  = Z21 @ np.linalg.inv(Z11)
+    
+    return X
+
+
+def block_matrix(A, B, C, D):
+    """Builds the block matrix [[A, B], [C, D]]"""
+    tl  = np.block([[A]])
+    tr  = np.block([[B]]) 
+    bl  = np.block([[C]])
+    br  = np.block([[D]])
+    return np.block([[tl, tr], [bl, br]])
+
+
+def decompose_blocks(Z):
+    n = Z.shape[0] // 2
+    Z11 = Z[:n, :n]
+    Z12 = Z[:n, n:]
+    Z21 = Z[n:, :n]
+    Z22 = Z[n:, n:]
+    return Z11, Z12, Z21, Z22
+
+
+def select_eigenvalues(α, β, tol=1e-9):
+    """Computes the eigenvalues λ = α/β and select those with modulus less or equal to 1."""
+    λ_all = []  # For all the eigenvalues
+    λ     = []  # Selected ones
+    ind   = []  # Indexes of the the selected ones
+    
+    for i in range(len(α)):
+        if not np.isclose(β[i], 0, atol=tol):
+            val = α[i]/β[i]
+            λ_all.append(val)
+            if np.linalg.norm(val) <= 1:
+                λ.append(val)
+                ind.append(i)
+        else:
+            if np.isclose(α[i], 0, atol=tol):
+                λ_all.append(np.nan)
+            else:
+                λ_all.append(np.inf)
+                
+    return λ, ind, λ_all
+
+
+def select_eigenvalues_bool(α, β, tol=1e-9):
+    """Computes the eigenvalues λ = α/β and select those with modulus less or equal to 1."""
+    decision = []
+    
+    for i in range(len(α)):
+        if not np.isclose(β[i], 0, atol=tol):
+            val = α[i]/β[i]
+            if np.linalg.norm(val) <= 1:
+                decision.append(True)
+            else:
+                decision.append(False)
+        else:
+            decision.append(False)
+                
+    return np.array(decision)
+
+
+def print_colored_tab(tab, tab_bool):
+    for i, (value, is_true) in enumerate(zip(tab, tab_bool)):
+        if is_true:
+            print(Fore.RED + str(value) + Style.RESET_ALL, end='')
+        else:
+            print(value, end='')
+        if i < len(tab) - 1:
+            print(', ', end='')
+    print()
