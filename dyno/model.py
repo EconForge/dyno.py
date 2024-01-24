@@ -50,8 +50,6 @@ class Model:
 
         from dolang.symbolic import remove_timing
 
-        import copy
-
         symbols = self.symbols
         calibration = dict()
         for k, v in self.data.get("calibration", {}).items():
@@ -100,10 +98,37 @@ class Model:
 
     def __get_exogenous__(self):
 
-        # TODO: write something here
-        s = self.data['exogenous']['e_z']
-        s = np.array([[0.001**2]])
-        return Normal(s, ['e_z'])
+        from .langage import ProductNormal
+
+        if "exogenous" not in self.data:
+            return {}
+
+        exo = self.data["exogenous"]
+        calibration = self.get_calibration()
+        from dolang.language import eval_data
+
+        exogenous = eval_data(exo, calibration)
+
+        
+
+        # new style
+        syms = self.symbols["exogenous"]
+        # first we check that shocks are defined in the right order
+        ssyms = []
+        for k in exo.keys():
+            vars = [v.strip() for v in k.split(",")]
+            ssyms.append(vars)
+        ssyms = tuple(sum(ssyms, []))
+        # if tuple(syms) != ssyms:
+        #     from dolang.language import ModelError
+
+        #     lc = exo.lc
+        #     raise ModelError(
+        #         f"{lc.line}:{lc.col}: 'exogenous' section. Shocks specification must match declaration order. Found {ssyms}. Expected{tuple(syms)}"
+        #     )
+
+        return ProductNormal(*exogenous.values())
+
 
     def describe(self):
 
@@ -126,7 +151,13 @@ symbols: {self.symbols}
 
         # check exogenous variables
         try:
-            exovars = self.data['exogenous'].keys()
+            l = [
+                [h.strip() for h in k.split(',')]
+                for k in self.data['exogenous'].keys()
+            ]
+            exovars = sum(l, [])
+            #
+            #  exovars = self.data['exogenous'].keys()
         except:
             exovars = []
 
