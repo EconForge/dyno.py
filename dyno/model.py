@@ -220,7 +220,7 @@ symbols: {self.symbols}
 
 def irfs(model, dr):
 
-    from .solver import irf
+    from .simul import irf
 
     res = {}
     for i,e in enumerate(model.symbols['exogenous']):
