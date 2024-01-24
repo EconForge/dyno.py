@@ -1,57 +1,7 @@
 import numpy as np
-import pandas as pd
+
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
-
-def irf(dr, i, T=40):
-
-    X = dr.X.data
-    Y = dr.Y.data
-    Σ = dr.Σ
-
-    n = X.shape[1]
-    v0 = np.zeros(n)
-    m0 = np.zeros(Y.shape[1])
-    ss = [v0]
-
-    m0[i] = np.sqrt(Σ[i,i])
-
-    ss.append(X@ss[-1] + Y @ m0 )
-
-    for t in range(T-1):
-        
-        ss.append(X@ss[-1])
-
-    res = np.concatenate([e[None,:] for e in ss], axis=0)
-
-
-    dim_1 = [*range(T+1)]
-    dim_2 = [*dr.X.coords['y_t'].data]
-
-    return pd.DataFrame(res, columns=dim_2)
-
-def simulate(dr,T=40):
-
-    X = dr.X.data
-    Y = dr.Y.data
-    Σ = dr.Σ
-
-    n = X.shape[1]
-    v0 = np.zeros(n)
-    m0 = np.zeros(Y.shape[1])
-    ss = [v0]
-
-    for t in range(T):
-        e = np.random.multivariate_normal(m0, Σ)
-        ss.append(X@ss[-1] + Y@e)
-
-    res = np.concatenate([e[None,:] for e in ss], axis=0)
-    # # rr = pd.DataFrame(res, columns=X.coords['y_t'])
-    # return res
-    dim_1 = [*range(T+1)]
-    dim_2 = [*dr.X.coords['y_t'].data]
-
-    return pd.DataFrame(res, columns=dim_2)
 
 
 def solve(A,B,C, method='ti', options={}):
@@ -86,14 +36,6 @@ def solve_ti(A,B,C, T=10000, tol=1e-10):
 
     raise Exception("No convergence")
 
-    #     X1 = - linsolve(A@X0 + B, C)
-    #     e = abs(X0-X1).max()
-
-    #     X0 = X1
-    #     if e<tol:
-    #         return X0
-        
-    # raise Exception("No convergence")
 
 def solve_qz(A, B, C, tol=1e-15):
     """Solves AX² + BX + C = 0 for X using a QZ decomposition."""
@@ -136,15 +78,3 @@ def genev(α, β, tol=1e-9):
 
 
 vgenev = np.vectorize(genev, excluded=['tol'])
-
-
-# def print_colored_tab(tab, tab_bool):
-#     from colorama import Fore, Style
-#     for i, (value, is_true) in enumerate(zip(tab, tab_bool)):
-#         if is_true:
-#             print(Fore.RED + str(value) + Style.RESET_ALL, end='')
-#         else:
-#             print(value, end='')
-#         if i < len(tab) - 1:
-#             print(', ', end='')
-#     print()

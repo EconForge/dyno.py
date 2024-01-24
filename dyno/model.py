@@ -8,35 +8,22 @@ from numpy.linalg import solve as linsolve
 
 import numpy as np
 import yaml
-import xarray
 
 from .solver import solve
+from .misc import jacobian
 
 cache = []
 
-def jacobian(func,initial,delta=1e-3):
-  f = func
-  nrow = len(f(initial))
-  ncol = len(initial)
-  output = np.zeros(nrow*ncol)
-  output = output.reshape(nrow,ncol)
-  for i in range(nrow):
-    for j in range(ncol):
-      ej = np.zeros(ncol)
-      ej[j] = 1
-      dij = (f(initial+ delta * ej)[i] - f(initial- delta * ej)[i])/(2*delta)
-      output[i,j] = dij
-  return output
 
 class RecursiveSolution:
 
-    def __init__(self, X, Y, Σ, variables):
+    def __init__(self, X, Y, Σ, symbols):
 
         self.X = X
         self.Y = Y
         self.Σ = Σ
 
-        self.variables = variables
+        self.symbols = symbols
 
 class Normal:
 
@@ -216,7 +203,7 @@ symbols: {self.symbols}
 
         from .solver import solve as solveit
         r,A,B,C,D = self.compute(diff=True, calibration=calibration)
-        X = solveit(A,B,C, method=method)
+        X = solve(A,B,C, method=method)
         Y = linsolve(A@X + B, -D)
 
         v = self.symbols['variables']
@@ -225,8 +212,8 @@ symbols: {self.symbols}
         Σ = self.exogenous.Σ
 
         return RecursiveSolution(
-            xarray.DataArray(X, coords=(("y_t",v), ("y_{t-1}",v))),
-            xarray.DataArray(Y, coords=(("y_t",v), ("e_t",e))),
+            X,
+            Y,
             Σ,
             {'endogenous': v,'exogenous':e}
         )

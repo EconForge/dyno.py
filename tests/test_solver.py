@@ -35,4 +35,3 @@ def test_all(tol=1e-9):
     err_ti = np.linalg.norm(res_ti, 1)
     assert err_ti < tol, "Time Iteration did not find a solution (residual = {}).".format(err_ti)
     
-    raise Exception()
