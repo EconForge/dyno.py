@@ -2,7 +2,33 @@ import numpy as np
 import pandas as pd
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
-import xarray
+
+def irf(dr, i, T=40):
+
+    X = dr.X.data
+    Y = dr.Y.data
+    Σ = dr.Σ
+
+    n = X.shape[1]
+    v0 = np.zeros(n)
+    m0 = np.zeros(Y.shape[1])
+    ss = [v0]
+
+    m0[i] = np.sqrt(Σ[i,i])
+
+    ss.append(X@ss[-1] + Y @ m0 )
+
+    for t in range(T-1):
+        
+        ss.append(X@ss[-1])
+
+    res = np.concatenate([e[None,:] for e in ss], axis=0)
+
+
+    dim_1 = [*range(T+1)]
+    dim_2 = [*dr.X.coords['y_t'].data]
+
+    return pd.DataFrame(res, columns=dim_2)
 
 def simulate(dr,T=40):
 
@@ -25,7 +51,8 @@ def simulate(dr,T=40):
     dim_1 = [*range(T+1)]
     dim_2 = [*dr.X.coords['y_t'].data]
 
-    return xarray.DataArray(res, coords=(('T', dim_1 ), ('V', dim_2)))
+    return pd.DataFrame(res, columns=dim_2)
+
 
 def solve(A,B,C, method='ti', options={}):
     

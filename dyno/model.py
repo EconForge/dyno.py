@@ -30,11 +30,13 @@ def jacobian(func,initial,delta=1e-3):
 
 class RecursiveSolution:
 
-    def __init__(self, X, Y, Σ):
+    def __init__(self, X, Y, Σ, variables):
 
         self.X = X
         self.Y = Y
         self.Σ = Σ
+
+        self.variables = variables
 
 class Normal:
 
@@ -42,6 +44,10 @@ class Normal:
 
         self.Σ = Σ
         self.variables = tuple(*vars)
+
+from dolang.symbolic import sanitize, parse_string, str_expression
+from dolang.language import eval_data
+from dolang.symbolic import str_expression
 
 class Model:
 
@@ -52,6 +58,58 @@ class Model:
         self.__update_calibration__()
         self.exogenous = self.__get_exogenous__()
 
+    def __update_calibration__(self):
+
+
+        from dolang.symbolic import remove_timing
+
+        import copy
+
+        symbols = self.symbols
+        calibration = dict()
+        for k, v in self.data.get("calibration", {}).items():
+            if v.tag == "tag:yaml.org,2002:str":
+
+                expr = parse_string(v)
+                expr = remove_timing(expr)
+                expr = str_expression(expr)
+            else:
+                expr = float(v.value)
+            kk = remove_timing(parse_string(k))
+            kk = str_expression(kk)
+
+            calibration[kk] = expr
+
+        initial_values = {
+            "exogenous": float("nan"),
+            "endogenous": float("nan"),
+            "parameters": float("nan")
+        }
+
+        for symbol_group in symbols:
+            if symbol_group in initial_values:
+                default = initial_values[symbol_group]
+            else:
+                default = float("nan")
+            for s in symbols[symbol_group]:
+                if s not in calibration:
+                    calibration[s] = default
+
+        self.__calibration__ = calibration
+
+    def get_calibration(self, **kwargs):
+
+        import copy
+        from dolang.triangular_solver import solve_triangular_system
+
+        calibration = copy.copy(self.__calibration__)
+        calibration.update(**kwargs)
+
+        return solve_triangular_system(calibration)
+
+    #     self.__calibration__ =  solve_triangular_system(calibration)
+
+    # return self.__calibration__
 
     def __get_exogenous__(self):
 
@@ -143,9 +201,9 @@ symbols: {self.symbols}
         
         return r
 
-    def compute(self, diff=False):
+    def compute(self, diff=False, calibration={}):
 
-        c = self.calibration
+        c = self.get_calibration(**calibration)
         v = self.symbols['variables']
         p = self.symbols['parameters']
 
@@ -153,26 +211,12 @@ symbols: {self.symbols}
         p0 = np.array([c[e] for e in p])
         e = np.zeros(len(self.symbols['exogenous']))
         return self.dynamic(y0,y0,y0,e,p0,diff=diff)
-    
-    def __update_calibration__(self):
 
-        syms = self.symbols['variables'] + self.symbols['parameters']
+    def solve(self, calibration={}, method='ti')->RecursiveSolution:
 
-        data = self.data
-        nan = float("nan")
-
-        calibration = {k: nan for k in syms}
-
-        for k,vv in data['calibration'].items():
-            v = vv.value
-            calibration[k] = eval(v)
-
-        self.calibration = calibration
-
-    def solve(self, **args)->RecursiveSolution:
-
-        r,A,B,C,D = self.compute(diff=True)
-        X = solve(A,B,C, **args)
+        from .solver import solve as solveit
+        r,A,B,C,D = self.compute(diff=True, calibration=calibration)
+        X = solveit(A,B,C, method=method)
         Y = linsolve(A@X + B, -D)
 
         v = self.symbols['variables']
@@ -183,8 +227,19 @@ symbols: {self.symbols}
         return RecursiveSolution(
             xarray.DataArray(X, coords=(("y_t",v), ("y_{t-1}",v))),
             xarray.DataArray(Y, coords=(("y_t",v), ("e_t",e))),
-            Σ
+            Σ,
+            {'endogenous': v,'exogenous':e}
         )
+
+def irfs(model, dr):
+
+    from .solver import irf
+
+    res = {}
+    for i,e in enumerate(model.symbols['exogenous']):
+        res[e] = irf(dr, i)
+    
+    return res
 
 
 def import_file(filename)->Model:
