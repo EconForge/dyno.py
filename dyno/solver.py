@@ -27,8 +27,19 @@ def simulate(dr,T=40):
 
     return xarray.DataArray(res, coords=(('T', dim_1 ), ('V', dim_2)))
 
+def solve(A,B,C, method='ti', options={}):
+    
+    if method == 'ti':
 
-def solve(A,B,C, T=10000, tol=1e-10):
+        sol = solve_ti(A,B,C, **options)
+
+    else:
+
+        sol = solve_qz(A,B,C, **options)
+
+    return sol
+
+def solve_ti(A,B,C, T=10000, tol=1e-10):
             
     n = A.shape[0]
 
@@ -36,7 +47,7 @@ def solve(A,B,C, T=10000, tol=1e-10):
 
     for t in range(T):
 
-        X1 = - linsolve(A@X0 + B, -C)
+        X1 = linsolve(A@X0 + B, -C)
         e = abs(X0-X1).max()
 
         if np.isnan(e):
@@ -46,6 +57,7 @@ def solve(A,B,C, T=10000, tol=1e-10):
         if e<tol:
             return X0
 
+    raise Exception("No convergence")
 
     #     X1 = - linsolve(A@X0 + B, C)
     #     e = abs(X0-X1).max()
@@ -99,13 +111,13 @@ def genev(α, β, tol=1e-9):
 vgenev = np.vectorize(genev, excluded=['tol'])
 
 
-def print_colored_tab(tab, tab_bool):
-    from colorama import Fore, Style
-    for i, (value, is_true) in enumerate(zip(tab, tab_bool)):
-        if is_true:
-            print(Fore.RED + str(value) + Style.RESET_ALL, end='')
-        else:
-            print(value, end='')
-        if i < len(tab) - 1:
-            print(', ', end='')
-    print()
+# def print_colored_tab(tab, tab_bool):
+#     from colorama import Fore, Style
+#     for i, (value, is_true) in enumerate(zip(tab, tab_bool)):
+#         if is_true:
+#             print(Fore.RED + str(value) + Style.RESET_ALL, end='')
+#         else:
+#             print(value, end='')
+#         if i < len(tab) - 1:
+#             print(', ', end='')
+#     print()
