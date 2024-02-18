@@ -52,7 +52,7 @@ class Normal:
         # this class wraps functionality from scipy
         import scipy.stats
 
-        self._dist_ = scipy.stats.multivariate_normal(mean=self.Μ, cov=self.Σ)
+        self._dist_ = scipy.stats.multivariate_normal(mean=self.Μ, cov=self.Σ, allow_singular=True)
 
 
 @language_element

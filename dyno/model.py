@@ -98,7 +98,7 @@ class Model:
 
     def __get_exogenous__(self):
 
-        from .langage import ProductNormal
+        from .language import ProductNormal
 
         if "exogenous" not in self.data:
             return {}
@@ -119,13 +119,6 @@ class Model:
             vars = [v.strip() for v in k.split(",")]
             ssyms.append(vars)
         ssyms = tuple(sum(ssyms, []))
-        # if tuple(syms) != ssyms:
-        #     from dolang.language import ModelError
-
-        #     lc = exo.lc
-        #     raise ModelError(
-        #         f"{lc.line}:{lc.col}: 'exogenous' section. Shocks specification must match declaration order. Found {ssyms}. Expected{tuple(syms)}"
-        #     )
 
         return ProductNormal(*exogenous.values())
 

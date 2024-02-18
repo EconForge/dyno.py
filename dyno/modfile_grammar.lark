@@ -1,0 +1,125 @@
+?start: modfile
+
+modfile: (var_statement | par_statement | varexo_statement | pred_statement | parinit_statement)*   \
+     model_block (command_statement)? (initval_block)? (command_statement)? (shocks_block)?  (command_statement*)?
+
+varexo_statement: "varexo " (lsymbol ","?)* lsymbol ";"
+var_statement: "var " (lsymbol ","?)* lsymbol ";"
+par_statement: "parameters " (lsymbol ","?)* lsymbol ";"
+
+pred_statement: "predetermined_variables " (symbol ","?)* symbol ";"
+
+?parinit_statement: parassignment ";"
+
+lsymbol: symbol "$" latex_string "$" "(" properties ")"
+    | symbol "(" properties ")"
+    | symbol "$" latex_string "$"
+    | symbol 
+
+latex_string: LATEX_STRING
+
+
+# TODO
+
+command_statement:  COMMAND ";"
+    | COMMAND "(" symbol ")" ";"
+    | COMMAND (symbol *) ";" 
+    | COMMAND "(" (symbol "=" NUMBER ",")* symbol "=" NUMBER ")" ";"
+    | COMMAND "(" (symbol "=" NUMBER ",")* symbol "=" NUMBER ")" (symbol *) ";" 
+
+
+model_block: "model" ";" _list_of_equations "end" ";"
+    | "model" "(" "linear" ")" ";" _list_of_equations "end" ";"
+initval_block: "initval" ";" _list_of_parassignments "end" ";"
+
+shocks_block: "shocks" ";"  (setstdvar_stmt | setvar_stmt | setcovar_stmt)*  "end" ";" 
+
+setstdvar_stmt: "var" symbol ";" "stderr" formula ";"
+setvar_stmt: "var" symbol "=" formula ";"
+setcovar_stmt: "var" symbol "," symbol "=" formula ";"
+
+
+_list_of_equations: (lequation) (";"  lequation )* ";"
+_list_of_parassignments: (parassignment) (";"  parassignment )* ";"
+
+lequation: equation
+    | "[" properties "]" equation
+
+properties: (pair ",")* pair
+pair:  NAME "=" "'" UNQUOTED_STRING "'"
+
+equation: equality | formula
+
+parassignment: symbol "=" formula
+
+assignment: variable "=" formula
+
+equality: sum "=" sum 
+    | sum "==" sum
+
+?formula: sum
+?sum: product
+    | sum "+" product   -> add
+    | sum "-" product   -> sub
+?product: atom
+    | product "*" atom  -> mul
+    | product "/" atom  -> div
+?pow: atom _POW atom -> pow
+
+_POW: "^"|"**"
+
+?atom: NUMBER           -> number
+        | "-" atom         -> neg
+        | pow
+        | call
+        | symbol         
+        | "(" sum ")"
+        | variable
+
+
+variable: cname  "[" date_index "]" -> variable
+        | cname "[" "t" "]" -> variable
+        | cname "(" date_index ")" -> variable
+        | cname "[" "t$" subperiod "]"
+
+subperiod: INT | NAME
+
+!cname: NAME -> name
+
+?date_index: "t" SIGNED_INT2 -> date
+    | SIGNED_INT -> date
+
+?call: FUNCTION "(" sum ")" -> call
+
+
+!symbol: NAME -> symbol
+
+FUNCTION: "sin"|"cos"|"exp"|"log"|"steady_state"
+
+COMMAND: "steady"|"check"|"stoch_simul"
+
+SIGNED_INT2: ("+"|"-") INT
+
+_NEWLINE: NEWLINE
+
+UNICODE_LETTER: /[^\W\d_\$]/
+
+LATEX_STRING: /[^'"\$]+/
+
+UNQUOTED_STRING: /[^'"]+/
+NAME: UNICODE_LETTER ("_"|UNICODE_LETTER|DIGIT)*
+
+%import common.SIGNED_INT
+%import common.DIGIT
+%import common.INT
+%import common.NUMBER
+%import common.WS_INLINE
+%import common.NEWLINE
+
+MULTILINE_COMMENT: "/*" /(.|\n)+?/ "*/"
+COMMENT: ("//"|"%"|"#") /[^\n]/*
+
+%ignore MULTILINE_COMMENT
+%ignore COMMENT
+%ignore WS_INLINE
+%ignore NEWLINE  // comment out to avoid crash
