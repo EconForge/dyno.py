@@ -1,6 +1,7 @@
 import os 
 import dolang
 from lark import Token, Lark
+import numpy as np
 
 def ast_to_yaml(node, indent=""):
     indent += "  "
@@ -18,21 +19,66 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 modfile_grammar = open(f"{dir_path}/modfile_grammar.lark").read()
 modfile_parser = Lark(modfile_grammar, propagate_positions=True)
 
+class UnsupportedDynareFeature(Exception):
 
-class Modfile:
+    pass
 
-    def __init__(self, filename):
+from dyno.model import Model
+from lark import Visitor
 
+class CheckFunCalls(Visitor):
+
+    def call(self, tree):
+
+        funname = tree.children[0].value
+        if funname == "steady_state":
+            raise UnsupportedDynareFeature("Calling 'steady_state' value within model is not supported (yet).")
+        else:
+            accepted = ["sin", "cos", "exp", "log"]
+            if funname not in accepted:
+                raise UnsupportedDynareFeature(f"Calling external function `{funname}` is not allowed.")
+
+
+class Modfile(Model):
+
+    def __init__(self, filename=None, txt=None):
+
+        if txt is not None:
+            if filename is None:
+                filename = "<string>.mod"
         self.filename = filename
+
+        if txt is None:
+            txt = open(filename).read()
+
         try:
-            self.data = modfile_parser.parse(open(filename).read())
+            self.data = modfile_parser.parse(txt)
         except Exception as e:
             raise e
     
+        yml_ = ast_to_yaml(self.data)
+        with open("temp2.yml","w") as f:
+            for g in yml_:
+                f.write(g)
+                f.write("\n")
+
+        self.__check_supported__()
+
         self.symbols = self.__find_symbols__()
         self.calibration = self.__get_calibration__()
         self.exogenous = self.__find_sigma__()
+
+        self.__update_equations__()
         
+    def __check_supported__(self):
+        
+        # for ch in self.data.children:
+
+        #     if ch.data.value == "steady_block":
+        #         raise UnsupportedDynareFeature("'steady_state_model' block is not supported yet.")
+        
+        CheckFunCalls().visit(self.data)
+
     @property
     def variables(self):
         return self.symbols['endogenous'] + self.symbols['exogenous']
@@ -130,8 +176,19 @@ class Modfile:
                         vv = v
                     calibration[k] = vv
 
+        for k in self.symbols['endogenous'] + self.symbols['exogenous'] :
+            if k not in calibration.keys():
+                calibration[k] = 0.0
+
+        for k in self.symbols['parameters']:
+            if k not in calibration.keys():
+                calibration[k] = np.nan
+
         return calibration
 
+    def get_calibration(self, **kwargs):
+
+        return self.__get_calibration__()
     
     def __find_symbols__(self):
         
@@ -161,4 +218,57 @@ class Modfile:
 
         return symbols
 
+
+    def __update_equations__(self):
+
+        mod = self
+        variables = mod.variables
+
+        mm = [e for e in mod.data.children if e.data == 'model_block']
+        assert len(mm) == 1
+
+        import dolang
+        from dolang.grammar import sanitize, str_expression, stringify, stringify_symbol
+        from dolang.function_compiler import FlatFunctionFactory as FFF
+        from dolang.function_compiler import make_method_from_factory
+
+
+        symbols = self.symbols
+        variables = self.variables
+
+        equations = []
+        for ll in  mm[0].children:
+            eq_tree = ll.children[-1]
+            eq = sanitize(eq_tree, variables=variables)
+            eq = stringify(eq)
+            eq = str_expression(eq)
+
+            if '=' in eq:
+                lhs, rhs = eq.split('=')
+                eq = f"({rhs}) - ({lhs})"
+
+            equations.append(eq)
+         
+        n = len(equations)
+        
+        dict_eq = {f"out{i+1}": equations[i] for i in range(n)}
+
+        spec = dict(
+            y_f=[stringify_symbol((e,1)) for e in symbols['endogenous']],
+            y_0=[stringify_symbol((e,0)) for e in symbols['endogenous']],
+            y_p=[stringify_symbol((e,-1)) for e in symbols['endogenous']],
+            e=[stringify_symbol((e,0)) for e in symbols['exogenous']],
+            p=[stringify_symbol(e) for e in symbols['parameters']]
+        )
+
+        fff = FFF(
+            dict(),
+            dict_eq,
+            spec,
+            "f_dynamic"
+        )
+
+        fun = make_method_from_factory(fff, compile=False, debug=False)
+
+        self.__functions__ = {'dynamic': fun}
 

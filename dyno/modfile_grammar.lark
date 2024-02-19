@@ -1,7 +1,10 @@
 ?start: modfile
 
+
 modfile: (var_statement | par_statement | varexo_statement | pred_statement | parinit_statement)*   \
-     model_block (command_statement)? (initval_block)? (command_statement)? (shocks_block)?  (command_statement*)?
+    model_block \
+    (command_statement | steady_block | initval_block | steady_block | shocks_block )*
+    
 
 varexo_statement: "varexo " (lsymbol ","?)* lsymbol ";"
 var_statement: "var " (lsymbol ","?)* lsymbol ";"
@@ -28,11 +31,14 @@ command_statement:  COMMAND ";"
     | COMMAND "(" (symbol "=" NUMBER ",")* symbol "=" NUMBER ")" (symbol *) ";" 
 
 
-model_block: "model" ";" _list_of_equations "end" ";"
-    | "model" "(" "linear" ")" ";" _list_of_equations "end" ";"
-initval_block: "initval" ";" _list_of_parassignments "end" ";"
+model_block.1: "model" ";" _list_of_equations _END_TOKEN ";"
+    | "model" "(" "linear" ")" ";" _list_of_equations _END_TOKEN ";"
 
-shocks_block: "shocks" ";"  (setstdvar_stmt | setvar_stmt | setcovar_stmt)*  "end" ";" 
+steady_block.1: "steady_state_model" ";" _list_of_equations _END_TOKEN ";"
+
+initval_block.1: "initval" ";" _list_of_parassignments _END_TOKEN ";"
+
+shocks_block.1: "shocks" ";"  (setstdvar_stmt | setvar_stmt | setcovar_stmt)*  _END_TOKEN ";" 
 
 setstdvar_stmt: "var" symbol ";" "stderr" formula ";"
 setvar_stmt: "var" symbol "=" formula ";"
@@ -48,7 +54,7 @@ lequation: equation
 properties: (pair ",")* pair
 pair:  NAME "=" "'" UNQUOTED_STRING "'"
 
-equation: equality | formula
+?equation: equality | formula
 
 parassignment: symbol "=" formula
 
@@ -77,7 +83,7 @@ _POW: "^"|"**"
         | variable
 
 
-variable: cname  "[" date_index "]" -> variable
+variable.1: cname  "[" date_index "]" -> variable
         | cname "[" "t" "]" -> variable
         | cname "(" date_index ")" -> variable
         | cname "[" "t$" subperiod "]"
@@ -89,10 +95,14 @@ subperiod: INT | NAME
 ?date_index: "t" SIGNED_INT2 -> date
     | SIGNED_INT -> date
 
-?call: FUNCTION "(" sum ")" -> call
+call: FUNCTION "(" sum ")"
+    | NAME "(" (formula ",")* formula ")"
 
 
 !symbol: NAME -> symbol
+
+
+_END_TOKEN: "end"
 
 FUNCTION: "sin"|"cos"|"exp"|"log"|"steady_state"
 
@@ -107,7 +117,10 @@ UNICODE_LETTER: /[^\W\d_\$]/
 LATEX_STRING: /[^'"\$]+/
 
 UNQUOTED_STRING: /[^'"]+/
+
 NAME: UNICODE_LETTER ("_"|UNICODE_LETTER|DIGIT)*
+
+#NAME: /(?!(end)\b)[^\W\d_\$]+/i
 
 %import common.SIGNED_INT
 %import common.DIGIT

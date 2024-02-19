@@ -82,7 +82,7 @@ var e, u = phi*0.009*0.009;
 end;
 
 //use command to generate TeX-Files with dynamic and static model equations
-//write_latex_dynamic_model;
-//write_latex_static_model;
+write_latex_dynamic_model;
+write_latex_static_model;
 
 stoch_simul;
