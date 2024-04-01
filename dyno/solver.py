@@ -4,7 +4,7 @@ from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
 
 
-def solve(A,B,C, method='ti', options={}):
+def solve(A,B,C, method='qz', options={}):
     
     if method == 'ti':
 
@@ -32,7 +32,7 @@ def solve_ti(A,B,C, T=10000, tol=1e-10):
         
         X0 = X1
         if e<tol:
-            return X0
+            return X0, None
 
     raise Exception("No convergence")
 
@@ -54,7 +54,7 @@ def solve_qz(A, B, C, tol=1e-15):
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
     X  = Z21 @ np.linalg.inv(Z11)
     
-    return X
+    return X, sorted(λ_all)
 
 
 def decompose_blocks(Z):

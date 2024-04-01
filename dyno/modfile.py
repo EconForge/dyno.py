@@ -176,6 +176,18 @@ class Modfile(Model):
                         vv = v
                     calibration[k] = vv
 
+            elif l.data.value == "steady_block":
+                for ll in l.children:
+                    k = ll.children[0].children[0].value
+                    ve = ll.children[1]
+
+                    v = dolang.str_expression(ve)
+                    try:
+                        vv = eval(v.replace("^","**"))
+                    except:
+                        vv = v
+                    calibration[k] = vv
+
         for k in self.symbols['endogenous'] + self.symbols['exogenous'] :
             if k not in calibration.keys():
                 calibration[k] = 0.0
@@ -188,7 +200,15 @@ class Modfile(Model):
 
     def get_calibration(self, **kwargs):
 
-        return self.__get_calibration__()
+
+        import copy
+        from dolang.triangular_solver import solve_triangular_system
+
+        calibration = (self.__get_calibration__())
+        calibration.update(**kwargs)
+
+        return solve_triangular_system(calibration)
+        # return self.__get_calibration__()
     
     def __find_symbols__(self):
         
@@ -227,7 +247,6 @@ class Modfile(Model):
         mm = [e for e in mod.data.children if e.data == 'model_block']
         assert len(mm) == 1
 
-        import dolang
         from dolang.grammar import sanitize, str_expression, stringify, stringify_symbol
         from dolang.function_compiler import FlatFunctionFactory as FFF
         from dolang.function_compiler import make_method_from_factory

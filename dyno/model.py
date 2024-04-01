@@ -8,11 +8,13 @@ from .misc import jacobian
 
 class RecursiveSolution:
 
-    def __init__(self, X, Y, Σ, symbols):
+    def __init__(self, X, Y, Σ, symbols, evs=None):
 
         self.X = X
         self.Y = Y
         self.Σ = Σ
+
+        self.evs = evs
 
         self.symbols = symbols
 
@@ -51,20 +53,18 @@ symbols: {self.symbols}
     def compute(self, diff=False, calibration={}):
 
         c = self.get_calibration(**calibration)
-        print(c)
         v = self.symbols['endogenous']
         p = self.symbols['parameters']
-
         y0 = np.array([c[e] for e in v])
         p0 = np.array([c[e] for e in p])
         e = np.zeros(len(self.symbols['exogenous']))
         return self.dynamic(y0,y0,y0,e,p0,diff=diff)
 
-    def solve(self, calibration={}, method='ti')->RecursiveSolution:
+    def solve(self, calibration={}, method='qz')->RecursiveSolution:
 
         from .solver import solve as solveit
         r,A,B,C,D = self.compute(diff=True, calibration=calibration)
-        X = solve(A,B,C, method=method)
+        X,evs = solve(A,B,C, method=method)
         Y = linsolve(A@X + B, -D)
 
         v = self.symbols['endogenous']
@@ -76,7 +76,8 @@ symbols: {self.symbols}
             X,
             Y,
             Σ,
-            {'endogenous': v,'exogenous':e}
+            {'endogenous': v,'exogenous':e},
+            evs=evs
         )
 
 def irfs(model, dr):

@@ -34,7 +34,7 @@ command_statement:  COMMAND ";"
 model_block.1: "model" ";" _list_of_equations _END_TOKEN ";"
     | "model" "(" "linear" ")" ";" _list_of_equations _END_TOKEN ";"
 
-steady_block.1: "steady_state_model" ";" _list_of_equations _END_TOKEN ";"
+steady_block.1: "steady_state_model" ";" _list_of_parassignments _END_TOKEN ";"
 
 initval_block.1: "initval" ";" _list_of_parassignments _END_TOKEN ";"
 

@@ -5,6 +5,8 @@ package:
 build:
   noarch: python
   script: {{ PYTHON }} -m pip install . --no-deps -vv
+  always_include_files:
+  - dyno/modfile_grammar.lark
 
 source:
   path: ../
