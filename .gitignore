@@ -1,3 +1,7 @@
 *.pyc
 *.whl
 *.tar.gz
+.pixi/*
+.vscode/*
+pixi.lock
+poetry.lock
