@@ -1,0 +1,6 @@
+Random thoughts:
+
+- web deployment:
+    - dyno serve babymodel.yaml
+    - integration with quarto/shiny/...
+9

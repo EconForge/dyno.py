@@ -63,8 +63,10 @@ symbols: {self.symbols}
     def solve(self, calibration={}, method='qz')->RecursiveSolution:
 
         from .solver import solve as solveit
+
         r,A,B,C,D = self.compute(diff=True, calibration=calibration)
-        X,evs = solve(A,B,C, method=method)
+        
+        X,evs = solveit(A,B,C, method=method)
         Y = linsolve(A@X + B, -D)
 
         v = self.symbols['endogenous']

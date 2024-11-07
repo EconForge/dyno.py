@@ -8,13 +8,13 @@ def solve(A,B,C, method='qz', options={}):
     
     if method == 'ti':
 
-        sol = solve_ti(A,B,C, **options)
+        sol, evs = solve_ti(A,B,C, **options)
 
     else:
 
-        sol = solve_qz(A,B,C, **options)
+        sol, evs = solve_qz(A,B,C, **options)
 
-    return sol
+    return sol, evs
 
 def solve_ti(A,B,C, T=10000, tol=1e-10):
             

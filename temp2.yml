@@ -1,0 +1,1228 @@
+  - type: modfile
+    children:
+    - type: var_statement
+      children:
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'pi'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\pi}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'inflation'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'y_gap'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\tilde y}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'output gap'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'y_nat'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{y^{nat}}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'natural output'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'y'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{y}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'output'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'yhat'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\hat y}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'output deviation from steady state'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'r_nat'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{r^{nat}}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'natural interest rate'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'i'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{i}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'nominal interrst rate'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'n'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{n}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'hours worked'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'nu'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\nu}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'AR(1) monetary policy shock process'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'a'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{a}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'AR(1) technology shock process'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'z'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{z}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'AR(1) preference shock process'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'p'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{p}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'price level'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'w'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{w}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'nominal wage'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'c'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{c}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'consumption'
+    - type: varexo_statement
+      children:
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'eps_a'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\varepsilon_a}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'technology shock'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'eps_nu'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\varepsilon_\\nu}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'monetary policy shock'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'eps_z'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\varepsilon_z}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'preference shock innovation'
+    - type: par_statement
+      children:
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'alppha'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\alpha}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'capital share'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'betta'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\beta}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'discount factor'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'rho_a'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\rho_a}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'autocorrelation technology shock'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'rho_nu'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\rho_{\\nu}}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'autocorrelation monetary policy shock'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'rho_z'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\rho_{z}}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'autocorrelation monetary demand shock'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'siggma'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\sigma}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'inverse EIS'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'varphi'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\varphi}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'inverse Frisch elasticity'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'phi_pi'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\phi_{\\pi}}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'inflation feedback Taylor Rule'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'phi_y'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\phi_{y}}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'output feedback Taylor Rule'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'eta'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\eta}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'semi-elasticity of money demand'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'epsilon'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\epsilon}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'demand elasticity'
+      - type: lsymbol
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'theta'
+        - type: latex_string
+          children:
+          - type: LATEX_STRING
+            value: '{\\theta}'
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'long_name'
+            - type: UNQUOTED_STRING
+              value: 'Calvo parameter'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'siggma'
+      - type: number
+        children:
+        - type: NUMBER
+          value: '1'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'varphi'
+      - type: number
+        children:
+        - type: NUMBER
+          value: '5'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'phi_pi'
+      - type: number
+        children:
+        - type: NUMBER
+          value: '1.5'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'phi_y'
+      - type: number
+        children:
+        - type: NUMBER
+          value: '0.125'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'theta'
+      - type: div
+        children:
+        - type: number
+          children:
+          - type: NUMBER
+            value: '3'
+        - type: number
+          children:
+          - type: NUMBER
+            value: '4'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'rho_nu'
+      - type: number
+        children:
+        - type: NUMBER
+          value: '0.5'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'rho_z'
+      - type: number
+        children:
+        - type: NUMBER
+          value: '0.5'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'rho_a'
+      - type: number
+        children:
+        - type: NUMBER
+          value: '0.9'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'betta'
+      - type: number
+        children:
+        - type: NUMBER
+          value: '0.99'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'eta'
+      - type: number
+        children:
+        - type: NUMBER
+          value: '3.77'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'alppha'
+      - type: div
+        children:
+        - type: number
+          children:
+          - type: NUMBER
+            value: '1'
+        - type: number
+          children:
+          - type: NUMBER
+            value: '4'
+    - type: parassignment
+      children:
+      - type: symbol
+        children:
+        - type: NAME
+          value: 'epsilon'
+      - type: number
+        children:
+        - type: NUMBER
+          value: '9'
+    - type: model_block
+      children:
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'New Keynesian Phillips Curve eq. (22)'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'pi'
+          - type: add
+            children:
+            - type: mul
+              children:
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'betta'
+              - type: variable
+                children:
+                - type: name
+                  children:
+                  - type: NAME
+                    value: 'pi'
+                - type: date
+                  children:
+                  - type: SIGNED_INT
+                    value: '+1'
+            - type: mul
+              children:
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'kappa'
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'y_gap'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'Dynamic IS Curve eq. (23)'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'y_gap'
+          - type: add
+            children:
+            - type: mul
+              children:
+              - type: div
+                children:
+                - type: neg
+                  children:
+                  - type: number
+                    children:
+                    - type: NUMBER
+                      value: '1'
+                - type: symbol
+                  children:
+                  - type: NAME
+                    value: 'siggma'
+              - type: sub
+                children:
+                - type: sub
+                  children:
+                  - type: symbol
+                    children:
+                    - type: NAME
+                      value: 'i'
+                  - type: variable
+                    children:
+                    - type: name
+                      children:
+                      - type: NAME
+                        value: 'pi'
+                    - type: date
+                      children:
+                      - type: SIGNED_INT
+                        value: '+1'
+                - type: symbol
+                  children:
+                  - type: NAME
+                    value: 'r_nat'
+            - type: variable
+              children:
+              - type: name
+                children:
+                - type: NAME
+                  value: 'y_gap'
+              - type: date
+                children:
+                - type: SIGNED_INT
+                  value: '+1'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'Interest Rate Rule eq. (26)'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'i'
+          - type: add
+            children:
+            - type: add
+              children:
+              - type: mul
+                children:
+                - type: symbol
+                  children:
+                  - type: NAME
+                    value: 'phi_pi'
+                - type: symbol
+                  children:
+                  - type: NAME
+                    value: 'pi'
+              - type: mul
+                children:
+                - type: symbol
+                  children:
+                  - type: NAME
+                    value: 'phi_y'
+                - type: symbol
+                  children:
+                  - type: NAME
+                    value: 'yhat'
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'nu'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'Definition natural rate of interest eq. (24)'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'r_nat'
+          - type: add
+            children:
+            - type: mul
+              children:
+              - type: mul
+                children:
+                - type: mul
+                  children:
+                  - type: neg
+                    children:
+                    - type: symbol
+                      children:
+                      - type: NAME
+                        value: 'siggma'
+                  - type: symbol
+                    children:
+                    - type: NAME
+                      value: 'psi_n_ya'
+                - type: sub
+                  children:
+                  - type: number
+                    children:
+                    - type: NUMBER
+                      value: '1'
+                  - type: symbol
+                    children:
+                    - type: NAME
+                      value: 'rho_a'
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'a'
+            - type: mul
+              children:
+              - type: sub
+                children:
+                - type: number
+                  children:
+                  - type: NUMBER
+                    value: '1'
+                - type: symbol
+                  children:
+                  - type: NAME
+                    value: 'rho_z'
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'z'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'Definition natural output, eq. (20)'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'y_nat'
+          - type: mul
+            children:
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'psi_n_ya'
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'a'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'Definition output gap'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'y_gap'
+          - type: sub
+            children:
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'y'
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'y_nat'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'Monetary policy shock'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'nu'
+          - type: add
+            children:
+            - type: mul
+              children:
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'rho_nu'
+              - type: variable
+                children:
+                - type: name
+                  children:
+                  - type: NAME
+                    value: 'nu'
+                - type: date
+                  children:
+                  - type: SIGNED_INT
+                    value: '-1'
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'eps_nu'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'TFP shock'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'a'
+          - type: add
+            children:
+            - type: mul
+              children:
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'rho_a'
+              - type: variable
+                children:
+                - type: name
+                  children:
+                  - type: NAME
+                    value: 'a'
+                - type: date
+                  children:
+                  - type: SIGNED_INT
+                    value: '-1'
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'eps_a'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'Production function (eq. 14)'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'y'
+          - type: add
+            children:
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'a'
+            - type: mul
+              children:
+              - type: sub
+                children:
+                - type: number
+                  children:
+                  - type: NUMBER
+                    value: '1'
+                - type: symbol
+                  children:
+                  - type: NAME
+                    value: 'alppha'
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'n'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'Preference shock, p. 54'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'z'
+          - type: sub
+            children:
+            - type: mul
+              children:
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'rho_z'
+              - type: variable
+                children:
+                - type: name
+                  children:
+                  - type: NAME
+                    value: 'z'
+                - type: date
+                  children:
+                  - type: SIGNED_INT
+                    value: '-1'
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'eps_z'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'Output deviation from steady state'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'yhat'
+          - type: sub
+            children:
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'y'
+            - type: call
+              children:
+              - type: FUNCTION
+                value: 'steady_state'
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'y'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'Definition price level'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'pi'
+          - type: sub
+            children:
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'p'
+            - type: variable
+              children:
+              - type: name
+                children:
+                - type: NAME
+                  value: 'p'
+              - type: date
+                children:
+                - type: SIGNED_INT
+                  value: '-1'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'resource constraint, eq. (12)'
+        - type: equality
+          children:
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'y'
+          - type: symbol
+            children:
+            - type: NAME
+              value: 'c'
+      - type: lequation
+        children:
+        - type: properties
+          children:
+          - type: pair
+            children:
+            - type: NAME
+              value: 'name'
+            - type: UNQUOTED_STRING
+              value: 'FOC labor, eq. (2)'
+        - type: equality
+          children:
+          - type: sub
+            children:
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'w'
+            - type: symbol
+              children:
+              - type: NAME
+                value: 'p'
+          - type: add
+            children:
+            - type: mul
+              children:
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'siggma'
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'c'
+            - type: mul
+              children:
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'varphi'
+              - type: symbol
+                children:
+                - type: NAME
+                  value: 'n'
+    - type: shocks_block
+      children:
+      - type: setvar_stmt
+        children:
+        - type: symbol
+          children:
+          - type: NAME
+            value: 'eps_nu'
+        - type: pow
+          children:
+          - type: number
+            children:
+            - type: NUMBER
+              value: '0.0025'
+          - type: number
+            children:
+            - type: NUMBER
+              value: '2'

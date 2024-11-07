@@ -27,3 +27,11 @@ exogenous:
             [0.002, 0.0  ],
             [0.000, 0.001]
         ]
+
+---
+gui:
+    model:
+        NEO1.YAML
+        NEO2.YAML
+    PARCHOICE:
+        BETA

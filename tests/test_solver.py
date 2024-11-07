@@ -18,7 +18,7 @@ def test_all(tol=1e-9):
     import time
     # Check QZ decomposition solver
     t1 = time.time()
-    X0_qz = solve_qz(A0, B0, C0)
+    X0_qz, evs = solve_qz(A0, B0, C0)
     t2 = time.time()
     print(f"Elapsed: {t2-t1}")
     res_qz = A0 @ X0_qz @ X0_qz + B0 @ X0_qz + C0
@@ -28,7 +28,7 @@ def test_all(tol=1e-9):
     
     # Check Time Iteration solver
     t1 = time.time()
-    X0_ti = solve_ti(A0, B0, C0)
+    X0_ti, evs_ti = solve_ti(A0, B0, C0)
     t2 = time.time()
     print(f"Elapsed: {t2 -t1}")
     res_ti = A0 @ X0_ti @ X0_ti + B0 @ X0_ti + C0

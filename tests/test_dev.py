@@ -21,4 +21,4 @@ model = Modfile(filename)
 print( model.describe() )
 
 
-print(model.solve())
+# print(model.solve())
