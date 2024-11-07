@@ -8,6 +8,7 @@ def test_solution_ti():
 
     sim = dyno.simulate(sol)
 
+
 def test_solution_qz():
 
     import dyno
@@ -17,5 +18,3 @@ def test_solution_qz():
     sol = model.solve(method="qz")
 
     sim = dyno.simulate(sol)
-
-    

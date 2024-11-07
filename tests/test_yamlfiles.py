@@ -10,7 +10,7 @@ import pytest
 
 
 # @pytest.mark.nondestructive
-@pytest.mark.parametrize("filename",files)
+@pytest.mark.parametrize("filename", files)
 def test_yamlfile_import(filename):
 
     f = filename
@@ -18,5 +18,5 @@ def test_yamlfile_import(filename):
     filename = "examples/" + f
 
     model = dyno.import_file(filename)
-    
+
     assert True

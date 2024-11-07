@@ -12,6 +12,7 @@ Vector = List[float]
 
 import numpy as np
 
+
 @language_element
 def Matrix(*lines):
     mat = np.array(lines, np.float64)
@@ -24,6 +25,7 @@ def Vector(*elements):
     mat = np.array(elements, np.float64)
     assert mat.ndim == 1
     return mat
+
 
 @language_element
 class Normal:
@@ -45,14 +47,16 @@ class Normal:
             self.Μ = np.array([0.0] * self.d)
         else:
             self.Μ = np.array(mu, dtype=float)
-        
+
         assert self.Σ.shape[0] == self.d
         assert self.Σ.shape[0] == self.d
 
         # this class wraps functionality from scipy
         import scipy.stats
 
-        self._dist_ = scipy.stats.multivariate_normal(mean=self.Μ, cov=self.Σ, allow_singular=True)
+        self._dist_ = scipy.stats.multivariate_normal(
+            mean=self.Μ, cov=self.Σ, allow_singular=True
+        )
 
 
 @language_element

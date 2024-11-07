@@ -22,7 +22,6 @@ class YAMLFile(Model):
 
     def __update_calibration__(self):
 
-
         from dolang.symbolic import remove_timing
 
         symbols = self.symbols
@@ -43,7 +42,7 @@ class YAMLFile(Model):
         initial_values = {
             "exogenous": float("nan"),
             "endogenous": float("nan"),
-            "parameters": float("nan")
+            "parameters": float("nan"),
         }
 
         for symbol_group in symbols:
@@ -84,8 +83,6 @@ class YAMLFile(Model):
 
         exogenous = eval_data(exo, calibration)
 
-        
-
         # new style
         syms = self.symbols["exogenous"]
         # first we check that shocks are defined in the right order
@@ -97,25 +94,23 @@ class YAMLFile(Model):
 
         return ProductNormal(*exogenous.values())
 
-
     def __update_equations__(self):
 
         data = self.data
 
-        tree = dolang.parse_string(data['equations'], start="equation_block")
+        tree = dolang.parse_string(data["equations"], start="equation_block")
 
         stree = dolang.grammar.sanitize(tree)
 
         symlist = dolang.list_symbols(stree)
 
-        vars = list( set(e[0] for e in symlist.variables) )
+        vars = list(set(e[0] for e in symlist.variables))
         pars = symlist.parameters
 
         # check exogenous variables
         try:
             l = [
-                [h.strip() for h in k.split(',')]
-                for k in self.data['exogenous'].keys()
+                [h.strip() for h in k.split(",")] for k in self.data["exogenous"].keys()
             ]
             exovars = sum(l, [])
             #
@@ -124,9 +119,9 @@ class YAMLFile(Model):
             exovars = []
 
         symbols = {
-            'endogenous': [e for e in vars if e not in exovars],
-            'parameters': pars,
-            'exogenous': exovars
+            "endogenous": [e for e in vars if e not in exovars],
+            "parameters": pars,
+            "exogenous": exovars,
         }
 
         self.symbols = symbols
@@ -134,50 +129,48 @@ class YAMLFile(Model):
         n = len(tree.children)
 
         # equations = [f"({stringify(eq.children[1])})-({stringify(eq.children[0])})"  for eq in tree.children]
-        equations = [stringify(str_expression(eq))  for eq in tree.children]
-        
+        equations = [stringify(str_expression(eq)) for eq in tree.children]
+
         self.equations = equations
 
         equations = [
-                ("({1})-({0})".format(*eq.split("=")) if "=" in eq else eq) for eq in equations
+            ("({1})-({0})".format(*eq.split("=")) if "=" in eq else eq)
+            for eq in equations
         ]
 
         self.equations = equations
 
         dict_eq = dict([(f"out{i+1}", equations[i]) for i in range(n)])
         spec = dict(
-            y_f=[stringify_symbol((e,1)) for e in symbols['endogenous']],
-            y_0=[stringify_symbol((e,0)) for e in symbols['endogenous']],
-            y_p=[stringify_symbol((e,-1)) for e in symbols['endogenous']],
-            e=[stringify_symbol((e,0)) for e in symbols['exogenous']],
-            p=[stringify_symbol(e) for e in symbols['parameters']]
+            y_f=[stringify_symbol((e, 1)) for e in symbols["endogenous"]],
+            y_0=[stringify_symbol((e, 0)) for e in symbols["endogenous"]],
+            y_p=[stringify_symbol((e, -1)) for e in symbols["endogenous"]],
+            e=[stringify_symbol((e, 0)) for e in symbols["exogenous"]],
+            p=[stringify_symbol(e) for e in symbols["parameters"]],
         )
 
-        fff = FFF(
-            dict(),
-            dict_eq,
-            spec,
-            "f_dynamic"
-        )
+        fff = FFF(dict(), dict_eq, spec, "f_dynamic")
 
         fun = make_method_from_factory(fff, compile=False, debug=False)
 
-        self.__functions__ = {'dynamic': fun}
+        self.__functions__ = {"dynamic": fun}
+
 
 cache = []
 
 
-def import_file(filename)->YAMLFile:
-    
+def import_file(filename) -> YAMLFile:
+
     txt = open(filename, "rt", encoding="utf-8").read()
     return import_model(txt)
 
-def import_model(txt)->YAMLFile:
+
+def import_model(txt) -> YAMLFile:
 
     data = yaml.compose(txt)
 
     v = hash(txt)
-    v_eq = hash(data['equations'].value)
+    v_eq = hash(data["equations"].value)
 
     existing = [m[0] for m in cache]
 
@@ -188,7 +181,5 @@ def import_model(txt)->YAMLFile:
 
     else:
         model = YAMLFile(data)
-        cache.append((v,v_eq,model))
+        cache.append((v, v_eq, model))
         return model
-    
-
