@@ -13,7 +13,7 @@ import time
 
 
 @solara.component
-def SolutionViewer(dr_):
+def SolutionViewer(dr_, moments_, use_hpfilter_):
 
     from IPython.core.display import display_html
 
@@ -31,6 +31,15 @@ def SolutionViewer(dr_):
     # print(html_evs)
     # solara.HTML(tag="table", unsafe_innerHTML=html_evs, style="font-family: monospace")
 
+    solara.Markdown("__Steady-state__")
+
+    ss = pd.DataFrame(
+        [dr.x0],
+        columns=["{}".format(e) for e in dr.symbols["endogenous"]]
+    )
+
+    solara.display(ss)
+
     # solara.Markdown("### Decision Rule")
     solara.Markdown("__Decision Rule__")
 
@@ -47,67 +56,29 @@ def SolutionViewer(dr_):
 
     solara.display(df)
 
-    df_moments = pd.DataFrame(
-        hh_y,
-        columns=["{}[t]".format(e) for e in (dr.symbols["endogenous"])],
-        index=["{}[t]".format(e) for e in (dr.symbols["endogenous"])],
-    )
+    if moments_.value:
 
-    solara.Markdown("__Moments__")
+        from dyno.solver import moments
+        Σ0, Σ = moments(dr.X, dr.Y, dr.Σ)
 
-    solara.display(df_moments)
+        df_umoments = pd.DataFrame(
+            Σ0,
+            columns=["{}[t]".format(e) for e in (dr.symbols["endogenous"])],
+            index=["{}[t]".format(e) for e in (dr.symbols["endogenous"])],
+        )
 
+        df_cmoments = pd.DataFrame(
+            Σ,
+            columns=["{}[t]".format(e) for e in (dr.symbols["endogenous"])],
+            index=["{}[t]".format(e) for e in (dr.symbols["endogenous"])],
+        )
 
-# def one_plot(irfs_, c, selects):
+        solara.Markdown("__Unconditional Moments__")
+        solara.display(df_umoments)
 
-#     irfs = irfs_.value
+        solara.Markdown("__Conditional Moments__")
+        solara.display(df_cmoments)
 
-#     k0 = [*irfs.keys()][0]
-
-#     x_ = irfs[k0][c].index
-
-
-#     # create scales
-#     xs = bqplot.LinearScale(min=0,max=len(x_)+1)
-#     # ys = bqplot.LinearScale()
-
-#     colors=["blue","red"]
-#     # with iw.Card(outlinedd=True,_style="width: 350px; height: 250px"):
-#     lines = [
-#         bqplot.Lines(x=x_, y=irfs[k][c], scales={"x": xs, "y": bqplot.LinearScale()}, labels=[k], colors=colors[i])
-#         for (i,k) in enumerate(irfs['shocks'].unique()) if k in selects.value
-#     ]
-#     # create axes objects
-#     # xax = bqplot.Axis(scale=xs, grid_lines="solid", label='t')
-#     # yax = bqplot.Axis(scale=ys, orientation="vertical", label=c, grid_lines="solid")
-
-#     # create the figure object (renders in the output cell)
-#     return bqplot.Figure(marks=lines, legend=True, transition=True)
-
-
-# from reacton import ipyvuetify as iw
-
-
-# @solara.component
-# def SimulViewer(irfs, sim_grid, selects):
-
-#     cols = [str(e) for e in [*irfs.value.values()][0].columns[1:]]
-#     n = len(cols)
-
-#     ind, set_ind = solara.use_state(cols[0])
-
-
-#     if not sim_grid.value:
-#         with iw.Window(v_model=ind, on_v_model=set_ind, show_arrows=True):
-#             for (i,c) in enumerate(cols):
-#                 with iw.WindowItem(value=c):
-#                     # with iw.Card():
-#                         one_plot(irfs, c, selects)
-#     else:
-#         with solara.ColumnsResponsive():
-#             for (i,c) in enumerate(cols):
-#                     # with iw.Card():
-#                         one_plot(irfs, c, selects)
 
 
 def SimulViewer2(irfs_, sim_grid, selects):
@@ -124,6 +95,8 @@ def SimulViewer2(irfs_, sim_grid, selects):
     fig.update_xaxes(title_text="")
 
     solara.FigurePlotly(fig)
+
+    solara.Markdown("The values on the y axes are %-deviations from the steady state.")
 
 
 from reacton import ipyvuetify as iw

@@ -9,8 +9,9 @@ from .misc import jacobian
 
 class RecursiveSolution:
 
-    def __init__(self, X, Y, Σ, symbols, evs=None):
+    def __init__(self, X, Y, Σ, symbols, x0=None, evs=None):
 
+        self.x0 = x0
         self.X = X
         self.Y = Y
         self.Σ = Σ
@@ -76,15 +77,23 @@ symbols: {self.symbols}
 
         Σ = self.exogenous.Σ
 
-        return RecursiveSolution(X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs)
+        # a bit stupid
+        c = self.get_calibration(**calibration)
+        v = self.symbols["endogenous"]
+        p = self.symbols["parameters"]
+        y0 = np.array([c[e] for e in v])
+        p0 = np.array([c[e] for e in p])
 
 
-def irfs(model, dr):
+        return RecursiveSolution(X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0)
+
+
+def irfs(model, dr, type="log-deviation"):
 
     from .simul import irf
 
     res = {}
     for i, e in enumerate(model.symbols["exogenous"]):
-        res[e] = irf(dr, i)
+        res[e] = irf(dr, i, type=type)
 
     return res

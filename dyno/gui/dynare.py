@@ -26,7 +26,9 @@ def dyno_gui(filename, parchoice={}):
     model = Modfile(txt=txt)
     dr0 = model.solve()
 
-    sim = sim_to_nsim(dyno.model.irfs(model, dr0))
+    simul_type = solara.reactive("log-deviation")
+
+    sim = sim_to_nsim(dyno.model.irfs(model, dr0, type=simul_type.value))
 
     modfile = solara.reactive(txt)
     simul = solara.reactive(sim)
@@ -42,6 +44,10 @@ def dyno_gui(filename, parchoice={}):
     ok = solara.reactive(True)
 
     use_qz = solara.reactive(True)
+
+    compute_moments = solara.reactive(True)
+    use_hpfilter = solara.reactive(True)
+
 
     model_description = solara.reactive(None)
     msg = solara.reactive("No problem")
@@ -103,7 +109,7 @@ def dyno_gui(filename, parchoice={}):
 
             t1 = time.time()
 
-            if use_qz:
+            if use_qz.value:
                 method = "qz"
             else:
                 method = "ti"
@@ -125,7 +131,7 @@ def dyno_gui(filename, parchoice={}):
             ok.value = ok_import.value & ok_ss.value & ok_bk.value
 
         if ok_bk.value:
-            sim = dyno.model.irfs(model, dr.value)
+            sim = dyno.model.irfs(model, dr.value, type=simul_type.value)
 
             simul.value = sim_to_nsim(sim)
 
@@ -172,8 +178,13 @@ def dyno_gui(filename, parchoice={}):
 
                 Diagnostic()
 
-                with solara.Card("Parameters"):
-                    ParameterChooser(args_0, parameters, import_model, text)
+                # with solara.Card("Options"):
+                #     solara.Checkbox(label="Compute Moments", value=compute_moments)
+                #     solara.ToggleButtonsSingle(value=simul_type, values=['level','deviation','log-deviation'])
+
+                if len(parameters)>0:
+                    with solara.Card("Parameters"):
+                        ParameterChooser(args_0, parameters, import_model, text)
 
                 # with solara.Card("Simul Options"):
                 #     solara.Checkbox(label="Use Qz", value=use_qz)
@@ -194,7 +205,7 @@ def dyno_gui(filename, parchoice={}):
                         ModelEditor()
                 with solara.lab.Tab("Solution"):
                     with solara.Card(elevation=2):
-                        SolutionViewer(dr)
+                        SolutionViewer(dr, compute_moments, use_hpfilter)
 
                 with solara.lab.Tab("Simulation"):
                     with solara.Card(elevation=2):

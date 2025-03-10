@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-def irf(dr, i, T=40):
+def irf(dr, i, T=40, type="level"):
 
     X = dr.X.data
     Y = dr.Y.data
@@ -23,8 +23,13 @@ def irf(dr, i, T=40):
 
     res = np.concatenate([e[None, :] for e in ss], axis=0)
 
-    # dim_1 = [*range(T+1)]
-    # dim_2 = [*dr.variables["endogenous"]]
+
+    if type=="level":
+        res = res + dr.x0[None,:]
+    elif type=="log-deviation":
+        res = (res/dr.x0[None,:])*100
+    elif type=="deviation":
+        pass
 
     return pd.DataFrame(res, columns=dr.symbols["endogenous"])
 

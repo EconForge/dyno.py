@@ -6,11 +6,8 @@ authors = ["Pablo Winant <pablo.winant@gmail.com>"]
 channels = ["conda-forge"]
 platforms = ["linux-64"]
 
-[tasks]
-
 [dependencies]
-dynare-preprocessor = "0.0.0.dev0.6235e6907526d468e2c35f14c38db1e308698bc9.*"
-dolang = "^0.0.21.*"
+dolang = "0.0.20.*"
 scipy = "1.11.4.*"
 bqplot = "0.12.42.*"
 xarray = "2023.11.0.*"
