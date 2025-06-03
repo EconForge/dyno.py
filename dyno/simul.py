@@ -23,12 +23,11 @@ def irf(dr, i, T=40, type="level"):
 
     res = np.concatenate([e[None, :] for e in ss], axis=0)
 
-
-    if type=="level":
-        res = res + dr.x0[None,:]
-    elif type=="log-deviation":
-        res = (res/dr.x0[None,:])*100
-    elif type=="deviation":
+    if type == "level":
+        res = res + dr.x0[None, :]
+    elif type == "log-deviation":
+        res = (res / dr.x0[None, :]) * 100
+    elif type == "deviation":
         pass
 
     return pd.DataFrame(res, columns=dr.symbols["endogenous"])

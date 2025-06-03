@@ -34,8 +34,7 @@ def SolutionViewer(dr_, moments_, use_hpfilter_):
     solara.Markdown("__Steady-state__")
 
     ss = pd.DataFrame(
-        [dr.x0],
-        columns=["{}".format(e) for e in dr.symbols["endogenous"]]
+        [dr.x0], columns=["{}".format(e) for e in dr.symbols["endogenous"]]
     )
 
     solara.display(ss)
@@ -59,6 +58,7 @@ def SolutionViewer(dr_, moments_, use_hpfilter_):
     if moments_.value:
 
         from dyno.solver import moments
+
         Σ0, Σ = moments(dr.X, dr.Y, dr.Σ)
 
         df_umoments = pd.DataFrame(
@@ -78,7 +78,6 @@ def SolutionViewer(dr_, moments_, use_hpfilter_):
 
         solara.Markdown("__Conditional Moments__")
         solara.display(df_cmoments)
-
 
 
 def SimulViewer2(irfs_, sim_grid, selects):

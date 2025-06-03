@@ -84,8 +84,9 @@ symbols: {self.symbols}
         y0 = np.array([c[e] for e in v])
         p0 = np.array([c[e] for e in p])
 
-
-        return RecursiveSolution(X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0)
+        return RecursiveSolution(
+            X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0
+        )
 
 
 def irfs(model, dr, type="log-deviation"):

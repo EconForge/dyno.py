@@ -15,7 +15,7 @@ scipy = "^1.12.0"
 pandas = "^2.2.2"
 mkapi = "^3.0.22"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
 black = "^24.10.0"
 mkdocs = "^1.6.1"

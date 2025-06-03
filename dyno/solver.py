@@ -81,15 +81,15 @@ def genev(α, β, tol=1e-9):
 vgenev = np.vectorize(genev, excluded=["tol"])
 
 
-def moments(X,Y,Σ):
+def moments(X, Y, Σ):
     """
     Compute conditional and unconditional moments of process $y_t = X y_{t-1} + Y e_t$
     """
 
-    Σ0 = Y@Σ@Y.T
+    Σ0 = Y @ Σ @ Y.T
     n = X.shape[0]
 
     # Compute the unconditional variance
-    Σ = (np.linalg.inv(np.eye(n**2) - np.kron(X,X))@Σ0.flatten()).reshape(n,n)
+    Σ = (np.linalg.inv(np.eye(n**2) - np.kron(X, X)) @ Σ0.flatten()).reshape(n, n)
 
     return Σ0, Σ

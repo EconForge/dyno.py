@@ -48,7 +48,6 @@ def dyno_gui(filename, parchoice={}):
     compute_moments = solara.reactive(True)
     use_hpfilter = solara.reactive(True)
 
-
     model_description = solara.reactive(None)
     msg = solara.reactive("No problem")
 
@@ -182,7 +181,7 @@ def dyno_gui(filename, parchoice={}):
                 #     solara.Checkbox(label="Compute Moments", value=compute_moments)
                 #     solara.ToggleButtonsSingle(value=simul_type, values=['level','deviation','log-deviation'])
 
-                if len(parameters)>0:
+                if len(parameters) > 0:
                     with solara.Card("Parameters"):
                         ParameterChooser(args_0, parameters, import_model, text)
 
