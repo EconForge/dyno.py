@@ -5,3 +5,6 @@
 .vscode/*
 pixi.lock
 poetry.lock
+.coverage
+**/__pycache__/*
+temp*.yml
