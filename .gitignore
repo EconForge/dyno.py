@@ -8,3 +8,4 @@ poetry.lock
 .coverage
 **/__pycache__/*
 temp*.yml
+.mypy*
