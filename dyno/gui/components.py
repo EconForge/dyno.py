@@ -61,13 +61,13 @@ def SolutionViewer(dr_, moments_, use_hpfilter_):
 
         Σ0, Σ = moments(dr.X, dr.Y, dr.Σ)
 
-        df_umoments = pd.DataFrame(
+        df_cmoments = pd.DataFrame(
             Σ0,
             columns=["{}[t-1]".format(e) for e in (dr.symbols["endogenous"])],
             index=["{}[t]".format(e) for e in (dr.symbols["endogenous"])],
         )
 
-        df_cmoments = pd.DataFrame(
+        df_umoments = pd.DataFrame(
             Σ,
             columns=["{}[t-1]".format(e) for e in (dr.symbols["endogenous"])],
             index=["{}[t]".format(e) for e in (dr.symbols["endogenous"])],
