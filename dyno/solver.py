@@ -21,10 +21,11 @@ def solve(A, B, C, method="qz", options={}):
 
     Returns
     -------
-    X : (N,N) ndarray
+    tuple containing:
+    - X : (N,N) ndarray
         solution of the equation
     
-    evs : List[float]
+    - evs : List[float]
         sorted list of associated generalized eigenvalues if the chosen method is "qz", None otherwise
     """
 
@@ -61,10 +62,12 @@ def solve_ti(A, B, C, T=10000, tol=1e-10):
 
     Returns
     -------
-    X : (N,N) ndarray
+    tuple containing:
+
+    - X : (N,N) ndarray
         solution of the equation
     
-    evs : None
+    - evs : None
         not applicable, returned for the sake of having a uniform interface over solvers
     
     Raises
@@ -112,10 +115,11 @@ def solve_qz(A, B, C, tol=1e-15):
 
     Returns
     -------
-    X : (N,N) ndarray
+    tuple containing:
+    - X : (N,N) ndarray
         solution of the equation
     
-    evs : List[float]
+    - evs : List[float]
         sorted list of associated generalized eigenvalues
     """
     n = A.shape[0]
