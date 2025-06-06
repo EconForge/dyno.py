@@ -39,7 +39,24 @@ def solve_ti(A, B, C, T=10000, tol=1e-10, verbose=False):
 
 
 def solve_qz(A, B, C, tol=1e-15):
-    """Solves AX² + BX + C = 0 for X using a QZ decomposition."""
+    """Solves AX² + BX + C = 0 for X using a QZ decomposition.
+
+    Parameters
+    ----------
+    A : _type_
+        _description_
+    B : _type_
+        _description_
+    C : _type_
+        _description_
+    tol : _type_, optional
+        _description_, by default 1e-15
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     n = A.shape[0]
     I = np.eye(n)
     Z = np.zeros((n, n))
