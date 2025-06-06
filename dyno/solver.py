@@ -3,15 +3,15 @@ from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
 
 def solve(A, B, C, method="qz", options={}):
-    """Solves AX²+BX+C = 0 for X
+    """Solves $AX^2 + BX + C = 0$ for $X$ using the chosen method
 
     Parameters
     ----------
-    A : (N, N) Matrix
+    A : $(N, N)$ Matrix
         
-    B : (N, N) Matrix
+    B : $(N, N)$ Matrix
         
-    C : (N, N) Matrix
+    C : $(N, N)$ Matrix
         
     method : str, optional
         chosen solver: either "ti" for fixed-point iteration or "qz" for generalized Schur decomposition, by default "qz"
@@ -21,7 +21,7 @@ def solve(A, B, C, method="qz", options={}):
 
     Returns
     -------
-    X : (N, N) Matrix
+    X : $(N, N)$ Matrix
         solution of the equation
     
     **evs** : List[float]
@@ -43,15 +43,15 @@ class NoConvergence(Exception):
     pass
 
 def solve_ti(A, B, C, T=10000, tol=1e-10):
-    """Solves AX² + BX + C = 0 for X using fixed-point iteration.
+    """Solves $AX^2 + BX + C = 0$ for $X$ using fixed-point iteration.
 
     Parameters
     ----------
-    A : (N, N) Matrix
+    A : $(N, N)$ Matrix
         
-    B : (N, N) Matrix
+    B : $(N, N)$ Matrix
         
-    C : (N, N) Matrix
+    C : $(N, N)$ Matrix
         
     T : int, optional
         Maximum number of iterations. If more are needed, `NoConvergence` is raised, by default 10000
@@ -60,7 +60,7 @@ def solve_ti(A, B, C, T=10000, tol=1e-10):
 
     Returns
     -------
-    X : (N, N) matrix
+    X : $(N, N)$ matrix
         solution of the equation
     
     **evs** : None
@@ -96,22 +96,22 @@ def solve_ti(A, B, C, T=10000, tol=1e-10):
 
 
 def solve_qz(A, B, C, tol=1e-15):
-    """Solves AX² + BX + C = 0 for X using a QZ decomposition.
+    """Solves $AX^2 + BX + C = 0$ for $X$ using a QZ decomposition.
 
     Parameters
     ----------
-    A : (N, N) Matrix
+    A : $(N, N)$ Matrix
         
-    B : (N, N) Matrix
+    B : $(N, N)$ Matrix
         
-    C : (N, N) Matrix
+    C : $(N, N)$ Matrix
         
     tol : float, optional
         error tolerance, by default 1e-15
 
     Returns
     -------
-    X : (N, N) Matrix
+    X : $(N, N)$ Matrix
         solution of the equation
     
     **evs** : List[float]
