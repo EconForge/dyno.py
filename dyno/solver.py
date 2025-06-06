@@ -1,5 +1,4 @@
 import numpy as np
-
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
 
@@ -16,6 +15,7 @@ def solve(A, B, C, method="qz", options={}):
         
     method : str, optional
         chosen solver: either "ti" for fixed-point iteration or "qz" for generalized Schur decomposition, by default "qz"
+    
     options : dict, optional
         dictionary of optional parameters to pass to the chosen solver, by default {}
 
@@ -23,7 +23,8 @@ def solve(A, B, C, method="qz", options={}):
     -------
     X : (N, N) Matrix
         solution of the equation
-    evs : List[float] or None
+    
+    **evs** : List[float]
         sorted list of associated generalized eigenvalues if the chosen method is "qz", None otherwise
     """
 
@@ -61,7 +62,8 @@ def solve_ti(A, B, C, T=10000, tol=1e-10):
     -------
     X : (N, N) matrix
         solution of the equation
-    evs : None
+    
+    **evs** : None
         no eigenvalues are returned
     
     Raises
@@ -111,7 +113,8 @@ def solve_qz(A, B, C, tol=1e-15):
     -------
     X : (N, N) Matrix
         solution of the equation
-    evs : List[float]
+    
+    **evs** : List[float]
         sorted list of associated generalized eigenvalues
     """
     n = A.shape[0]
@@ -157,7 +160,7 @@ vgenev = np.vectorize(genev, excluded=["tol"])
 
 def moments(X, Y, Σ):
     """
-    Compute conditional and unconditional moments of process $y_t = X y_{t-1} + Y e_t$
+    Computes conditional and unconditional moments of process $y_t = X y_{t-1} + Y e_t$
     """
 
     Σ0 = Y @ Σ @ Y.T
