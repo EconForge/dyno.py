@@ -3,17 +3,17 @@ from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
 
 def solve(A, B, C, method="qz", options={}):
-    """Solves $AX^2 + BX + C = 0$ for $X$ using the chosen method
+    """Solves AX² + BX + C = 0 for X using the chosen method
 
     Parameters
     ----------
-    A : $(N, N)$ Matrix
+    A : (N,N) ndarray
         
-    B : $(N, N)$ Matrix
+    B : (N,N) ndarray
         
-    C : $(N, N)$ Matrix
+    C : (N,N) ndarray
         
-    method : str, optional
+    method : _str, optional_
         chosen solver: either "ti" for fixed-point iteration or "qz" for generalized Schur decomposition, by default "qz"
     
     options : dict, optional
@@ -21,10 +21,10 @@ def solve(A, B, C, method="qz", options={}):
 
     Returns
     -------
-    X : $(N, N)$ Matrix
+    X : (N,N) ndarray
         solution of the equation
     
-    **evs** : List[float]
+    evs : List[float]
         sorted list of associated generalized eigenvalues if the chosen method is "qz", None otherwise
     """
 
@@ -43,28 +43,29 @@ class NoConvergence(Exception):
     pass
 
 def solve_ti(A, B, C, T=10000, tol=1e-10):
-    """Solves $AX^2 + BX + C = 0$ for $X$ using fixed-point iteration.
+    """Solves AX² + BX + C = 0 for X using fixed-point iteration.
 
     Parameters
     ----------
-    A : $(N, N)$ Matrix
+    A : (N,N) ndarray
         
-    B : $(N, N)$ Matrix
+    B : (N,N) ndarray
         
-    C : $(N, N)$ Matrix
+    C : (N,N) ndarray
         
     T : int, optional
         Maximum number of iterations. If more are needed, `NoConvergence` is raised, by default 10000
+    
     tol : float, optional
         convergence threshold, by default 1e-10
 
     Returns
     -------
-    X : $(N, N)$ matrix
+    X : (N,N) ndarray
         solution of the equation
     
-    **evs** : None
-        no eigenvalues are returned
+    evs : None
+        not applicable, returned for the sake of having a uniform interface over solvers
     
     Raises
     ------
@@ -96,25 +97,25 @@ def solve_ti(A, B, C, T=10000, tol=1e-10):
 
 
 def solve_qz(A, B, C, tol=1e-15):
-    """Solves $AX^2 + BX + C = 0$ for $X$ using a QZ decomposition.
+    """Solves AX² + BX + C = 0 for X using QZ decomposition.
 
     Parameters
     ----------
-    A : $(N, N)$ Matrix
+    A : (N,N) ndarray
         
-    B : $(N, N)$ Matrix
-        
-    C : $(N, N)$ Matrix
+    B : (N,N) ndarray
+       
+    C : (N,N) ndarray
         
     tol : float, optional
         error tolerance, by default 1e-15
 
     Returns
     -------
-    X : $(N, N)$ Matrix
+    X : (N,N) ndarray
         solution of the equation
     
-    **evs** : List[float]
+    evs : List[float]
         sorted list of associated generalized eigenvalues
     """
     n = A.shape[0]
@@ -126,9 +127,9 @@ def solve_qz(A, B, C, tol=1e-15):
     G = np.block([[I, Z], [Z, A]])
     T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1)
     λ_all = vgenev(α, β, tol=tol)
-    λ = λ_all[np.abs(λ_all) <= 1]
+    #λ = λ_all[np.abs(λ_all) <= 1] # unused?
 
-    Λ = np.diag(λ) # unused?
+    #Λ = np.diag(λ) # unused?
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
     X = Z21 @ np.linalg.inv(Z11)
 
@@ -136,6 +137,26 @@ def solve_qz(A, B, C, tol=1e-15):
 
 
 def decompose_blocks(Z):
+    """Decomposes square matrix Z into four square blocks Z11, Z12, Z21, Z22 such that Z can be written as:
+    ```
+    [Z11, Z12]
+    [Z21, Z22]
+    ```
+
+    Parameters
+    ----------
+    Z : (N,N) ndarray
+    
+    Returns
+    -------
+    Z11 : (N//2, N//2) ndarray
+
+    Z12 : (N//2, N-N//2) ndarray
+
+    Z21 : (N-N//2, N//2) ndarray
+
+    Z22 : (N-N//2, N-N//2) ndarray
+    """
     n = Z.shape[0] // 2
     Z11 = Z[:n, :n]
     Z12 = Z[:n, n:]
@@ -145,7 +166,19 @@ def decompose_blocks(Z):
 
 
 def genev(α, β, tol=1e-9):
-    """Computes the eigenvalues λ = α/β."""
+    """Computes the generalized eigenvalues λ = α/β.
+    
+    Parameters
+    ----------
+
+    α, β : (N,) ndarrays
+        output of scipy.linalg.ordqz
+    
+    Returns
+    -------
+    λ : (N,) ndarray
+        vector of generalized eigenvalues computed as λ = α/β
+    """
     if not np.isclose(β, 0, atol=tol):
         return α / β
     else:
@@ -156,7 +189,7 @@ def genev(α, β, tol=1e-9):
 
 
 vgenev = np.vectorize(genev, excluded=["tol"])
-
+"""vectorized version of `genev`"""
 
 def moments(X, Y, Σ):
     """

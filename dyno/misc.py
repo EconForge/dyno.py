@@ -6,17 +6,17 @@ def jacobian(func, initial, delta=1e-3):
 
     Parameters
     ----------
-    func : Callable
+    func : Callable[(p,) ndarray, (N,) ndarray]
         the function for which we seek the Jacobian
-    initial : Vector
+    initial : (p,) ndarray
         the value at which the Jacobian is calculated
     delta : float, optional
         step size for Jacobian calculation, by default 1e-3
 
     Returns
     -------
-    Matrix
-        Jacobian matrix of `func` at point `initial`
+    output : (N,p)
+        Jacobian matrix of func at point initial
     """
     f = func
     f0 = f(initial)
