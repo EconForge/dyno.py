@@ -15,9 +15,15 @@ markdown_extensions:
       extend_pygments_lang: [yaml]
   - pymdownx.superfences
 
+theme:
+  name: material 
+  features:
+    - content.tooltips 
+    - navigation.expand 
+    - navigation.indexes 
+    - navigation.sections 
+    - navigation.tabs 
 
-extra_css:
-    - css/extra.css
 
 extra_javascript:
   # other extra java script
