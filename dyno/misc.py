@@ -2,7 +2,22 @@ import numpy as np
 
 
 def jacobian(func, initial, delta=1e-3):
+    """Jacobian calculation with finite differences
 
+    Parameters
+    ----------
+    func : Callable
+        the function for which we seek the Jacobian
+    initial : NDArray
+        the value at which the Jacobian is calculated
+    delta : float, optional
+        step size for Jacobian calculation, by default 1e-3
+
+    Returns
+    -------
+    NDArray
+        Jacobian matrix of `func` at point `initial`
+    """
     f = func
     f0 = f(initial)
     nrow = len(f0)
