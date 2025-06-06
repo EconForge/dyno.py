@@ -25,3 +25,8 @@ extra_javascript:
   - https://cdn.jsdelivr.net/npm/vega@5
   - https://cdn.jsdelivr.net/npm/vega-lite@3
   - https://cdn.jsdelivr.net/npm/vega-embed@5
+
+nav:
+  - index.md
+  - Reference:
+    - $api/dyno.***
