@@ -13,7 +13,7 @@ def solve(A, B, C, method="qz", options={}):
         
     C : (N,N) ndarray
         
-    method : _str, optional_
+    method : str, optional
         chosen solver: either "ti" for fixed-point iteration or "qz" for generalized Schur decomposition, by default "qz"
     
     options : dict, optional
