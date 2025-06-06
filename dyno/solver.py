@@ -3,8 +3,29 @@ import numpy as np
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
 
-
 def solve(A, B, C, method="qz", options={}):
+    """Solves AX²+BX+C = 0 for X
+
+    Parameters
+    ----------
+    A : (N, N) Matrix
+        
+    B : (N, N) Matrix
+        
+    C : (N, N) Matrix
+        
+    method : str, optional
+        chosen solver: either "ti" for fixed-point iteration or "qz" for generalized Schur decomposition, by default "qz"
+    options : dict, optional
+        dictionary of optional parameters to pass to the chosen solver, by default {}
+
+    Returns
+    -------
+    X : (N, N) Matrix
+        solution of the equation
+    evs : List[float] or None
+        sorted list of associated generalized eigenvalues if the chosen method is "qz", None otherwise
+    """
 
     if method == "ti":
 
@@ -16,9 +37,42 @@ def solve(A, B, C, method="qz", options={}):
 
     return sol, evs
 
+class NoConvergence(Exception):
+    """An exception raised when the convergence threshold is not reached within the maximal allowed number of iterations"""
+    pass
 
-def solve_ti(A, B, C, T=10000, tol=1e-10, verbose=False):
+def solve_ti(A, B, C, T=10000, tol=1e-10):
+    """Solves AX² + BX + C = 0 for X using fixed-point iteration.
 
+    Parameters
+    ----------
+    A : (N, N) Matrix
+        
+    B : (N, N) Matrix
+        
+    C : (N, N) Matrix
+        
+    T : int, optional
+        Maximum number of iterations. If more are needed, `NoConvergence` is raised, by default 10000
+    tol : float, optional
+        convergence threshold, by default 1e-10
+
+    Returns
+    -------
+    X : (N, N) matrix
+        solution of the equation
+    evs : None
+        no eigenvalues are returned
+    
+    Raises
+    ------
+    NoConvergence :
+        when the convergence threshold is not reached within the maximal allowed number of iterations
+    LinAlgError :
+        when a non-singular matrix is obtained while iterating
+    ValueError :
+        when a matrix containing a NaN is obtained while iterating
+    """
     n = A.shape[0]
 
     X0 = np.random.randn(n, n)
@@ -29,13 +83,14 @@ def solve_ti(A, B, C, T=10000, tol=1e-10, verbose=False):
         e = abs(X0 - X1).max()
 
         if np.isnan(e):
-            raise Exception("Invalid value")
+            # impossible situation?
+            raise ValueError("Invalid value")
 
         X0 = X1
         if e < tol:
             return X0, None
 
-    raise Exception("No convergence")
+    raise NoConvergence("The maximal number of iterations was exceeded.")
 
 
 def solve_qz(A, B, C, tol=1e-15):
@@ -43,19 +98,21 @@ def solve_qz(A, B, C, tol=1e-15):
 
     Parameters
     ----------
-    A : _type_
-        _description_
-    B : _type_
-        _description_
-    C : _type_
-        _description_
-    tol : _type_, optional
-        _description_, by default 1e-15
+    A : (N, N) Matrix
+        
+    B : (N, N) Matrix
+        
+    C : (N, N) Matrix
+        
+    tol : float, optional
+        error tolerance, by default 1e-15
 
     Returns
     -------
-    _type_
-        _description_
+    X : (N, N) Matrix
+        solution of the equation
+    evs : List[float]
+        sorted list of associated generalized eigenvalues
     """
     n = A.shape[0]
     I = np.eye(n)
@@ -68,7 +125,7 @@ def solve_qz(A, B, C, tol=1e-15):
     λ_all = vgenev(α, β, tol=tol)
     λ = λ_all[np.abs(λ_all) <= 1]
 
-    Λ = np.diag(λ)
+    Λ = np.diag(λ) # unused?
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
     X = Z21 @ np.linalg.inv(Z11)
 
