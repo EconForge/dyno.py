@@ -151,8 +151,31 @@ def decompose_blocks(Z):
 
 
 def genev(α, β, tol=1e-9):
-    """Computes the generalized eigenvalues λ = α/β
+    """
+    Computes the generalized eigenvalue λ = α/β
     
+    Parameters
+    ----------
+
+    α, β : floats
+    
+    Returns
+    -------
+    λ : float
+        Generalized eigenvalue computed as λ = α/β with the conventions x/0 = ∞ for x > 0 and 0/0 = NaN
+    """
+    if not np.isclose(β, 0, atol=tol):
+        return α / β
+    else:
+        if np.isclose(α, 0, atol=tol):
+            return np.nan
+        else:
+            return np.inf
+
+def vgenev(α, β, tol=1e-9):
+    """
+    Computes the generalized eigenvalues λ = α/β, vectorized version of `genev`
+
     Parameters
     ----------
 
@@ -164,17 +187,8 @@ def genev(α, β, tol=1e-9):
     λ : (2*N,) ndarray
         vector of generalized eigenvalues computed as λ = α/β
     """
-    if not np.isclose(β, 0, atol=tol):
-        return α / β
-    else:
-        if np.isclose(α, 0, atol=tol):
-            return np.nan
-        else:
-            return np.inf
+    return np.array([genev(a,b) for a,b in zip(α, β)])
 
-
-vgenev = np.vectorize(genev, excluded=["tol"])
-"""vectorized version of `genev`"""
 
 def moments(X, Y, Σ):
     """
@@ -196,7 +210,7 @@ def moments(X, Y, Σ):
     Notes
     -----
     The unconditional covariance matrix Γ is computed in the following way:
-    
+
     Applying the linear covariance operator to both sides of the equation $y_t = X y_{t-1} + Y e_t$ yields
     $$
     \mathrm{Cov}(y_t) = X ⋅ \mathrm{Cov}(y_{t-1}) ⋅ X^* + Y ⋅ \mathrm{Cov}(e_t) ⋅ Y^*
