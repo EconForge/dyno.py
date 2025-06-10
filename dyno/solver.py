@@ -136,11 +136,11 @@ def decompose_blocks(Z):
 
     Parameters
     ----------
-    Z : (N,N) ndarray
+    Z : (2*N,2*N) ndarray
     
     Returns
     -------
-    (Z11, Z12, Z21, Z22) : Tuple[(N//2, N//2) ndarray, (N//2, N-N//2) ndarray, (N-N//2, N//2) ndarray, (N-N//2, N-N//2) ndarray]
+    Z11, Z12, Z21, Z22 : (N,N) ndarrays
     """
     n = Z.shape[0] // 2
     Z11 = Z[:n, :n]
