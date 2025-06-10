@@ -196,6 +196,7 @@ def moments(X, Y, Σ):
     Notes
     -----
     The unconditional covariance matrix Γ is computed in the following way:
+    
     Applying the linear covariance operator to both sides of the equation $y_t = X y_{t-1} + Y e_t$ yields
     $$
     \mathrm{Cov}(y_t) = X ⋅ \mathrm{Cov}(y_{t-1}) ⋅ X^* + Y ⋅ \mathrm{Cov}(e_t) ⋅ Y^*
@@ -206,7 +207,7 @@ def moments(X, Y, Σ):
     $$
     By applying the [Vec-operator](https://en.wikipedia.org/wiki/Vectorization_(mathematics)#Compatibility_with_Kronecker_products), we get the following equation:
     $$
-    \mathrm{Vec}(Γ) = (X ⊗ X) (\mathrm{Vec}(Γ))  + \mathrm{Vec}(Γ₀)
+    \mathrm{Vec}(Γ) = (X ⊗ X) \mathrm{Vec}(Γ)  + \mathrm{Vec}(Γ₀)
     $$
     Which gives the following solution
     $$
