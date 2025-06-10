@@ -15,8 +15,11 @@ scipy = "^1.12.0"
 pandas = "^2.2.2"
 
 [tool.poetry.group.dev.dependencies]
+mypy = "^1.0.0"
 pandas-stubs = "^2.2.2"
 scipy-stubs = "^1.12.0"
+types-mock = "^5.0.0.0"
+types-PyYAML = "^6.0.12"
 pytest = "^8.3.3"
 black = "^24.10.0"
 mkdocs = "^1.6.1"
