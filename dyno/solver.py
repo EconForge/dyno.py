@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
-from shape_types import Vector, SquareMatrix
+from dyno.shape_types import Vector, SquareMatrix
 from typing import Tuple
 
 def solve(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, method="qz", options={}) -> Tuple[SquareMatrix, Vector|None]:
@@ -124,6 +124,7 @@ def solve_qz(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, tol=1e-15) -> Tu
 
     Λ = np.diag(λ) # unused?
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
+    
     X = Z21 @ np.linalg.inv(Z11)
 
     return X, sorted(λ_all)

@@ -9,3 +9,4 @@ poetry.lock
 **/__pycache__/*
 temp*.yml
 .mypy*
+dgse_example.ipynb
