@@ -21,12 +21,8 @@ def solve(A, B, C, method="qz", options={}):
 
     Returns
     -------
-    tuple containing:
-    - X : (N,N) ndarray
-        solution of the equation
-    
-    - evs : List[float]
-        sorted list of associated generalized eigenvalues if the chosen method is "qz", None otherwise
+    (X, evs) : Tuple[(N,N) ndarray, (2*N,) ndarray|None]
+        solution of the equation as well as sorted list of associated generalized eigenvalues if the chosen method is "qz" and None otherwise
     """
 
     if method == "ti":
@@ -62,13 +58,8 @@ def solve_ti(A, B, C, T=10000, tol=1e-10):
 
     Returns
     -------
-    tuple containing:
-
-    - X : (N,N) ndarray
-        solution of the equation
-    
-    - evs : None
-        not applicable, returned for the sake of having a uniform interface over solvers
+    (X, evs) : Tuple[(N,N) ndarray, None]
+        solution of the equation and None (necessary to have a common solver interface)
     
     Raises
     ------
@@ -115,12 +106,8 @@ def solve_qz(A, B, C, tol=1e-15):
 
     Returns
     -------
-    tuple containing:
-    - X : (N,N) ndarray
-        solution of the equation
-    
-    - evs : List[float]
-        sorted list of associated generalized eigenvalues
+    (X, evs) : Tuple[(N,N) ndarray, (2*N, ) ndarray]
+        solution of the equation as well as sorted list of associated generalized eigenvalues
     """
     n = A.shape[0]
     I = np.eye(n)
@@ -131,9 +118,9 @@ def solve_qz(A, B, C, tol=1e-15):
     G = np.block([[I, Z], [Z, A]])
     T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1)
     λ_all = vgenev(α, β, tol=tol)
-    #λ = λ_all[np.abs(λ_all) <= 1] # unused?
+    λ = λ_all[np.abs(λ_all) <= 1] # unused? should be used to ensure that Blanchard-Kahn conditions are verified
 
-    #Λ = np.diag(λ) # unused?
+    Λ = np.diag(λ) # unused?
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
     X = Z21 @ np.linalg.inv(Z11)
 
@@ -153,13 +140,7 @@ def decompose_blocks(Z):
     
     Returns
     -------
-    Z11 : (N//2, N//2) ndarray
-
-    Z12 : (N//2, N-N//2) ndarray
-
-    Z21 : (N-N//2, N//2) ndarray
-
-    Z22 : (N-N//2, N-N//2) ndarray
+    (Z11, Z12, Z21, Z22) : Tuple[(N//2, N//2) ndarray, (N//2, N-N//2) ndarray, (N-N//2, N//2) ndarray, (N-N//2, N-N//2) ndarray]
     """
     n = Z.shape[0] // 2
     Z11 = Z[:n, :n]
@@ -170,17 +151,17 @@ def decompose_blocks(Z):
 
 
 def genev(α, β, tol=1e-9):
-    """Computes the generalized eigenvalues λ = α/β.
+    """Computes the generalized eigenvalues λ = α/β
     
     Parameters
     ----------
 
-    α, β : (N,) ndarrays
+    α, β : (2*N,) ndarrays
         output of scipy.linalg.ordqz
     
     Returns
     -------
-    λ : (N,) ndarray
+    λ : (2*N,) ndarray
         vector of generalized eigenvalues computed as λ = α/β
     """
     if not np.isclose(β, 0, atol=tol):
@@ -197,13 +178,46 @@ vgenev = np.vectorize(genev, excluded=["tol"])
 
 def moments(X, Y, Σ):
     """
-    Computes conditional and unconditional moments of process $y_t = X y_{t-1} + Y e_t$
+    Computes conditional and unconditional moments of stationary process $y_t = X y_{t-1} + Y e_t$
+
+    Parameters
+    ----------
+    X, Y : (N,N) ndarrays
+        matrices defining the stochastic process
+    
+    Σ : (N,N) ndarray
+        covariance matrix of the independant idententically distributed error terms e_t
+    
+    Returns
+    -------
+    Γ₀, Γ : (N,N) ndarrays
+        conditional and unconditional covariance matrices of the stationary process y_t respectively
+    
+    Notes
+    -----
+    The unconditional covariance matrix Γ is computed in the following way:
+    Applying the linear covariance operator to both sides of the equation $y_t = X y_{t-1} + Y e_t$ yields
+    $$
+    \mathrm{Cov}(y_t) = X ⋅ \mathrm{Cov}(y_{t-1}) ⋅ X^* + Y ⋅ \mathrm{Cov}(e_t) ⋅ Y^*
+    $$
+    By stationarity of $y_t$, $\mathrm{Cov}(y_t) = \mathrm{Cov}(y_{t-1}) := \Gamma$, so
+    $$
+    Γ = X Γ X^* + Γ₀
+    $$
+    By applying the [Vec-operator](https://en.wikipedia.org/wiki/Vectorization_(mathematics)#Compatibility_with_Kronecker_products), we get the following equation:
+    $$
+    \mathrm{Vec}(Γ) = (X ⊗ X) (\mathrm{Vec}(Γ))  + \mathrm{Vec}(Γ₀)
+    $$
+    Which gives the following solution
+    $$
+    \mathrm{Vec}(Γ) = (I_{N^2} - X ⊗ X)^{-1} \mathrm{Vec}(Γ₀)
+    $$
     """
 
-    Σ0 = Y @ Σ @ Y.T
+    Γ0 = Y @ Σ @ Y.T
     n = X.shape[0]
 
     # Compute the unconditional variance
-    Σ = (np.linalg.inv(np.eye(n**2) - np.kron(X, X)) @ Σ0.flatten()).reshape(n, n)
+    Γ = (np.linalg.inv(np.eye(n**2) - np.kron(X, X)) @ Γ0.flatten()).reshape(n, n)
 
-    return Σ0, Σ
+    return Γ0, Γ
