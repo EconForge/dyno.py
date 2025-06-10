@@ -1,8 +1,10 @@
 import numpy as np
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
+from shape_types import Vector, SquareMatrix
+from typing import Tuple
 
-def solve(A, B, C, method="qz", options={}):
+def solve(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, method="qz", options={}) -> Tuple[SquareMatrix, Vector|None]:
     """Solves AX² + BX + C = 0 for X using the chosen method
 
     Parameters
@@ -39,7 +41,7 @@ class NoConvergence(Exception):
     """An exception raised when the convergence threshold is not reached within the maximal allowed number of iterations"""
     pass
 
-def solve_ti(A, B, C, T=10000, tol=1e-10):
+def solve_ti(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, T=10000, tol=1e-10) -> Tuple[SquareMatrix, None]:
     """Solves AX² + BX + C = 0 for X using fixed-point iteration.
 
     Parameters
@@ -66,9 +68,9 @@ def solve_ti(A, B, C, T=10000, tol=1e-10):
     NoConvergence :
         when the convergence threshold is not reached within the maximal allowed number of iterations
     LinAlgError :
-        when a non-singular matrix is obtained while iterating
+        when a non-singular SquareMatrix is obtained while iterating
     ValueError :
-        when a matrix containing a NaN is obtained while iterating
+        when a SquareMatrix containing a NaN is obtained while iterating
     """
     n = A.shape[0]
 
@@ -90,7 +92,7 @@ def solve_ti(A, B, C, T=10000, tol=1e-10):
     raise NoConvergence("The maximal number of iterations was exceeded.")
 
 
-def solve_qz(A, B, C, tol=1e-15):
+def solve_qz(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, tol=1e-15) -> Tuple[SquareMatrix, Vector]:
     """Solves AX² + BX + C = 0 for X using QZ decomposition.
 
     Parameters
@@ -127,8 +129,8 @@ def solve_qz(A, B, C, tol=1e-15):
     return X, sorted(λ_all)
 
 
-def decompose_blocks(Z):
-    """Decomposes square matrix Z into four square blocks Z11, Z12, Z21, Z22 such that Z can be written as:
+def decompose_blocks(Z: SquareMatrix) -> Tuple[SquareMatrix, SquareMatrix, SquareMatrix, SquareMatrix]:
+    """Decomposes square SquareMatrix Z into four square blocks Z11, Z12, Z21, Z22 such that Z can be written as:
     ```
     [Z11, Z12]
     [Z21, Z22]
@@ -150,7 +152,7 @@ def decompose_blocks(Z):
     return Z11, Z12, Z21, Z22
 
 
-def genev(α, β, tol=1e-9):
+def genev(α: float, β: float, tol=1e-9) -> float:
     """
     Computes the generalized eigenvalue λ = α/β
     
@@ -172,7 +174,7 @@ def genev(α, β, tol=1e-9):
         else:
             return np.inf
 
-def vgenev(α, β, tol=1e-9):
+def vgenev(α: Vector, β: Vector, tol=1e-9) -> Vector:
     """
     Computes the generalized eigenvalues λ = α/β, vectorized version of `genev`
 
@@ -190,7 +192,7 @@ def vgenev(α, β, tol=1e-9):
     return np.array([genev(a,b) for a,b in zip(α, β)])
 
 
-def moments(X, Y, Σ):
+def moments(X: SquareMatrix, Y: SquareMatrix, Σ: SquareMatrix) -> Tuple[SquareMatrix, SquareMatrix]:
     """
     Computes conditional and unconditional moments of stationary process $y_t = X y_{t-1} + Y e_t$
 
@@ -200,7 +202,7 @@ def moments(X, Y, Σ):
         matrices defining the stochastic process
     
     Σ : (N,N) ndarray
-        covariance matrix of the independant idententically distributed error terms e_t
+        covariance SquareMatrix of the independant idententically distributed error terms e_t
     
     Returns
     -------
@@ -209,7 +211,7 @@ def moments(X, Y, Σ):
     
     Notes
     -----
-    The unconditional covariance matrix Γ is computed in the following way:
+    The unconditional covariance SquareMatrix Γ is computed in the following way:
 
     Applying the linear covariance operator to both sides of the equation $y_t = X y_{t-1} + Y e_t$ yields
     $$
