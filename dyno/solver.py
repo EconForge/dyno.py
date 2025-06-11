@@ -1,10 +1,9 @@
 import numpy as np
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
-from dyno.shape_types import Vector, SquareMatrix
-from typing import Tuple
+from .types import Vector, Matrix, Solver
 
-def solve(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, method="qz", options={}) -> Tuple[SquareMatrix, Vector|None]:
+def solve(A: Matrix, B: Matrix, C: Matrix, method: Solver = "qz", options={}) -> tuple[Matrix, Vector|None]:
     """Solves AX² + BX + C = 0 for X using the chosen method
 
     Parameters
@@ -23,8 +22,17 @@ def solve(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, method="qz", option
 
     Returns
     -------
-    (X, evs) : Tuple[(N,N) ndarray, (2*N,) ndarray|None]
+    (X, evs) : tuple[(N,N) ndarray, (2*N,) ndarray|None]
         solution of the equation as well as sorted list of associated generalized eigenvalues if the chosen method is "qz" and None otherwise
+    
+    Raises
+    ------
+    NoConvergence :
+        when the convergence threshold is not reached within the maximal allowed number of iterations (only in `solve_ti`)
+    LinAlgError :
+        when a singular matrix is obtained during iterations in `solve_ti` or when Blachard-Kahn conditions are not verified in `solve_qz`
+    ValueError :
+        when a matrix containing a NaN is obtained
     """
 
     if method == "ti":
@@ -41,7 +49,7 @@ class NoConvergence(Exception):
     """An exception raised when the convergence threshold is not reached within the maximal allowed number of iterations"""
     pass
 
-def solve_ti(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, T=10000, tol=1e-10) -> Tuple[SquareMatrix, None]:
+def solve_ti(A: Matrix, B: Matrix, C: Matrix, T: int =10000, tol: float =1e-10) -> tuple[Matrix, None]:
     """Solves AX² + BX + C = 0 for X using fixed-point iteration.
 
     Parameters
@@ -60,7 +68,7 @@ def solve_ti(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, T=10000, tol=1e-
 
     Returns
     -------
-    (X, evs) : Tuple[(N,N) ndarray, None]
+    (X, evs) : tuple[(N,N) ndarray, None]
         solution of the equation and None (necessary to have a common solver interface)
     
     Raises
@@ -68,13 +76,14 @@ def solve_ti(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, T=10000, tol=1e-
     NoConvergence :
         when the convergence threshold is not reached within the maximal allowed number of iterations
     LinAlgError :
-        when a non-singular SquareMatrix is obtained while iterating
+        when a singular matrix is obtained while iterating
     ValueError :
-        when a SquareMatrix containing a NaN is obtained while iterating
+        when a matrix containing a NaN is obtained while iterating
     """
     n = A.shape[0]
 
-    X0 = np.random.randn(n, n)
+    # Reshape necessary for static type checking
+    X0 = np.random.randn(n, n).reshape((n,n))
 
     for t in range(T):
 
@@ -92,7 +101,7 @@ def solve_ti(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, T=10000, tol=1e-
     raise NoConvergence("The maximal number of iterations was exceeded.")
 
 
-def solve_qz(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, tol=1e-15) -> Tuple[SquareMatrix, Vector]:
+def solve_qz(A: Matrix, B: Matrix, C: Matrix, tol: float =1e-15) -> tuple[Matrix, Vector]:
     """Solves AX² + BX + C = 0 for X using QZ decomposition.
 
     Parameters
@@ -108,8 +117,13 @@ def solve_qz(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, tol=1e-15) -> Tu
 
     Returns
     -------
-    (X, evs) : Tuple[(N,N) ndarray, (2*N, ) ndarray]
+    (X, evs) : tuple[(N,N) ndarray, (2*N, ) ndarray]
         solution of the equation as well as sorted list of associated generalized eigenvalues
+    
+    Raises
+    ------
+    LinAlgError :
+        when Blanchard-Kahn conditions are not verified (less than N generalized eigenvalues inside the unit ball)
     """
     n = A.shape[0]
     I = np.eye(n)
@@ -118,20 +132,18 @@ def solve_qz(A: SquareMatrix, B: SquareMatrix, C: SquareMatrix, tol=1e-15) -> Tu
     # Generalised eigenvalue problem
     F = np.block([[Z, I], [-C, -B]])
     G = np.block([[I, Z], [Z, A]])
-    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1)
+    T, S, α, β, Q, Z = ordqz(F, G, sort='iuc')
     λ_all = vgenev(α, β, tol=tol)
-    λ = λ_all[np.abs(λ_all) <= 1] # unused? should be used to ensure that Blanchard-Kahn conditions are verified
-
-    Λ = np.diag(λ) # unused?
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
-    
-    X = Z21 @ np.linalg.inv(Z11)
+    # TODO: verify whether Blanchard-Kahn conditions are valid
 
-    return X, sorted(λ_all)
+    X = (Z21 @ np.linalg.inv(Z11)).reshape((n,n)) # Reshape necessary for static type checking
+
+    return X, np.sort(λ_all).reshape(2*n)
 
 
-def decompose_blocks(Z: SquareMatrix) -> Tuple[SquareMatrix, SquareMatrix, SquareMatrix, SquareMatrix]:
-    """Decomposes square SquareMatrix Z into four square blocks Z11, Z12, Z21, Z22 such that Z can be written as:
+def decompose_blocks(Z: Matrix) -> tuple[Matrix, Matrix, Matrix, Matrix]:
+    """Decomposes square matrix Z into four square blocks Z11, Z12, Z21, Z22 such that Z can be written as:
     ```
     [Z11, Z12]
     [Z21, Z22]
@@ -146,14 +158,15 @@ def decompose_blocks(Z: SquareMatrix) -> Tuple[SquareMatrix, SquareMatrix, Squar
     Z11, Z12, Z21, Z22 : (N,N) ndarrays
     """
     n = Z.shape[0] // 2
-    Z11 = Z[:n, :n]
-    Z12 = Z[:n, n:]
-    Z21 = Z[n:, :n]
-    Z22 = Z[n:, n:]
+    # Reshapes necessary for static type checking
+    Z11 = Z[:n, :n].reshape((n,n))
+    Z12 = Z[:n, n:].reshape((n,n))
+    Z21 = Z[n:, :n].reshape((n,n))
+    Z22 = Z[n:, n:].reshape((n,n))
     return Z11, Z12, Z21, Z22
 
 
-def genev(α: float, β: float, tol=1e-9) -> float:
+def genev(α: float, β: float, tol: float = 1e-9) -> float:
     """
     Computes the generalized eigenvalue λ = α/β
     
@@ -175,7 +188,7 @@ def genev(α: float, β: float, tol=1e-9) -> float:
         else:
             return np.inf
 
-def vgenev(α: Vector, β: Vector, tol=1e-9) -> Vector:
+def vgenev(α: Vector, β: Vector, tol: float =1e-9) -> Vector:
     """
     Computes the generalized eigenvalues λ = α/β, vectorized version of `genev`
 
@@ -190,10 +203,10 @@ def vgenev(α: Vector, β: Vector, tol=1e-9) -> Vector:
     λ : (2*N,) ndarray
         vector of generalized eigenvalues computed as λ = α/β
     """
-    return np.array([genev(a,b) for a,b in zip(α, β)])
+    return (np.array([genev(a,b) for a,b in zip(α, β)])).reshape(len(α))
 
 
-def moments(X: SquareMatrix, Y: SquareMatrix, Σ: SquareMatrix) -> Tuple[SquareMatrix, SquareMatrix]:
+def moments(X: Matrix, Y: Matrix, Σ: Matrix) -> tuple[Matrix, Matrix]:
     """
     Computes conditional and unconditional moments of stationary process $y_t = X y_{t-1} + Y e_t$
 
@@ -203,7 +216,7 @@ def moments(X: SquareMatrix, Y: SquareMatrix, Σ: SquareMatrix) -> Tuple[SquareM
         matrices defining the stochastic process
     
     Σ : (N,N) ndarray
-        covariance SquareMatrix of the independant idententically distributed error terms e_t
+        covariance matrix of the independant idententically distributed error terms e_t
     
     Returns
     -------
@@ -212,7 +225,7 @@ def moments(X: SquareMatrix, Y: SquareMatrix, Σ: SquareMatrix) -> Tuple[SquareM
     
     Notes
     -----
-    The unconditional covariance SquareMatrix Γ is computed in the following way:
+    The unconditional covariance matrix Γ is computed in the following way:
 
     Applying the linear covariance operator to both sides of the equation $y_t = X y_{t-1} + Y e_t$ yields
     $$

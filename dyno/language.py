@@ -7,11 +7,10 @@ from typing import Iterator, Tuple  # type: ignore
 
 from dolang.language import greek_tolerance, language_element  # type: ignore
 
-Vector = List[float]
-# Matrix = List[Vector]
-
 import numpy as np
 
+Vector = List[float]
+Matrix = List[Vector]
 
 @language_element
 def Matrix(*lines):

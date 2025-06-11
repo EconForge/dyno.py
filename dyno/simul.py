@@ -1,16 +1,23 @@
 import numpy as np
 import pandas as pd
+from .model import RecursiveSolution
 
+from .types import IRFType
+from typing import cast
 
-def irf(dr, i, T=40, type="level"):
-
+def irf(dr : RecursiveSolution, i : int, T: int=40, type: IRFType="level") -> pd.DataFrame:
+    """Impulse response function."""
     X = dr.X.data
     Y = dr.Y.data
     Σ = dr.Σ
 
-    n = X.shape[1]
-    v0 = np.zeros(n)
+    assert(X.shape is not None) # Necessary for static typechecking
+    # v0 = np.zeros((X.shape[1],1))
+    v0 = np.zeros(X.shape[1])
+
+    assert(Y.shape is not None) # Necessary for static typechecking
     m0 = np.zeros(Y.shape[1])
+    
     ss = [v0]
 
     m0[i] = np.sqrt(Σ[i, i])
@@ -23,6 +30,8 @@ def irf(dr, i, T=40, type="level"):
 
     res = np.concatenate([e[None, :] for e in ss], axis=0)
 
+    assert(dr.x0 is not None) # Necessary for static typechecking
+
     if type == "level":
         res = res + dr.x0[None, :]
     elif type == "log-deviation":
@@ -33,14 +42,17 @@ def irf(dr, i, T=40, type="level"):
     return pd.DataFrame(res, columns=dr.symbols["endogenous"])
 
 
-def simulate(dr, T=40):
+def simulate(dr : RecursiveSolution, T: int=40) -> pd.DataFrame:
 
     X = dr.X.data
     Y = dr.Y.data
     Σ = dr.Σ
+    assert(X.shape is not None) # Necessary for static typechecking
 
     n = X.shape[1]
     v0 = np.zeros(n)
+    
+    assert(Y.shape is not None) # Necessary for static typechecking
     m0 = np.zeros(Y.shape[1])
     ss = [v0]
 
