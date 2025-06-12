@@ -13,6 +13,7 @@ from .types import Vector, Matrix, IRFType, Solver, SymbolType, DynamicFunction
 from pandas import DataFrame
 from .language import Normal
 
+
 class RecursiveSolution:
     """VAR(1) representing a linearized model
 
@@ -20,18 +21,27 @@ class RecursiveSolution:
     ----------
     X, Y, Σ: (N,N) matrix
         parameters of the stationary VAR process $y_t = Xy_{t-1} + Yε_t$, where Σ is the covariance matrix of $ε_t$
-    
+
     symbols: dict[SymbolType, list[str]]
         dictionary containing the symbols used in the model, the only allowed keys are "endogenous", "exogenous" and "parameters"
-    
+
     x0: N Vector | None
         the state around which the linearization is done, generally the steady state, by default None
-    
+
     evs: 2N Vector | None
         eigenvalues containing information about the stability of the model,
         only available if the qz solver was used for linearization, by default None
     """
-    def __init__(self: Self, X: Matrix, Y: Matrix, Σ: Matrix, symbols: dict[SymbolType, list[str]], x0:Vector|None = None, evs: Vector | None = None) -> None:
+
+    def __init__(
+        self: Self,
+        X: Matrix,
+        Y: Matrix,
+        Σ: Matrix,
+        symbols: dict[SymbolType, list[str]],
+        x0: Vector | None = None,
+        evs: Vector | None = None,
+    ) -> None:
 
         self.x0 = x0
         self.X = X
@@ -45,9 +55,10 @@ class RecursiveSolution:
 
 class Model(ABC):
     """Abstract class representing an economic model"""
+
     symbols: dict[SymbolType, list[str]]
     exogenous: Normal
-    __functions__ : dict[Literal["dynamic"], DynamicFunction]
+    __functions__: dict[Literal["dynamic"], DynamicFunction]
 
     @abstractmethod
     def get_calibration(self: Self) -> dict[str, float]:
@@ -61,14 +72,26 @@ symbols: {self.symbols}
         """
 
     @overload
-    def dynamic(self: Self, y0: Vector, y1: Vector, y2: Vector, e: Vector, p: Vector) -> Vector:
+    def dynamic(
+        self: Self, y0: Vector, y1: Vector, y2: Vector, e: Vector, p: Vector
+    ) -> Vector:
         pass
 
     @overload
-    def dynamic(self: Self, y0: Vector, y1: Vector, y2: Vector, e: Vector, p: Vector, diff:bool) -> tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
+    def dynamic(
+        self: Self, y0: Vector, y1: Vector, y2: Vector, e: Vector, p: Vector, diff: bool
+    ) -> tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
         pass
 
-    def dynamic(self: Self, y0: Vector, y1: Vector, y2: Vector, e: Vector, p: Vector, diff:bool =False) -> Vector|tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
+    def dynamic(
+        self: Self,
+        y0: Vector,
+        y1: Vector,
+        y2: Vector,
+        e: Vector,
+        p: Vector,
+        diff: bool = False,
+    ) -> Vector | tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
         """function f describing the behavior of the dynamic system $f(y_{t+1}, y_t, y_{t-1}, ε_t, p) = 0$
 
         Parameters
@@ -102,14 +125,18 @@ symbols: {self.symbols}
         return r
 
     @overload
-    def compute(self: Self, calibration: dict[str, float]={}) -> Vector:
+    def compute(self: Self, calibration: dict[str, float] = {}) -> Vector:
         pass
 
     @overload
-    def compute(self: Self, calibration: dict[str, float]={}, diff: bool = False) -> tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
+    def compute(
+        self: Self, calibration: dict[str, float] = {}, diff: bool = False
+    ) -> tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
         pass
 
-    def compute(self: Self, calibration: dict[str, float]={}, diff: bool = False) -> Vector|tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
+    def compute(
+        self: Self, calibration: dict[str, float] = {}, diff: bool = False
+    ) -> Vector | tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
         """Computes the dynamic function's value based on calibration state and parameters
 
         Parameters
@@ -137,7 +164,9 @@ symbols: {self.symbols}
         e = np.zeros(len(self.symbols["exogenous"]))
         return self.dynamic(y0, y0, y0, e, p0, diff=diff)
 
-    def solve(self: Self, calibration:dict[str, float]={}, method: Solver = "qz") -> RecursiveSolution:
+    def solve(
+        self: Self, calibration: dict[str, float] = {}, method: Solver = "qz"
+    ) -> RecursiveSolution:
         """linearizes the model
 
         Parameters
@@ -168,19 +197,21 @@ symbols: {self.symbols}
         c = self.get_calibration(**calibration)
         v = self.symbols["endogenous"]
         p = self.symbols["parameters"]
-        
+
         endogenous_values = [c[e] for e in v]
         parameter_values = [c[e] for e in p]
         # Reshapes necessary for static type checking
         y0 = np.reshape(endogenous_values, len(endogenous_values))
         p0 = np.reshape(parameter_values, len(parameter_values))
-        
+
         return RecursiveSolution(
             X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0
         )
 
 
-def irfs(model : Model, dr : RecursiveSolution, type:IRFType="log-deviation") -> dict[str, DataFrame]:
+def irfs(
+    model: Model, dr: RecursiveSolution, type: IRFType = "log-deviation"
+) -> dict[str, DataFrame]:
     """Impulse response function simulation in response to shocks on each exogenous variable
 
     Parameters

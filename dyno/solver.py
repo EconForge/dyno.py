@@ -3,16 +3,19 @@ from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
 from .types import Vector, Matrix, Solver
 
-def solve(A: Matrix, B: Matrix, C: Matrix, method: Solver = "qz", options={}) -> tuple[Matrix, Vector|None]:
+
+def solve(
+    A: Matrix, B: Matrix, C: Matrix, method: Solver = "qz", options={}
+) -> tuple[Matrix, Vector | None]:
     """Solves AX² + BX + C = 0 for X using the chosen method
 
     Parameters
     ----------
     A, B, C : (N,N) Matrix
-        
+
     method : str, optional
         chosen solver: either "ti" for fixed-point iteration or "qz" for generalized Schur decomposition, by default "qz"
-    
+
     options : dict, optional
         dictionary of optional parameters to pass to the chosen solver, by default {}
 
@@ -20,7 +23,7 @@ def solve(A: Matrix, B: Matrix, C: Matrix, method: Solver = "qz", options={}) ->
     -------
     (X, evs) : tuple[(N,N) Matrix, 2N Vector|None]
         solution of the equation as well as sorted list of associated generalized eigenvalues if the chosen method is "qz" and None otherwise
-    
+
     Raises
     ------
     NoConvergence :
@@ -41,11 +44,16 @@ def solve(A: Matrix, B: Matrix, C: Matrix, method: Solver = "qz", options={}) ->
 
     return sol, evs
 
+
 class NoConvergence(Exception):
     """An exception raised when the convergence threshold is not reached within the maximal allowed number of iterations"""
+
     pass
 
-def solve_ti(A: Matrix, B: Matrix, C: Matrix, T: int =10000, tol: float =1e-10) -> tuple[Matrix, None]:
+
+def solve_ti(
+    A: Matrix, B: Matrix, C: Matrix, T: int = 10000, tol: float = 1e-10
+) -> tuple[Matrix, None]:
     """Solves AX² + BX + C = 0 for X using fixed-point iteration.
 
     Parameters
@@ -54,7 +62,7 @@ def solve_ti(A: Matrix, B: Matrix, C: Matrix, T: int =10000, tol: float =1e-10) 
 
     T : int, optional
         Maximum number of iterations. If more are needed, `NoConvergence` is raised, by default 10000
-    
+
     tol : float, optional
         convergence threshold, by default 1e-10
 
@@ -62,7 +70,7 @@ def solve_ti(A: Matrix, B: Matrix, C: Matrix, T: int =10000, tol: float =1e-10) 
     -------
     (X, evs) : tuple[(N,N) Matrix, None]
         solution of the equation and None (necessary to have a common solver interface)
-    
+
     Raises
     ------
     NoConvergence :
@@ -75,7 +83,7 @@ def solve_ti(A: Matrix, B: Matrix, C: Matrix, T: int =10000, tol: float =1e-10) 
     n = A.shape[0]
 
     # Reshape necessary for static type checking
-    X0 = np.random.randn(n, n).reshape((n,n))
+    X0 = np.random.randn(n, n).reshape((n, n))
 
     for t in range(T):
 
@@ -93,13 +101,15 @@ def solve_ti(A: Matrix, B: Matrix, C: Matrix, T: int =10000, tol: float =1e-10) 
     raise NoConvergence("The maximal number of iterations was exceeded.")
 
 
-def solve_qz(A: Matrix, B: Matrix, C: Matrix, tol: float =1e-15) -> tuple[Matrix, Vector]:
+def solve_qz(
+    A: Matrix, B: Matrix, C: Matrix, tol: float = 1e-15
+) -> tuple[Matrix, Vector]:
     """Solves AX² + BX + C = 0 for X using QZ decomposition.
 
     Parameters
     ----------
     A, B, C : (N,N) Matrix
-        
+
     tol : float, optional
         error tolerance, by default 1e-15
 
@@ -107,7 +117,7 @@ def solve_qz(A: Matrix, B: Matrix, C: Matrix, tol: float =1e-15) -> tuple[Matrix
     -------
     (X, evs) : tuple[(N,N) Matrix, 2N Vector]
         solution of the equation as well as sorted list of associated generalized eigenvalues
-    
+
     Raises
     ------
     LinAlgError :
@@ -120,14 +130,16 @@ def solve_qz(A: Matrix, B: Matrix, C: Matrix, tol: float =1e-15) -> tuple[Matrix
     # Generalised eigenvalue problem
     F = np.block([[Z, I], [-C, -B]])
     G = np.block([[I, Z], [Z, A]])
-    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1) # type: ignore
+    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1)  # type: ignore
     λ_all = vgenev(α, β, tol=tol)
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
     # TODO: verify whether Blanchard-Kahn conditions are valid
 
-    X = (Z21 @ np.linalg.inv(Z11)).reshape((n,n)) # Reshape necessary for static type checking
+    X = (Z21 @ np.linalg.inv(Z11)).reshape(
+        (n, n)
+    )  # Reshape necessary for static type checking
 
-    return X, np.sort(λ_all).reshape(2*n)
+    return X, np.sort(λ_all).reshape(2 * n)
 
 
 def decompose_blocks(Z: Matrix) -> tuple[Matrix, Matrix, Matrix, Matrix]:
@@ -140,29 +152,29 @@ def decompose_blocks(Z: Matrix) -> tuple[Matrix, Matrix, Matrix, Matrix]:
     Parameters
     ----------
     Z : (2N,2N) Matrix
-    
+
     Returns
     -------
     Z11, Z12, Z21, Z22 : (N,N) Matrix
     """
     n = Z.shape[0] // 2
     # Reshapes necessary for static type checking
-    Z11 = Z[:n, :n].reshape((n,n))
-    Z12 = Z[:n, n:].reshape((n,n))
-    Z21 = Z[n:, :n].reshape((n,n))
-    Z22 = Z[n:, n:].reshape((n,n))
+    Z11 = Z[:n, :n].reshape((n, n))
+    Z12 = Z[:n, n:].reshape((n, n))
+    Z21 = Z[n:, :n].reshape((n, n))
+    Z22 = Z[n:, n:].reshape((n, n))
     return Z11, Z12, Z21, Z22
 
 
 def genev(α: float, β: float, tol: float = 1e-9) -> float:
     """
     Computes the generalized eigenvalue λ = α/β
-    
+
     Parameters
     ----------
 
     α, β : float
-    
+
     Returns
     -------
     λ : float
@@ -176,7 +188,8 @@ def genev(α: float, β: float, tol: float = 1e-9) -> float:
         else:
             return np.inf
 
-def vgenev(α: Vector, β: Vector, tol: float =1e-9) -> Vector:
+
+def vgenev(α: Vector, β: Vector, tol: float = 1e-9) -> Vector:
     """
     Computes the generalized eigenvalues λ = α/β, vectorized version of `genev`
 
@@ -185,13 +198,13 @@ def vgenev(α: Vector, β: Vector, tol: float =1e-9) -> Vector:
 
     α, β : 2N Vector
         output of scipy.linalg.ordqz
-    
+
     Returns
     -------
     λ : 2N Vector
         vector of generalized eigenvalues computed as λ = α/β
     """
-    return (np.array([genev(a,b) for a,b in zip(α, β)])).reshape(len(α))
+    return (np.array([genev(a, b) for a, b in zip(α, β)])).reshape(len(α))
 
 
 def moments(X: Matrix, Y: Matrix, Σ: Matrix) -> tuple[Matrix, Matrix]:
@@ -202,15 +215,15 @@ def moments(X: Matrix, Y: Matrix, Σ: Matrix) -> tuple[Matrix, Matrix]:
     ----------
     X, Y : (N,N) Matrix
         matrices defining the stochastic process
-    
+
     Σ : (N,N) Matrix
         covariance matrix of the independant idententically distributed error terms e_t
-    
+
     Returns
     -------
     Γ₀, Γ : (N,N) Matrix
         conditional and unconditional covariance matrices of the stationary process y_t respectively
-    
+
     Notes
     -----
     The unconditional covariance matrix Γ is computed in the following way:

@@ -2,7 +2,10 @@ import numpy as np
 from .types import Vector, Matrix
 from typing import Callable
 
-def jacobian(func: Callable[[Vector], Vector], initial: Vector, delta: float = 1e-3) -> Matrix:
+
+def jacobian(
+    func: Callable[[Vector], Vector], initial: Vector, delta: float = 1e-3
+) -> Matrix:
     """Jacobian calculation with finite differences
 
     Parameters

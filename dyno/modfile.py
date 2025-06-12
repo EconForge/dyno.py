@@ -184,7 +184,7 @@ class Modfile(Model):
 
                     v = dolang.str_expression(ve)
                     try:
-                        vv = eval(v.replace("^", "**")) # code injection risk?
+                        vv = eval(v.replace("^", "**"))  # code injection risk?
                     except:
                         vv = v
                     calibration[k] = vv
