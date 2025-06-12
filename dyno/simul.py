@@ -3,7 +3,6 @@ import pandas as pd
 from .model import RecursiveSolution
 
 from .types import IRFType
-from typing import cast
 
 def irf(dr : RecursiveSolution, i : int, T: int=40, type: IRFType="level") -> pd.DataFrame:
     """Impulse response function."""
@@ -22,11 +21,11 @@ def irf(dr : RecursiveSolution, i : int, T: int=40, type: IRFType="level") -> pd
 
     m0[i] = np.sqrt(Σ[i, i])
 
-    ss.append(X @ ss[-1] + Y @ m0)
+    ss.append(X @ ss[-1] + Y @ m0) # type: ignore
 
     for t in range(T - 1):
 
-        ss.append(X @ ss[-1])
+        ss.append(X @ ss[-1]) # type: ignore
 
     res = np.concatenate([e[None, :] for e in ss], axis=0)
 
@@ -58,7 +57,7 @@ def simulate(dr : RecursiveSolution, T: int=40) -> pd.DataFrame:
 
     for t in range(T):
         e = np.random.multivariate_normal(m0, Σ)
-        ss.append(X @ ss[-1] + Y @ e)
+        ss.append(X @ ss[-1] + Y @ e) # type: ignore
 
     res = np.concatenate([e[None, :] for e in ss], axis=0)
 

@@ -4,26 +4,12 @@
 
 from typing import List, TypeVar, Generic, Union, Any, Callable  # type: ignore
 from typing import Iterator, Tuple  # type: ignore
+from .types import Vector, Matrix
 
 from dolang.language import greek_tolerance, language_element  # type: ignore
 
 import numpy as np
 
-Vector = List[float]
-Matrix = List[Vector]
-
-@language_element
-def Matrix(*lines):
-    mat = np.array(lines, np.float64)
-    assert mat.ndim == 2
-    return mat
-
-
-@language_element
-def Vector(*elements):
-    mat = np.array(elements, np.float64)
-    assert mat.ndim == 1
-    return mat
 
 
 @language_element

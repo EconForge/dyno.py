@@ -24,7 +24,6 @@ def jacobian(func: Callable[[Vector], Vector], initial: Vector, delta: float = 1
     nrow = len(f0)
     ncol = len(initial)
     output = np.zeros((nrow, ncol))
-
     for j in range(ncol):
         ej = np.zeros(ncol)
         ej[j] = 1

@@ -6,9 +6,12 @@ import yaml
 from .solver import solve
 from .misc import jacobian
 
-from typing import Self, overload
-from .types import Vector, Matrix, IRFType, Solver
+from abc import ABC, abstractmethod
+
+from typing import Callable, Self, overload, Literal
+from .types import Vector, Matrix, IRFType, Solver, SymbolType, DynamicFunction
 from pandas import DataFrame
+from .language import Normal
 
 class RecursiveSolution:
 
@@ -24,15 +27,16 @@ class RecursiveSolution:
         self.symbols = symbols
 
 
-class Normal:
-    # Unused class, redundancy with language.Normal?
-    def __init__(self: Self, Σ: Matrix, vars) -> None:
+class Model(ABC):
 
-        self.Σ = Σ
-        self.variables = tuple(*vars)
+    symbols: dict[SymbolType, list[str]]
+    exogenous: Normal
+    __functions__ : dict[Literal["dynamic"], DynamicFunction]
 
-
-class Model:
+    # Necessary for static typechecking
+    @abstractmethod
+    def get_calibration(self: Self) -> dict[str, float]:
+        pass
 
     def describe(self: Self) -> str:
 

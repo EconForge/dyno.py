@@ -156,7 +156,7 @@ class YAMLFile(Model):
         self.__functions__ = {"dynamic": fun}
 
 
-cache = []
+cache: list[tuple[int, int, YAMLFile]] = []
 
 
 def import_file(filename) -> YAMLFile:
