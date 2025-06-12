@@ -14,6 +14,7 @@ class NotPositiveSemidefinite(np.linalg.LinAlgError):
 
     pass
 
+
 @language_element
 def _Matrix(*lines):
     mat = np.array(lines, np.float64)
@@ -26,7 +27,6 @@ def _Vector(*elements):
     mat = np.array(elements, np.float64)
     assert mat.ndim == 1
     return mat
-
 
 
 @language_element
@@ -56,7 +56,6 @@ class Normal:
 
     Μ: Vector  # this is capital case μ, not M... 😭
     Σ: Matrix
-
 
     signature = {"Σ": "_Matrix", "Μ": "Optional[_Vector]"}
 
