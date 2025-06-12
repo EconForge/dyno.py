@@ -8,9 +8,12 @@ from dolang.language import greek_tolerance, language_element  # type: ignore
 
 import numpy as np
 
+
 class NotPositiveSemidefinite(np.linalg.LinAlgError):
     """An exception raised when a normal process is created with a covariance matrix that is not positive semidefinite"""
+
     pass
+
 
 @language_element
 class Normal:
@@ -26,7 +29,7 @@ class Normal:
 
     Attributes
     ----------
-    
+
     Μ: d Vector
         Mean vector
 
@@ -36,6 +39,7 @@ class Normal:
     d : int
         dimension
     """
+
     Μ: Vector  # this is capital case μ, not M... 😭
     Σ: Matrix
 
@@ -47,11 +51,14 @@ class Normal:
 
         self.Σ = np.atleast_2d(np.array(Sigma, dtype=float))
         try:
-            assert(np.array_equal(Sigma, Sigma.T))
+            assert np.array_equal(Sigma, Sigma.T)
             np.linalg.cholesky(Sigma)
         except (AssertionError, np.linalg.LinAlgError):
-            raise(NotPositiveSemidefinite, "Σ can't be used as a covariance matrix as it is not positive semidefinite")
-        
+            raise (
+                NotPositiveSemidefinite,
+                "Σ can't be used as a covariance matrix as it is not positive semidefinite",
+            )
+
         self.d = len(self.Σ)
         if mu is None:
             self.Μ = np.array([0.0] * self.d)
