@@ -80,7 +80,13 @@ symbols: {self.symbols}
 
     @overload
     def dynamic(
-        self: Self, y0: TVector, y1: TVector, y2: TVector, e: TVector, p: TVector, diff: bool
+        self: Self,
+        y0: TVector,
+        y1: TVector,
+        y2: TVector,
+        e: TVector,
+        p: TVector,
+        diff: bool,
     ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
         pass
 
