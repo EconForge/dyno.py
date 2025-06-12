@@ -8,11 +8,7 @@ def solve(A: Matrix, B: Matrix, C: Matrix, method: Solver = "qz", options={}) ->
 
     Parameters
     ----------
-    A : (N,N) ndarray
-        
-    B : (N,N) ndarray
-        
-    C : (N,N) ndarray
+    A, B, C : (N,N) Matrix
         
     method : str, optional
         chosen solver: either "ti" for fixed-point iteration or "qz" for generalized Schur decomposition, by default "qz"
@@ -22,7 +18,7 @@ def solve(A: Matrix, B: Matrix, C: Matrix, method: Solver = "qz", options={}) ->
 
     Returns
     -------
-    (X, evs) : tuple[(N,N) ndarray, (2*N,) ndarray|None]
+    (X, evs) : tuple[(N,N) Matrix, 2N Vector|None]
         solution of the equation as well as sorted list of associated generalized eigenvalues if the chosen method is "qz" and None otherwise
     
     Raises
@@ -54,12 +50,8 @@ def solve_ti(A: Matrix, B: Matrix, C: Matrix, T: int =10000, tol: float =1e-10) 
 
     Parameters
     ----------
-    A : (N,N) ndarray
-        
-    B : (N,N) ndarray
-        
-    C : (N,N) ndarray
-        
+    A, B, C : (N,N) Matrix
+
     T : int, optional
         Maximum number of iterations. If more are needed, `NoConvergence` is raised, by default 10000
     
@@ -68,7 +60,7 @@ def solve_ti(A: Matrix, B: Matrix, C: Matrix, T: int =10000, tol: float =1e-10) 
 
     Returns
     -------
-    (X, evs) : tuple[(N,N) ndarray, None]
+    (X, evs) : tuple[(N,N) Matrix, None]
         solution of the equation and None (necessary to have a common solver interface)
     
     Raises
@@ -106,18 +98,14 @@ def solve_qz(A: Matrix, B: Matrix, C: Matrix, tol: float =1e-15) -> tuple[Matrix
 
     Parameters
     ----------
-    A : (N,N) ndarray
-        
-    B : (N,N) ndarray
-       
-    C : (N,N) ndarray
+    A, B, C : (N,N) Matrix
         
     tol : float, optional
         error tolerance, by default 1e-15
 
     Returns
     -------
-    (X, evs) : tuple[(N,N) ndarray, (2*N, ) ndarray]
+    (X, evs) : tuple[(N,N) Matrix, 2N Vector]
         solution of the equation as well as sorted list of associated generalized eigenvalues
     
     Raises
@@ -151,11 +139,11 @@ def decompose_blocks(Z: Matrix) -> tuple[Matrix, Matrix, Matrix, Matrix]:
 
     Parameters
     ----------
-    Z : (2*N,2*N) ndarray
+    Z : (2N,2N) Matrix
     
     Returns
     -------
-    Z11, Z12, Z21, Z22 : (N,N) ndarrays
+    Z11, Z12, Z21, Z22 : (N,N) Matrix
     """
     n = Z.shape[0] // 2
     # Reshapes necessary for static type checking
@@ -173,7 +161,7 @@ def genev(α: float, β: float, tol: float = 1e-9) -> float:
     Parameters
     ----------
 
-    α, β : floats
+    α, β : float
     
     Returns
     -------
@@ -195,12 +183,12 @@ def vgenev(α: Vector, β: Vector, tol: float =1e-9) -> Vector:
     Parameters
     ----------
 
-    α, β : (2*N,) ndarrays
+    α, β : 2N Vector
         output of scipy.linalg.ordqz
     
     Returns
     -------
-    λ : (2*N,) ndarray
+    λ : 2N Vector
         vector of generalized eigenvalues computed as λ = α/β
     """
     return (np.array([genev(a,b) for a,b in zip(α, β)])).reshape(len(α))
@@ -212,15 +200,15 @@ def moments(X: Matrix, Y: Matrix, Σ: Matrix) -> tuple[Matrix, Matrix]:
 
     Parameters
     ----------
-    X, Y : (N,N) ndarrays
+    X, Y : (N,N) Matrix
         matrices defining the stochastic process
     
-    Σ : (N,N) ndarray
+    Σ : (N,N) Matrix
         covariance matrix of the independant idententically distributed error terms e_t
     
     Returns
     -------
-    Γ₀, Γ : (N,N) ndarrays
+    Γ₀, Γ : (N,N) Matrix
         conditional and unconditional covariance matrices of the stationary process y_t respectively
     
     Notes
