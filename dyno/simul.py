@@ -59,7 +59,20 @@ def irf(dr : RecursiveSolution, i : int, T: int=40, type: IRFType="level") -> pd
 
 
 def simulate(dr : RecursiveSolution, T: int=40) -> pd.DataFrame:
+    """Simulates the evolution of the endogenous variables
 
+    Parameters
+    ----------
+    dr : RecursiveSolution
+        linearized model, contains all variables and parameters
+    T : int, optional
+        time horizon over which the simulation is done, by default 40
+
+    Returns
+    -------
+    pd.DataFrame
+        evolution of the endogenous variables over time
+    """
     X = dr.X.data
     Y = dr.Y.data
     Σ = dr.Σ
