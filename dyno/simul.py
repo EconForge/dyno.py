@@ -5,16 +5,33 @@ from .model import RecursiveSolution
 from .types import IRFType
 
 def irf(dr : RecursiveSolution, i : int, T: int=40, type: IRFType="level") -> pd.DataFrame:
-    """Impulse response function."""
+    """Impulse response function simulation in response to a shock on a specific exogenous variable
+
+    Parameters
+    ----------
+    dr : RecursiveSolution
+        linearized model, contains all variables and parameters
+    i : int
+        index representing the exogenous variable of the shock
+    T : int, optional
+        time horizon over which the simulation is done, by default 40
+    type : IRFType, optional
+        can be "level", "log-deviation" or "deviation", by default "level"
+
+    Returns
+    -------
+    pd.DataFrame
+        impulse response function of all endogenous variables to a shock on the ith exogenous variable
+    """
     X = dr.X.data
     Y = dr.Y.data
     Σ = dr.Σ
 
-    assert(X.shape is not None) # Necessary for static typechecking
+    assert(X.shape is not None)
     # v0 = np.zeros((X.shape[1],1))
     v0 = np.zeros(X.shape[1])
 
-    assert(Y.shape is not None) # Necessary for static typechecking
+    assert(Y.shape is not None)
     m0 = np.zeros(Y.shape[1])
     
     ss = [v0]

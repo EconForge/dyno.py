@@ -181,7 +181,22 @@ symbols: {self.symbols}
 
 
 def irfs(model : Model, dr : RecursiveSolution, type:IRFType="log-deviation") -> dict[str, DataFrame]:
+    """Impulse response function simulation in response to shocks on each exogenous variable
 
+    Parameters
+    ----------
+    dr : RecursiveSolution
+        linearized model, contains all variables and parameters
+    T : int, optional
+        time horizon over which the simulation is done, by default 40
+    type : IRFType, optional
+        can be "level", "log-deviation" or "deviation", by default "level"
+
+    Returns
+    -------
+    pd.DataFrame
+        impulse response function of all endogenous variables to shocks on each exogenous variable
+    """
     from .simul import irf
 
     res = {}
