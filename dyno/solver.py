@@ -230,19 +230,19 @@ def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
 
     Applying the linear covariance operator to both sides of the equation $y_t = X y_{t-1} + Y e_t$ yields
     $$
-    \mathrm{Cov}(y_t) = X ⋅ \mathrm{Cov}(y_{t-1}) ⋅ X^* + Y ⋅ \mathrm{Cov}(e_t) ⋅ Y^*
+    \\mathrm{Cov}(y_t) = X ⋅ \\mathrm{Cov}(y_{t-1}) ⋅ X^* + Y ⋅ \\mathrm{Cov}(e_t) ⋅ Y^*
     $$
-    By stationarity of $y_t$, $\mathrm{Cov}(y_t) = \mathrm{Cov}(y_{t-1}) := \Gamma$, so
+    By stationarity of $y_t$, $\\mathrm{Cov}(y_t) = \\mathrm{Cov}(y_{t-1}) := Γ$, so
     $$
     Γ = X Γ X^* + Γ₀
     $$
     By applying the [Vec-operator](https://en.wikipedia.org/wiki/Vectorization_(mathematics)#Compatibility_with_Kronecker_products), we get the following equation:
     $$
-    \mathrm{Vec}(Γ) = (X ⊗ X) \mathrm{Vec}(Γ)  + \mathrm{Vec}(Γ₀)
+    \\mathrm{Vec}(Γ) = (X ⊗ X) \\mathrm{Vec}(Γ)  + \\mathrm{Vec}(Γ₀)
     $$
     Which gives the following solution
     $$
-    \mathrm{Vec}(Γ) = (I_{N^2} - X ⊗ X)^{-1} \mathrm{Vec}(Γ₀)
+    \\mathrm{Vec}(Γ) = (I_{N^2} - X ⊗ X)^{-1} \\mathrm{Vec}(Γ₀)
     $$
     """
 
