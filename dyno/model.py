@@ -8,7 +8,8 @@ from .misc import jacobian
 
 from abc import ABC, abstractmethod
 
-from typing import Callable, Self, overload, Literal
+from typing import Callable, overload, Literal
+from typing_extensions import Self
 from .types import Vector, Matrix, IRFType, Solver, SymbolType, DynamicFunction
 from pandas import DataFrame
 from .language import Normal
