@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 
 from typing import Callable, overload, Literal
 from typing_extensions import Self
-from .types import Vector, Matrix, IRFType, Solver, SymbolType, DynamicFunction
+from .types import TVector, TMatrix, IRFType, Solver, SymbolType, DynamicFunction
 from pandas import DataFrame
 from .language import Normal
 
@@ -20,7 +20,7 @@ class RecursiveSolution:
 
     Attributes
     ----------
-    X, Y, Σ: (N,N) matrix
+    X, Y, Σ: (N,N) Matrix
         parameters of the stationary VAR process $y_t = Xy_{t-1} + Yε_t$, where Σ is the covariance matrix of $ε_t$
 
     symbols: dict[SymbolType, list[str]]
@@ -36,12 +36,12 @@ class RecursiveSolution:
 
     def __init__(
         self: Self,
-        X: Matrix,
-        Y: Matrix,
-        Σ: Matrix,
+        X: TMatrix,
+        Y: TMatrix,
+        Σ: TMatrix,
         symbols: dict[SymbolType, list[str]],
-        x0: Vector | None = None,
-        evs: Vector | None = None,
+        x0: TVector | None = None,
+        evs: TVector | None = None,
     ) -> None:
 
         self.x0 = x0
@@ -74,25 +74,25 @@ symbols: {self.symbols}
 
     @overload
     def dynamic(
-        self: Self, y0: Vector, y1: Vector, y2: Vector, e: Vector, p: Vector
-    ) -> Vector:
+        self: Self, y0: TVector, y1: TVector, y2: TVector, e: TVector, p: TVector
+    ) -> TVector:
         pass
 
     @overload
     def dynamic(
-        self: Self, y0: Vector, y1: Vector, y2: Vector, e: Vector, p: Vector, diff: bool
-    ) -> tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
+        self: Self, y0: TVector, y1: TVector, y2: TVector, e: TVector, p: TVector, diff: bool
+    ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
         pass
 
     def dynamic(
         self: Self,
-        y0: Vector,
-        y1: Vector,
-        y2: Vector,
-        e: Vector,
-        p: Vector,
+        y0: TVector,
+        y1: TVector,
+        y2: TVector,
+        e: TVector,
+        p: TVector,
         diff: bool = False,
-    ) -> Vector | tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
+    ) -> TVector | tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
         """function f describing the behavior of the dynamic system $f(y_{t+1}, y_t, y_{t-1}, ε_t, p) = 0$
 
         Parameters
@@ -126,18 +126,18 @@ symbols: {self.symbols}
         return r
 
     @overload
-    def compute(self: Self, calibration: dict[str, float] = {}) -> Vector:
+    def compute(self: Self, calibration: dict[str, float] = {}) -> TVector:
         pass
 
     @overload
     def compute(
         self: Self, calibration: dict[str, float] = {}, diff: bool = False
-    ) -> tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
+    ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
         pass
 
     def compute(
         self: Self, calibration: dict[str, float] = {}, diff: bool = False
-    ) -> Vector | tuple[Vector, Matrix, Matrix, Matrix, Matrix]:
+    ) -> TVector | tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
         """Computes the dynamic function's value based on calibration state and parameters
 
         Parameters
@@ -149,7 +149,7 @@ symbols: {self.symbols}
 
         Returns
         -------
-        Vector|tuple[Vector, Matrix, Matrix, Matrix, Matrix]
+        TVector|tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]
             value of the dynamic function at the state described by calibration, as well as its partial derivatives if diff is set to True
         """
         c = self.get_calibration(**calibration)

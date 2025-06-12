@@ -2,7 +2,7 @@
 
 # copied from dolo
 
-from .types import Vector, Matrix
+from .types import TVector, TMatrix
 
 from dolang.language import greek_tolerance, language_element  # type: ignore
 
@@ -16,14 +16,14 @@ class NotPositiveSemidefinite(np.linalg.LinAlgError):
 
 
 @language_element
-def _Matrix(*lines):
+def Matrix(*lines):
     mat = np.array(lines, np.float64)
     assert mat.ndim == 2
     return mat
 
 
 @language_element
-def _Vector(*elements):
+def Vector(*elements):
     mat = np.array(elements, np.float64)
     assert mat.ndim == 1
     return mat
@@ -54,10 +54,10 @@ class Normal:
         dimension
     """
 
-    Μ: Vector  # this is capital case μ, not M... 😭
-    Σ: Matrix
+    Μ: TVector  # this is capital case μ, not M... 😭
+    Σ: TMatrix
 
-    signature = {"Σ": "_Matrix", "Μ": "Optional[_Vector]"}
+    signature = {"Σ": "Matrix", "Μ": "Optional[Vector]"}
 
     @greek_tolerance
     def __init__(self, Σ, Μ=None):
@@ -119,7 +119,7 @@ class ProductNormal:
 
         Returns
         -------
-        Matrix
+        TMatrix
             Covariance matrix of the process
         """
         assert len(self.processes) == 1
