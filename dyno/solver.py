@@ -120,7 +120,7 @@ def solve_qz(A: Matrix, B: Matrix, C: Matrix, tol: float =1e-15) -> tuple[Matrix
     # Generalised eigenvalue problem
     F = np.block([[Z, I], [-C, -B]])
     G = np.block([[I, Z], [Z, A]])
-    T, S, α, β, Q, Z = ordqz(F, G, sort='iuc')
+    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1) # type: ignore
     λ_all = vgenev(α, β, tol=tol)
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
     # TODO: verify whether Blanchard-Kahn conditions are valid
