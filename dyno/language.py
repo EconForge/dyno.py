@@ -49,7 +49,7 @@ class Normal:
         try:
             assert(np.array_equal(Sigma, Sigma.T))
             np.linalg.cholesky(Sigma)
-        except AssertionError | np.linalg.LinAlgError:
+        except (AssertionError, np.linalg.LinAlgError):
             raise(NotPositiveSemidefinite, "Σ can't be used as a covariance matrix as it is not positive semidefinite")
         
         self.d = len(self.Σ)
