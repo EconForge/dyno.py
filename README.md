@@ -36,3 +36,8 @@ as well as unit and coverage tests:
 ```console
 poetry run pytest --cov=dyno tests/
 ```
+
+Finally, types can be checked with `mypy`:
+```console
+poetry run mypy dyno --ignore-missing-imports
+```
