@@ -1,11 +1,11 @@
 import numpy as np
-from .types import Vector, Matrix
+from .typedefs import TVector, TMatrix
 from typing import Callable
 
 
 def jacobian(
-    func: Callable[[Vector], Vector], initial: Vector, delta: float = 1e-3
-) -> Matrix:
+    func: Callable[[TVector], TVector], initial: TVector, delta: float = 1e-3
+) -> TMatrix:
     """Jacobian calculation with finite differences
 
     Parameters

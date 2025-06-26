@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from .model import RecursiveSolution
 
-from .types import IRFType
+from .typedefs import IRFType
 
 
 def irf(

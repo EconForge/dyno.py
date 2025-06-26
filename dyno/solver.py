@@ -1,12 +1,12 @@
 import numpy as np
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
-from .types import Vector, Matrix, Solver
+from .typedefs import TVector, TMatrix, Solver
 
 
 def solve(
-    A: Matrix, B: Matrix, C: Matrix, method: Solver = "qz", options={}
-) -> tuple[Matrix, Vector | None]:
+    A: TMatrix, B: TMatrix, C: TMatrix, method: Solver = "qz", options={}
+) -> tuple[TMatrix, TVector | None]:
     """Solves AX² + BX + C = 0 for X using the chosen method
 
     Parameters
@@ -52,8 +52,8 @@ class NoConvergence(Exception):
 
 
 def solve_ti(
-    A: Matrix, B: Matrix, C: Matrix, T: int = 10000, tol: float = 1e-10
-) -> tuple[Matrix, None]:
+    A: TMatrix, B: TMatrix, C: TMatrix, T: int = 10000, tol: float = 1e-10
+) -> tuple[TMatrix, None]:
     """Solves AX² + BX + C = 0 for X using fixed-point iteration.
 
     Parameters
@@ -102,8 +102,8 @@ def solve_ti(
 
 
 def solve_qz(
-    A: Matrix, B: Matrix, C: Matrix, tol: float = 1e-15
-) -> tuple[Matrix, Vector]:
+    A: TMatrix, B: TMatrix, C: TMatrix, tol: float = 1e-15
+) -> tuple[TMatrix, TVector]:
     """Solves AX² + BX + C = 0 for X using QZ decomposition.
 
     Parameters
@@ -142,7 +142,7 @@ def solve_qz(
     return X, np.sort(λ_all).reshape(2 * n)
 
 
-def decompose_blocks(Z: Matrix) -> tuple[Matrix, Matrix, Matrix, Matrix]:
+def decompose_blocks(Z: TMatrix) -> tuple[TMatrix, TMatrix, TMatrix, TMatrix]:
     """Decomposes square matrix Z into four square blocks Z11, Z12, Z21, Z22 such that Z can be written as:
     ```
     [Z11, Z12]
@@ -189,7 +189,7 @@ def genev(α: float, β: float, tol: float = 1e-9) -> float:
             return np.inf
 
 
-def vgenev(α: Vector, β: Vector, tol: float = 1e-9) -> Vector:
+def vgenev(α: TVector, β: TVector, tol: float = 1e-9) -> TVector:
     """
     Computes the generalized eigenvalues λ = α/β, vectorized version of `genev`
 
@@ -207,7 +207,7 @@ def vgenev(α: Vector, β: Vector, tol: float = 1e-9) -> Vector:
     return (np.array([genev(a, b) for a, b in zip(α, β)])).reshape(len(α))
 
 
-def moments(X: Matrix, Y: Matrix, Σ: Matrix) -> tuple[Matrix, Matrix]:
+def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
     """
     Computes conditional and unconditional moments of stationary process $y_t = X y_{t-1} + Y e_t$
 
@@ -230,19 +230,19 @@ def moments(X: Matrix, Y: Matrix, Σ: Matrix) -> tuple[Matrix, Matrix]:
 
     Applying the linear covariance operator to both sides of the equation $y_t = X y_{t-1} + Y e_t$ yields
     $$
-    \mathrm{Cov}(y_t) = X ⋅ \mathrm{Cov}(y_{t-1}) ⋅ X^* + Y ⋅ \mathrm{Cov}(e_t) ⋅ Y^*
+    \\mathrm{Cov}(y_t) = X ⋅ \\mathrm{Cov}(y_{t-1}) ⋅ X^* + Y ⋅ \\mathrm{Cov}(e_t) ⋅ Y^*
     $$
-    By stationarity of $y_t$, $\mathrm{Cov}(y_t) = \mathrm{Cov}(y_{t-1}) := \Gamma$, so
+    By stationarity of $y_t$, $\\mathrm{Cov}(y_t) = \\mathrm{Cov}(y_{t-1}) := Γ$, so
     $$
     Γ = X Γ X^* + Γ₀
     $$
     By applying the [Vec-operator](https://en.wikipedia.org/wiki/Vectorization_(mathematics)#Compatibility_with_Kronecker_products), we get the following equation:
     $$
-    \mathrm{Vec}(Γ) = (X ⊗ X) \mathrm{Vec}(Γ)  + \mathrm{Vec}(Γ₀)
+    \\mathrm{Vec}(Γ) = (X ⊗ X) \\mathrm{Vec}(Γ)  + \\mathrm{Vec}(Γ₀)
     $$
     Which gives the following solution
     $$
-    \mathrm{Vec}(Γ) = (I_{N^2} - X ⊗ X)^{-1} \mathrm{Vec}(Γ₀)
+    \\mathrm{Vec}(Γ) = (I_{N^2} - X ⊗ X)^{-1} \\mathrm{Vec}(Γ₀)
     $$
     """
 
