@@ -22,12 +22,7 @@ modfile_grammar = open(f"{dir_path}/modfile_grammar.lark").read()
 modfile_parser = Lark(modfile_grammar, propagate_positions=True)
 
 
-class UnsupportedDynareFeature(Exception):
-
-    pass
-
-
-from dyno.model import Model
+from dyno.model import Model, UnsupportedDynareFeature
 from lark import Visitor
 
 

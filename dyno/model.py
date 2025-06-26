@@ -441,3 +441,8 @@ def evaluate(expression: str, calibration: dict[str, float] = {}) -> float:
         )
     else:
         raise ValueError("Invalid Mathematical expression")
+
+
+class UnsupportedDynareFeature(Exception):
+
+    pass
