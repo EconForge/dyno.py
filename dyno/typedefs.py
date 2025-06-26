@@ -9,7 +9,4 @@ Solver = Literal["ti", "qz"]
 SymbolType = Literal["endogenous", "exogenous", "parameters"]
 IRFType = Literal["level", "log-deviation", "deviation"]
 
-DynamicFunction = Callable[
-    [TVector, TVector, TVector, TVector, TVector, TVector],
-    None
-]
+DynamicFunction = Callable[[TVector, TVector, TVector, TVector, TVector, TVector], None]
