@@ -1,5 +1,8 @@
-# Welcome to MkDocs
+# Reference
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
-
-The solution to all the problems is hidden in the source code of this page.
+::: dyno
+    options:
+        docstring_style: numpy
+        separate_signature: false
+        show_signature_annotations: false
+        docstring_section_style: table

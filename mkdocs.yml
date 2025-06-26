@@ -2,7 +2,7 @@ site_name: Dyno 🦖
 
 plugins:
   - search # necessary for search to work
-  - mkapi
+  - mkdocstrings
 
 markdown_extensions:
   - mdx_math
@@ -34,5 +34,3 @@ extra_javascript:
 
 nav:
   - index.md
-  - Reference:
-    - $api/dyno.***
