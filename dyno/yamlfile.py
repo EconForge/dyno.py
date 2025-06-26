@@ -10,19 +10,25 @@ from dolang.symbolic import sanitize, parse_string, str_expression
 from dolang.language import eval_data
 from dolang.symbolic import str_expression
 
+from typing_extensions import Self
+
 
 class YAMLFile(Model):
 
-    def __init__(self, data):
+    def import_model(self: Self, txt: str) -> None:
+        self.data = yaml.compose(txt)
 
-        self.data = data
-        self.__update_equations__()
-        self.__update_calibration__()
-        self.exogenous = self.__get_exogenous__()
+    def _set_name(self: Self):
+        node = self.data.value[0]
+        nodetype = node[0].value
+        if nodetype == "name":
+            self.name = node[1].value
 
-    def __update_calibration__(self):
+    def _set_calibration(self: Self) -> None:
 
         from dolang.symbolic import remove_timing
+
+        from .model import evaluate
 
         symbols = self.symbols
         calibration = dict()
@@ -54,28 +60,26 @@ class YAMLFile(Model):
                 if s not in calibration:
                     calibration[s] = default
 
-        self.__calibration__ = calibration
+        self.calibration = calibration
 
     def get_calibration(self, **kwargs):
 
-        import copy
         from dolang.triangular_solver import solve_triangular_system
 
-        calibration = copy.copy(self.__calibration__)
-        calibration.update(**kwargs)
+        calibration = super().get_calibration(**kwargs)
 
         return solve_triangular_system(calibration)
 
-    #     self.__calibration__ =  solve_triangular_system(calibration)
+    #     self.calibration =  solve_triangular_system(calibration)
 
-    # return self.__calibration__
+    # return self.calibration
 
-    def __get_exogenous__(self):
+    def _set_exogenous(self):
 
         from .language import ProductNormal
 
         if "exogenous" not in self.data:
-            return {}
+            self.exogenous = None
 
         exo = self.data["exogenous"]
         calibration = self.get_calibration()
@@ -92,13 +96,14 @@ class YAMLFile(Model):
             ssyms.append(vars)
         ssyms = tuple(sum(ssyms, []))
 
-        return ProductNormal(*exogenous.values())
+        self.exogenous = ProductNormal(*exogenous.values())
 
-    def __update_equations__(self):
-
+    def _set_symbols(self: Self) -> None:
         data = self.data
 
-        tree = dolang.parse_string(data["equations"], start="equation_block")
+        self._tree = dolang.parse_string(data["equations"], start="equation_block")
+
+        tree = self._tree
 
         stree = dolang.grammar.sanitize(tree)
 
@@ -126,60 +131,25 @@ class YAMLFile(Model):
 
         self.symbols = symbols
 
+    def _set_equations(self: Self):
+        tree = self._tree
+
         n = len(tree.children)
 
         # equations = [f"({stringify(eq.children[1])})-({stringify(eq.children[0])})"  for eq in tree.children]
-        equations = [stringify(str_expression(eq)) for eq in tree.children]
+        str_equations = [stringify(str_expression(eq)) for eq in tree.children]
 
-        self.equations = equations
+        self.equations = []
 
-        equations = [
-            ("({1})-({0})".format(*eq.split("=")) if "=" in eq else eq)
-            for eq in equations
-        ]
+        for streq in str_equations:
+            lst = streq.split("=")
 
-        self.equations = equations
+            match len(lst):
+                case 1:
+                    eq = (streq.strip(), "0")
+                case 2:
+                    eq = (lst[0].strip(), lst[1].strip())
+                case _:
+                    raise ValueError("More than one equation on the same line")
 
-        dict_eq = dict([(f"out{i+1}", equations[i]) for i in range(n)])
-        spec = dict(
-            y_f=[stringify_symbol((e, 1)) for e in symbols["endogenous"]],
-            y_0=[stringify_symbol((e, 0)) for e in symbols["endogenous"]],
-            y_p=[stringify_symbol((e, -1)) for e in symbols["endogenous"]],
-            e=[stringify_symbol((e, 0)) for e in symbols["exogenous"]],
-            p=[stringify_symbol(e) for e in symbols["parameters"]],
-        )
-
-        fff = FFF(dict(), dict_eq, spec, "f_dynamic")
-
-        fun = make_method_from_factory(fff, compile=False, debug=False)
-
-        self.__functions__ = {"dynamic": fun}
-
-
-cache: list[tuple[int, int, YAMLFile]] = []
-
-
-def import_file(filename) -> YAMLFile:
-
-    txt = open(filename, "rt", encoding="utf-8").read()
-    return import_model(txt)
-
-
-def import_model(txt) -> YAMLFile:
-
-    data = yaml.compose(txt)
-
-    v = hash(txt)
-    v_eq = hash(data["equations"].value)
-
-    existing = [m[0] for m in cache]
-
-    if v in existing:
-        i = existing.index(v)
-        model = cache[i][2]
-        return model
-
-    else:
-        model = YAMLFile(data)
-        cache.append((v, v_eq, model))
-        return model
+            self.equations.append(eq)

@@ -5,7 +5,7 @@ files = [
 # TODO: for excluded file, check the error is meaningful
 exclude = []
 
-import dyno
+from dyno import YAMLFile
 import pytest
 
 
@@ -17,6 +17,6 @@ def test_yamlfile_import(filename):
     print(f"Importing {f}")
     filename = "examples/" + f
 
-    model = dyno.import_file(filename)
+    model = YAMLFile(filename)
 
     assert True
