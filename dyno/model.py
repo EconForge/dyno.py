@@ -12,7 +12,7 @@ from typing import Callable, overload, Literal, Any
 from typing_extensions import Self
 from .typedefs import TVector, TMatrix, IRFType, Solver, SymbolType, DynamicFunction
 from pandas import DataFrame
-from .language import Normal
+from .language import Exogenous, Normal, Deterministic, ProductNormal
 
 
 class RecursiveSolution:
@@ -69,7 +69,7 @@ class Model(ABC):
     calibration: dict[str, float]
     """Dictionary of parameter values and initial values of endogenous and exogenous variables"""
 
-    exogenous: Normal
+    exogenous: Exogenous | None
     """Description of shocks on exogenous variables, only stochastic shocks are supported for now"""
 
     _dynamic: DynamicFunction
@@ -294,6 +294,10 @@ symbols: {self.symbols}
         e = self.symbols["exogenous"]
         p = self.symbols["parameters"]
 
+        # TODO add support for Deterministic
+        assert isinstance(self.exogenous, Normal) or isinstance(
+            self.exogenous, ProductNormal
+        )
         Σ = self.exogenous.Σ
 
         c = self.get_calibration(**calibration)

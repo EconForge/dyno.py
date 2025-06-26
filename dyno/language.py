@@ -29,8 +29,40 @@ def Vector(*elements):
     return mat
 
 
+class Exogenous:
+    pass
+
+
+class Deterministic(Exogenous):
+    """Deterministic exogenous variables clas
+
+    Parameters
+    ----------
+    horizon: int
+        time horizon over which the perfect foresight solver will simulate the model
+
+    values_dict: dict[str, list[float]]
+        dictionary containing the values that each exogenous variable takes on at each time period before the horizon,
+        empty fields are assumed to be zero
+    """
+
+    horizon: int
+    """time horizon over which the model will be simulated"""
+
+    values: dict[str, list[float]]
+    """values taken on by each exogenous variable"""
+
+    def __init__(self, horizon: int, values_dict: dict[str, list[float]]):
+        horizon = max(horizon, max([len(periods) for periods in values_dict.values()]))
+        for var, values in values_dict.items():
+            if len(values) < horizon:
+                values_dict[var] = pad_list(values, horizon)
+        self.horizon = horizon
+        self.values = values_dict
+
+
 @language_element
-class Normal:
+class Normal(Exogenous):
     """Multivariate normal process class, can be used to model white noise.
 
     Parameters
@@ -38,7 +70,7 @@ class Normal:
     Μ: d Vector | None
         Mean vector for the normal process, taken to be equal to zero if not passed
 
-    Σ : (d,d) Matrix
+    Σ: (d,d) Matrix
         Covariance matrix for the normal process, needs to be positive semidefinite
 
     Attributes
@@ -70,8 +102,7 @@ class Normal:
             assert np.array_equal(Sigma, Sigma.T)
             np.linalg.cholesky(Sigma)
         except (AssertionError, np.linalg.LinAlgError):
-            raise (
-                NotPositiveSemidefinite,
+            raise NotPositiveSemidefinite(
                 "Σ can't be used as a covariance matrix as it is not positive semidefinite",
             )
 
@@ -93,7 +124,7 @@ class Normal:
 
 
 @language_element
-class ProductNormal:
+class ProductNormal(Exogenous):
     """Product of multivariate normal processes
 
     Parameters
@@ -124,3 +155,7 @@ class ProductNormal:
         """
         assert len(self.processes) == 1
         return self.processes[0].Σ
+
+
+def pad_list(l: list, n: int) -> list:
+    return l + [0] * (n - len(l))
