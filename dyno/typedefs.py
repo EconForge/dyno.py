@@ -11,5 +11,5 @@ IRFType = Literal["level", "log-deviation", "deviation"]
 
 DynamicFunction = Callable[
     [TVector, TVector, TVector, TVector, TVector, TVector],
-    TVector | tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix],
+    None
 ]

@@ -1,5 +1,5 @@
 import numpy as np
-from .types import TVector, TMatrix
+from .typedefs import TVector, TMatrix
 from typing import Callable
 
 

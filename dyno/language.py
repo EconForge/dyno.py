@@ -2,7 +2,7 @@
 
 # copied from dolo
 
-from .types import TVector, TMatrix
+from .typedefs import TVector, TMatrix
 
 from dolang.language import greek_tolerance, language_element  # type: ignore
 

@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
-from .types import TVector, TMatrix, Solver
+from .typedefs import TVector, TMatrix, Solver
 
 
 def solve(
