@@ -55,6 +55,7 @@ matplotlib = ">=3.10.0"
 
 [feature.jupyter.tasks]
 notebook = "ipython kernel install --name $PIXI_ENVIRONMENT_NAME --user && jupyter notebook"
+ipython = "ipython"
 
 [feature.docs.dependencies]
 mkdocs = ">=1.6.1"
