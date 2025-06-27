@@ -23,8 +23,9 @@ coverage = ">=6.4.4"
 pytest-cov = ">=4.0.0"
 
 [feature.test.tasks]
-test = "pytest --cov=dyno --durations=0 -vv tests/"
-ci-test = "pytest --cov=./ --cov-report=xml"
+test = "pytest"
+durations = "pytest --durations=0 -vv"
+cov = "pytest --cov=./ --cov-report=xml"
 
 [feature.lint.dependencies]
 mypy = ">=1.0.0"
