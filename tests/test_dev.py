@@ -7,6 +7,7 @@ import pytest
 def modfile(request):
     return request.param
 
+
 def test_modfile_describe(modfile):
     files = [
         # "example1.mod",
@@ -20,7 +21,6 @@ def test_modfile_describe(modfile):
     exclude = []
 
     f = files[0]
-
 
     filename = "examples/modfiles/" + f
 

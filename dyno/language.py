@@ -8,6 +8,8 @@ from dolang.language import greek_tolerance, language_element  # type: ignore
 
 import numpy as np
 
+from scipy.stats import multivariate_normal
+
 
 class NotPositiveSemidefinite(np.linalg.LinAlgError):
     """An exception raised when a normal process is created with a covariance matrix that is not positive semidefinite"""
@@ -93,10 +95,8 @@ class Normal(Exogenous):
 
     @greek_tolerance
     def __init__(self, Σ, Μ=None):
-
         Sigma = np.array(Σ)
         mu = Μ
-
         self.Σ = np.atleast_2d(np.array(Sigma, dtype=float))
         try:
             assert np.array_equal(Sigma, Sigma.T)
@@ -105,7 +105,6 @@ class Normal(Exogenous):
             raise NotPositiveSemidefinite(
                 "Σ can't be used as a covariance matrix as it is not positive semidefinite",
             )
-
         self.d = len(self.Σ)
         if mu is None:
             self.Μ = np.array([0.0] * self.d)
@@ -113,14 +112,9 @@ class Normal(Exogenous):
             self.Μ = np.array(mu, dtype=float)
 
         assert self.Σ.shape[0] == self.d
-        assert self.Σ.shape[0] == self.d
-
+        assert self.Σ.shape[1] == self.d
         # this class wraps functionality from scipy
-        import scipy.stats
-
-        self._dist_ = scipy.stats.multivariate_normal(
-            mean=self.Μ, cov=self.Σ, allow_singular=True
-        )
+        self._dist_ = multivariate_normal(mean=self.Μ, cov=self.Σ, allow_singular=True)
 
 
 @language_element

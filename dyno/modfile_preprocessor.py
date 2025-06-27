@@ -3,6 +3,7 @@ import json
 from dyno.model import Model, evaluate, UnsupportedDynareFeature, _get_allowed_functions
 from dyno.language import pad_list, Normal, Deterministic
 from math import sqrt
+import numpy as np
 
 from typing_extensions import Self
 from typing import Any
@@ -95,8 +96,8 @@ class Modfile(Model):
 
         # Stochastic case
         var_index = {v: i for i, v in enumerate(varexo)}
-        covar = [[0] * n for _ in range(n)]
-        """covar[i][j] is the covariance of ith and jth exogenous variables"""
+        covar = np.zeros((n, n))
+        """covar[i,j] is the covariance of ith and jth exogenous variables"""
 
         for s in statements:
             match s["statementName"]:
@@ -104,7 +105,7 @@ class Modfile(Model):
                     if s["overwrite"]:
                         deterministic_model = None
                         det_vals = {v: [] for v in varexo}
-                        covar = [[0] * n for _ in range(n)]
+                        covar = np.zeros((n, n))
                     deterministic_shock = "deterministic_shocks" in s.keys()
                     if deterministic_model is None:
                         deterministic_model = deterministic_shock
@@ -124,24 +125,24 @@ class Modfile(Model):
                         # preprocessor ensures no overlap between cases below
                         for v in s["variance"]:
                             i = var_index[v["name"]]
-                            covar[i][i] = evaluate(v["variance"], c)
+                            covar[i, i] = evaluate(v["variance"], c)
                         for v in s["stderr"]:
                             i = var_index[v["name"]]
-                            covar[i][i] = evaluate(v["stderr"], c) ** 2
+                            covar[i, i] = evaluate(v["stderr"], c) ** 2
                         for couple in s["covariance"]:
                             i = var_index[couple["name"]]
                             j = var_index[couple["name2"]]
-                            covar[i][j] = evaluate(couple["covariance"], c)
-                            covar[j][i] = covar[i][j]
+                            covar[i, j] = evaluate(couple["covariance"], c)
+                            covar[j, i] = covar[i, j]
                         for couple in s["correlation"]:
                             i = var_index[couple["name"]]
                             j = var_index[couple["name2"]]
-                            std_i = sqrt(covar[i][i])
-                            std_j = sqrt(covar[j][j])
-                            covar[i][j] = (
+                            std_i = sqrt(covar[i, i])
+                            std_j = sqrt(covar[j, j])
+                            covar[i, j] = (
                                 evaluate(couple["correlation"], c) * std_i * std_j
                             )
-                            covar[j][i] = covar[i][j]
+                            covar[j, i] = covar[i, j]
                     else:
                         raise UnsupportedDynareFeature(
                             "Mixing deterministic and stochastic exogenous variables is not supported (yet)."
@@ -151,13 +152,12 @@ class Modfile(Model):
                         horizon = s["options"]["periods"]
                     except:
                         pass
-
         if deterministic_model is None:
             return  # No temporary shocks were defined, perhaps permanent ones were in initval
+
         if deterministic_model:
             self.exogenous = Deterministic(horizon, det_vals)
         else:
-            print(covar)
             self.exogenous = Normal(Σ=covar)
 
     def str_from_ast(self, ast: dict[str, Any]) -> str:

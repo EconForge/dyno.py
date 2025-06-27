@@ -237,7 +237,6 @@ symbols: {self.symbols}
         """
         r = np.zeros(len(y0))
         self._dynamic(y0, y1, y2, e, p, r)
-        print("_dynamic calculated")
         d = np.zeros(len(self.symbols["exogenous"]))
 
         if diff:
