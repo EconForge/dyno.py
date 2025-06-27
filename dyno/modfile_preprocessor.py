@@ -8,7 +8,11 @@ import numpy as np
 from typing_extensions import Self
 from typing import Any
 
-from dyno.util_json import json_safe_eval, UnsupportedDynareFeature, get_allowed_functions
+from dyno.util_json import (
+    json_safe_eval,
+    UnsupportedDynareFeature,
+    get_allowed_functions,
+)
 
 
 class Modfile(Model):
