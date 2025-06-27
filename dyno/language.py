@@ -100,8 +100,8 @@ class Normal(Exogenous):
         self.Σ = np.atleast_2d(np.array(Sigma, dtype=float))
         try:
             assert np.array_equal(Sigma, Sigma.T)
-            np.linalg.cholesky(Sigma)
-        except (AssertionError, np.linalg.LinAlgError):
+            assert np.all(np.linalg.eigvalsh(Sigma) > -1e-12)
+        except AssertionError:
             raise NotPositiveSemidefinite(
                 "Σ can't be used as a covariance matrix as it is not positive semidefinite",
             )
