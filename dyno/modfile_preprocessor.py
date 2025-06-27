@@ -1,10 +1,11 @@
 import dynare_preprocessor
 import json
-from dyno.model import Model, evaluate, UnsupportedDynareFeature
+from dyno.model import Model, evaluate, UnsupportedDynareFeature, _get_allowed_functions
 from dyno.language import pad_list, Normal, Deterministic
 from math import sqrt
 
 from typing_extensions import Self
+from typing import Any
 
 
 class Modfile(Model):
@@ -34,9 +35,18 @@ class Modfile(Model):
 
     def _set_equations(self: Self) -> None:
         """sets equations attribute of Model from json data"""
+
+        # self.equations = [
+        #     f"{eq['lhs']} = {eq['rhs']}" for eq in self.data["modfile"]["model"]
+        # ]
+
+        # Above doesn't work since it's in Dynare's format
+        # whereas Dolang expects yaml-like format for equations
+
         self.equations = [
-            (eq["lhs"], eq["rhs"]) for eq in self.data["modfile"]["model"]
-        ]  # Maybe add line numbers too
+            self.str_from_ast(eq["AST"])
+            for eq in self.data["modfile"]["abstract_syntax_tree"]
+        ]
 
     def _set_calibration(self: Self) -> None:
         """retrieves calibration values and exogenous variable definitions from json data"""
@@ -85,7 +95,7 @@ class Modfile(Model):
 
         # Stochastic case
         var_index = {v: i for i, v in enumerate(varexo)}
-        covar = [[0] * n] * n
+        covar = [[0] * n for _ in range(n)]
         """covar[i][j] is the covariance of ith and jth exogenous variables"""
 
         for s in statements:
@@ -94,7 +104,7 @@ class Modfile(Model):
                     if s["overwrite"]:
                         deterministic_model = None
                         det_vals = {v: [] for v in varexo}
-                        covar = [[0] * n] * n
+                        covar = [[0] * n for _ in range(n)]
                     deterministic_shock = "deterministic_shocks" in s.keys()
                     if deterministic_model is None:
                         deterministic_model = deterministic_shock
@@ -147,4 +157,56 @@ class Modfile(Model):
         if deterministic_model:
             self.exogenous = Deterministic(horizon, det_vals)
         else:
+            print(covar)
             self.exogenous = Normal(Σ=covar)
+
+    def str_from_ast(self, ast: dict[str, Any]) -> str:
+        match ast["node_type"]:
+            # Bases cases
+            case "NumConstNode":
+                value = ast["value"]
+                return f"({value})"
+
+            case "VariableNode":
+                name = ast["name"]
+                if name in self.parameters:
+                    return name
+                lag = ast["lag"]
+                if lag == 0:
+                    return f"{name}[t]"
+                elif lag > 0:
+                    return f"{name}[t+{lag}]"
+                else:
+                    return f"{name}[t-{-lag}]"
+
+            # Inductive cases
+            case "BinaryOpNode":
+                arg1 = self.str_from_ast(ast["arg1"])
+                arg2 = self.str_from_ast(ast["arg2"])
+                op = ast["op"]
+                if op in ["=", "+"]:
+                    return f"{arg1} {op} {arg2}"
+                elif op == "-":
+                    return f"{arg1} {op} ({arg2})"
+                else:
+                    return f"({arg1}) {op} ({arg2})"
+
+            case "UnaryOpNode":
+                op = ast["op"]
+                arg = self.str_from_ast(ast["arg"])
+                match op:
+                    case "uminus":
+                        return f"-({arg})"
+                    case "uplus":
+                        return f"+({arg})"
+                    case _:
+                        if op not in _get_allowed_functions():
+                            raise UnsupportedDynareFeature(
+                                f"Function {op} is not supported (yet)"
+                            )
+                        return f"{op}({arg})"
+
+            case _:
+                raise UnsupportedDynareFeature(
+                    f"Node type {ast['node_type']} is not supported (yet)"
+                )
