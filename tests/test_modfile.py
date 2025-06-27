@@ -21,7 +21,7 @@ import pytest
 files = [f for f in files if not (f in exclude)]
 
 
-@pytest.fixture(params=[lark]) #, preprocessor])
+@pytest.fixture(params=[lark])  # , preprocessor])
 def modfile(request):
     return request.param
 

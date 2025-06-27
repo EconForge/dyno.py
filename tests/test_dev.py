@@ -3,7 +3,11 @@ from dyno import modfile as lark
 import pytest
 
 
-@pytest.fixture(params=[lark, ]) # preprocessor
+@pytest.fixture(
+    params=[
+        lark,
+    ]
+)  # preprocessor
 def modfile(request):
     return request.param
 
