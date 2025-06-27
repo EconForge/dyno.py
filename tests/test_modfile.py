@@ -44,7 +44,7 @@ def test_modfile_import(filename, modfile):
 
     except Exception as e:
 
-        from dyno.model import UnsupportedDynareFeature
+        from dyno.util_json import UnsupportedDynareFeature
 
         assert f in unsupported
 

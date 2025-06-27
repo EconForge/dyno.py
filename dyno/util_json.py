@@ -1,5 +1,46 @@
 from typing import Any
 
+class UnsupportedDynareFeature(Exception):
+
+    pass
+
+
+def get_allowed_functions():
+    from math import exp, log, log10, sqrt
+    from numpy import cbrt, sign
+    from math import sin, cos, tan
+    from math import asin, acos, atan
+    from math import sinh, cosh, tanh
+    from math import asinh, acosh, atanh
+
+    # abs, max and min are builtins
+    safe_list = [
+        exp,
+        log,
+        log10,
+        sqrt,
+        cbrt,
+        sign,
+        abs,
+        max,
+        min,
+        sin,
+        cos,
+        tan,
+        asin,
+        acos,
+        atan,
+        sinh,
+        cosh,
+        tanh,
+        asinh,
+        acosh,
+        atanh,
+    ]
+    safe_dict = {f.__name__: f for f in safe_list}  # type: ignore
+    safe_dict["ln"] = log  # Add alias for compatibility with Dynare
+    return safe_dict
+
 
 def json_safe_eval(ast: dict[str, Any], context: dict[str, dict[str, Any]]):
     endogenous_present = context["endogenous_present"]
@@ -8,7 +49,7 @@ def json_safe_eval(ast: dict[str, Any], context: dict[str, dict[str, Any]]):
     exogenous = context["exogenous"]
     parameters = context["parameters"]
     local_variables = context["local_variables"]
-    allowed_functions = _get_allowed_functions()
+    allowed_functions = get_allowed_functions()
     match ast["node_type"]:
         # Bases cases
         case "NumConstNode":
@@ -28,11 +69,11 @@ def json_safe_eval(ast: dict[str, Any], context: dict[str, dict[str, Any]]):
                 case "endogenous":
                     match lag:
                         case 0:
-                            return exogenous_present[name]
+                            return endogenous_present[name]
                         case 1:
-                            return exogenous_future[name]
+                            return endogenous_future[name]
                         case -1:
-                            return exogenous_past[name]
+                            return endogenous_past[name]
                         case _:
                             raise ValueError("Unsupported lag value")
                 case _:
@@ -40,8 +81,8 @@ def json_safe_eval(ast: dict[str, Any], context: dict[str, dict[str, Any]]):
 
         # Inductive cases
         case "BinaryOpNode":
-            arg1 = json_safe_eval(ast["arg1"])
-            arg2 = json_safe_eval(ast["arg2"])
+            arg1 = json_safe_eval(ast["arg1"], context)
+            arg2 = json_safe_eval(ast["arg2"], context)
             match ast["op"]:
                 case "=" | "-":
                     return arg1 - arg2
@@ -70,7 +111,7 @@ def json_safe_eval(ast: dict[str, Any], context: dict[str, dict[str, Any]]):
 
         case "UnaryOpNode":
             op = ast["op"]
-            arg = json_safe_eval(ast["arg"])
+            arg = json_safe_eval(ast["arg"], context)
             match op:
                 case "uminus":
                     return -arg

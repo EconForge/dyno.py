@@ -1,6 +1,6 @@
 import dynare_preprocessor
 import json
-from dyno.model import Model, evaluate, UnsupportedDynareFeature, _get_allowed_functions
+from dyno.model import Model, evaluate
 from dyno.language import pad_list, Normal, Deterministic
 from math import sqrt
 import numpy as np
@@ -8,7 +8,7 @@ import numpy as np
 from typing_extensions import Self
 from typing import Any
 
-from dyno.util_json import json_safe_eval
+from dyno.util_json import json_safe_eval, UnsupportedDynareFeature, get_allowed_functions
 
 
 class Modfile(Model):
@@ -49,16 +49,12 @@ class Modfile(Model):
     def _set_calibration(self: Self) -> None:
         """retrieves calibration values and exogenous variable definitions from json data"""
 
-        self.calibration = {v: float("nan") for v in self.variables + self.parameters}
+        self.calibration = {}
         calibration = self.calibration
         statements = self.data["modfile"]["statements"]
 
         def calibrate(name, value):
             calibration[name.strip()] = evaluate(value, calibration)
-
-        if "steady_state_model" in self.data.keys():
-            for eq in self.data["steady_state_model"]["steady_state_model"]:
-                calibrate(eq["lhs"], eq["rhs"])
 
         for s in statements:
             match s["statementName"]:
@@ -86,6 +82,18 @@ class Modfile(Model):
                 continue  # TODO: Real evaluation and error checking
             calibration[var] = val
             self.locals[var] = val
+
+        if "steady_state_model" in self.data.keys():
+            for eq in self.data["steady_state_model"]["steady_state_model"]:
+                calibrate(eq["lhs"], eq["rhs"])
+
+        for k in self.variables:
+            if k not in calibration.keys():
+                calibration[k] = 0.0
+
+        for k in self.parameters + list(self.locals.keys()):
+            if k not in calibration.keys():
+                calibration[k] = np.nan
 
     def _set_exogenous(self: Self) -> None:
         self.exogenous = None
@@ -186,4 +194,5 @@ class Modfile(Model):
         }
         ast = self.data["modfile"]["abstract_syntax_tree"]
         assert r.shape[0] == len(ast)
-        r = np.array(json_safe_eval(eq, context) for eq in ast)
+        for i, eq in enumerate(ast):
+            r[i] = json_safe_eval(eq["AST"], context)
