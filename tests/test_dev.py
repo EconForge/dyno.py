@@ -1,24 +1,30 @@
-files = [
-    # "example1.mod",
-    # "example2.mod",
-    # "example3.mod",
-    # "Gali_2015.mod",
-    "NK_baseline.mod"
-]
+from dyno import modfile_preprocessor as preprocessor
+from dyno import modfile as lark
 
-# TODO: for excluded file, check the error is meaningful
-exclude = []
+@pytest.fixture(params=[preprocessor, lark])
+def modfile(request):
+    return request.param
 
-from dyno.modfile import Modfile
+def test_modfile_describe(modfile):
+    files = [
+        # "example1.mod",
+        # "example2.mod",
+        # "example3.mod",
+        # "Gali_2015.mod",
+        "NK_baseline.mod"
+    ]
 
-f = files[0]
+    # TODO: for excluded file, check the error is meaningful
+    exclude = []
+
+    f = files[0]
 
 
-filename = "examples/modfiles/" + f
+    filename = "examples/modfiles/" + f
 
-model = Modfile(filename)
+    model = modfile.Modfile(filename)
 
-print(model.describe())
+    print(model.describe())
 
 
 # print(model.solve())
