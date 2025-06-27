@@ -55,14 +55,6 @@ class Modfile(Model):
     def _check_supported(self):
         CheckFunCalls().visit(self.data)
 
-    @property
-    def variables(self):
-        return self.symbols["endogenous"] + self.symbols["exogenous"]
-
-    @property
-    def parameters(self):
-        return self.symbols["parameters"]
-
     def _set_exogenous(self):
 
         import numpy as np
@@ -220,13 +212,8 @@ class Modfile(Model):
         for ll in mm[0].children:
             eq_tree = ll.children[-1]
             eq = sanitize(eq_tree, variables=variables)
-            eq = stringify(eq)
             streq = str_expression(eq)
+            self.equations.append(streq)
 
-            if "=" in streq:
-                lhs, rhs = streq.split("=")
-                eq = (lhs.strip(), rhs.strip())
-            else:
-                eq = (streq.strip(), "0")
 
-            self.equations.append(eq)
+4

@@ -63,8 +63,8 @@ class Model(ABC):
     symbols: dict[SymbolType, list[str]]
     """Symbols dictionary, allowed keys are 'endogenous', 'exogenous' and 'parameters'"""
 
-    equations: list[tuple[str, str]]
-    """List of the equations of the model: the equation LHS = RHS is written as (LHS, RHS)"""
+    equations: list[str]
+    """List of the equations of the model written in the form LHS = RHS"""
 
     calibration: dict[str, float]
     """Dictionary of parameter values and initial values of endogenous and exogenous variables"""
@@ -139,12 +139,35 @@ class Model(ABC):
         c.update(**kwargs)
         return c
 
+    @property
+    def variables(self):
+        return self.symbols["endogenous"] + self.symbols["exogenous"]
+
+    @property
+    def parameters(self):
+        return self.symbols["parameters"]
+
     def _set_dynamic(self: Self) -> None:
         """generates dynamic method from the equations of the model using Dolang"""
-        dict_eq = {
-            f"out{i+1}": f"({rhs}) - ({lhs})"
-            for i, (lhs, rhs) in enumerate(self.equations)
-        }
+        from dolang import stringify
+
+        str_equations = [stringify(eq) for eq in self.equations]
+
+        equations = []
+        for streq in str_equations:
+            lst = streq.split("=")
+
+            match len(lst):
+                case 1:
+                    eq = streq.strip()
+                case 2:
+                    eq = f"({lst[0].strip()}) - ({lst[1].strip()})"
+                case _:
+                    raise ValueError("More than one equation on the same line")
+
+            equations.append(eq)
+
+        dict_eq = {f"out{i+1}": eq for i, eq in enumerate(equations)}
         symbols = self.symbols
         from dolang.symbolic import stringify_symbol
         from dolang.function_compiler import FlatFunctionFactory as FFF
@@ -214,6 +237,7 @@ symbols: {self.symbols}
         """
         r = np.zeros(len(y0))
         self._dynamic(y0, y1, y2, e, p, r)
+        print("_dynamic calculated")
         d = np.zeros(len(self.symbols["exogenous"]))
 
         if diff:
@@ -402,49 +426,58 @@ def evaluate(expression: str, calibration: dict[str, float] = {}) -> float:
     valid = all(isinstance(node, whitelist) for node in ast.walk(tree))
 
     if valid:
-        from math import exp, log, log10, sqrt
-        from numpy import cbrt, sign
-        from math import sin, cos, tan
-        from math import asin, acos, atan
-        from math import sinh, cosh, tanh
-        from math import asinh, acosh, atanh
-
-        # abs, max and min are builtins
-        safe_list = [
-            exp,
-            log,
-            log10,
-            sqrt,
-            cbrt,
-            sign,
-            abs,
-            max,
-            min,
-            sin,
-            cos,
-            tan,
-            asin,
-            acos,
-            atan,
-            sinh,
-            cosh,
-            tanh,
-            asinh,
-            acosh,
-            atanh,
-        ]
-        safe_dict = {f.__name__: f for f in safe_list}  # type: ignore
-        safe_dict["ln"] = log  # Add alias for compatibility with Dynare
+        safe_dict = _get_allowed_functions()
         safe_dict.update(calibration)
-        return float(
-            eval(
-                compile(tree, filename="", mode="eval"),
-                {"__builtins__": None},
-                safe_dict,
+        try:
+            return float(
+                eval(
+                    compile(tree, filename="", mode="eval"),
+                    {"__builtins__": None},
+                    safe_dict,
+                )
             )
-        )
+        except (UnsupportedDynareFeature, NameError, TypeError) as e:
+            raise UnsupportedDynareFeature("Function or operator not supported (yet)")
+
     else:
         raise ValueError("Invalid Mathematical expression")
+
+
+def _get_allowed_functions():
+    from math import exp, log, log10, sqrt
+    from numpy import cbrt, sign
+    from math import sin, cos, tan
+    from math import asin, acos, atan
+    from math import sinh, cosh, tanh
+    from math import asinh, acosh, atanh
+
+    # abs, max and min are builtins
+    safe_list = [
+        exp,
+        log,
+        log10,
+        sqrt,
+        cbrt,
+        sign,
+        abs,
+        max,
+        min,
+        sin,
+        cos,
+        tan,
+        asin,
+        acos,
+        atan,
+        sinh,
+        cosh,
+        tanh,
+        asinh,
+        acosh,
+        atanh,
+    ]
+    safe_dict = {f.__name__: f for f in safe_list}  # type: ignore
+    safe_dict["ln"] = log  # Add alias for compatibility with Dynare
+    return safe_dict
 
 
 class UnsupportedDynareFeature(Exception):

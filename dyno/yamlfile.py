@@ -1,14 +1,9 @@
 import dolang
-from dolang import stringify
-from dolang.function_compiler import FlatFunctionFactory as FFF
-from dolang.symbolic import str_expression, stringify_symbol
-from dolang.function_compiler import make_method_from_factory
 
 from dyno.model import Model
 import yaml
-from dolang.symbolic import sanitize, parse_string, str_expression
+from dolang.symbolic import parse_string, str_expression, stringify_symbol
 from dolang.language import eval_data
-from dolang.symbolic import str_expression
 
 from typing_extensions import Self
 
@@ -132,24 +127,5 @@ class YAMLFile(Model):
         self.symbols = symbols
 
     def _set_equations(self: Self):
-        tree = self._tree
-
-        n = len(tree.children)
-
         # equations = [f"({stringify(eq.children[1])})-({stringify(eq.children[0])})"  for eq in tree.children]
-        str_equations = [stringify(str_expression(eq)) for eq in tree.children]
-
-        self.equations = []
-
-        for streq in str_equations:
-            lst = streq.split("=")
-
-            match len(lst):
-                case 1:
-                    eq = (streq.strip(), "0")
-                case 2:
-                    eq = (lst[0].strip(), lst[1].strip())
-                case _:
-                    raise ValueError("More than one equation on the same line")
-
-            self.equations.append(eq)
+        self.equations = [str_expression(eq) for eq in self._tree.children]
