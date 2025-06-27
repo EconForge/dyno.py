@@ -1,5 +1,7 @@
 from dyno import modfile_preprocessor as preprocessor
 from dyno import modfile as lark
+import pytest
+
 
 @pytest.fixture(params=[preprocessor, lark])
 def modfile(request):

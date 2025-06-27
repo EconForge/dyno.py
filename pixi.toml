@@ -23,7 +23,7 @@ coverage = ">=6.4.4"
 pytest-cov = ">=4.0.0"
 
 [feature.test.tasks]
-test = "pytest --cov=dyno tests/"
+test = "pytest --cov=dyno --durations=0 -vv tests/"
 
 [feature.lint.dependencies]
 mypy = ">=1.0.0"
