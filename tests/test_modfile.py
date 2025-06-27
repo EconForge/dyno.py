@@ -14,16 +14,21 @@ unsupported = [
     "Gali_2015.mod",  # calls external funciton in steady-state
 ]
 
-from dyno.modfile import Modfile
-
+# from dyno import modfile_preprocessor as preprocessor
+from dyno import modfile as lark
 import pytest
 
 files = [f for f in files if not (f in exclude)]
 
 
+@pytest.fixture(params=[lark])  # , preprocessor])
+def modfile(request):
+    return request.param
+
+
 # @pytest.mark.nondestructive
 @pytest.mark.parametrize("filename", files)
-def test_modfile_import(filename):
+def test_modfile_import(filename, modfile):
 
     f = filename
 
@@ -31,7 +36,7 @@ def test_modfile_import(filename):
 
     try:
 
-        mod = Modfile(filename)
+        mod = modfile.Modfile(filename)
         sol = mod.compute()
         print(sol)
 
@@ -39,7 +44,7 @@ def test_modfile_import(filename):
 
     except Exception as e:
 
-        from dyno.modfile import UnsupportedDynareFeature
+        from dyno.util_json import UnsupportedDynareFeature
 
         assert f in unsupported
 

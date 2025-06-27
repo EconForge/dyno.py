@@ -4,16 +4,16 @@ from lark import Token, Lark
 import numpy as np
 
 
-def ast_to_yaml(node, indent=""):
-    indent += "  "
-    if isinstance(node, Token):
-        yield f"{indent}- type: {node.type}"
-        yield f"{indent}  value: {repr(node.value)}"
-    else:
-        yield f"{indent}- type: {node.data}"
-        yield f"{indent}  children:"
-        for child in node.children:
-            yield from ast_to_yaml(child, indent)
+# def ast_to_yaml(node, indent=""):
+#     indent += "  "
+#     if isinstance(node, Token):
+#         yield f"{indent}- type: {node.type}"
+#         yield f"{indent}  value: {repr(node.value)}"
+#     else:
+#         yield f"{indent}- type: {node.data}"
+#         yield f"{indent}  children:"
+#         for child in node.children:
+#             yield from ast_to_yaml(child, indent)
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -21,11 +21,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 modfile_grammar = open(f"{dir_path}/modfile_grammar.lark").read()
 modfile_parser = Lark(modfile_grammar, propagate_positions=True)
 
-
-class UnsupportedDynareFeature(Exception):
-
-    pass
-
+from dyno.util_json import UnsupportedDynareFeature
 
 from dyno.model import Model
 from lark import Visitor
@@ -50,53 +46,17 @@ class CheckFunCalls(Visitor):
 
 class Modfile(Model):
 
-    def __init__(self, filename=None, txt=None):
-
-        if txt is not None:
-            if filename is None:
-                filename = "<string>.mod"
-        self.filename = filename
-
-        if txt is None:
-            txt = open(filename).read()
-
+    def import_model(self, txt):
         try:
             self.data = modfile_parser.parse(txt)
         except Exception as e:
             raise e
+        self._check_supported()
 
-        yml_ = ast_to_yaml(self.data)
-        with open("temp2.yml", "w") as f:
-            for g in yml_:
-                f.write(g)
-                f.write("\n")
-
-        self.__check_supported__()
-
-        self.symbols = self.__find_symbols__()
-        self.calibration = self.__get_calibration__()
-        self.exogenous = self.__find_sigma__()
-
-        self.__update_equations__()
-
-    def __check_supported__(self):
-
-        # for ch in self.data.children:
-
-        #     if ch.data.value == "steady_block":
-        #         raise UnsupportedDynareFeature("'steady_state_model' block is not supported yet.")
-
+    def _check_supported(self):
         CheckFunCalls().visit(self.data)
 
-    @property
-    def variables(self):
-        return self.symbols["endogenous"] + self.symbols["exogenous"]
-
-    @property
-    def parameters(self):
-        return self.symbols["parameters"]
-
-    def __find_sigma__(self):
+    def _set_exogenous(self):
 
         import numpy as np
         from dyno.language import Normal
@@ -157,10 +117,9 @@ class Modfile(Model):
                         Sigma[i, j] = vv
                         Sigma[j, i] = vv
 
-        return Normal(Σ=Sigma)
+        self.exogenous = Normal(Σ=Sigma)
 
-    def __get_calibration__(self):
-
+    def _set_calibration(self):
         calibration = {}
         for l in self.data.children:
 
@@ -209,20 +168,9 @@ class Modfile(Model):
             if k not in calibration.keys():
                 calibration[k] = np.nan
 
-        return calibration
+        self.calibration = calibration
 
-    def get_calibration(self, **kwargs):
-
-        import copy
-        from dolang.triangular_solver import solve_triangular_system
-
-        calibration = self.__get_calibration__()
-        calibration.update(**kwargs)
-
-        return solve_triangular_system(calibration)
-        # return self.__get_calibration__()
-
-    def __find_symbols__(self):
+    def _set_symbols(self):
 
         # so far we discard latex and names
         get_name = lambda x: x.children[0].children[0].value
@@ -242,15 +190,13 @@ class Modfile(Model):
                     name = get_name(tp)
                     dfs.append((name, "parameters"))
 
-        symbols = {
+        self.symbols = {
             "endogenous": tuple(e[0] for e in dfs if e[1] == "endogenous"),
             "exogenous": tuple(e[0] for e in dfs if e[1] == "exogenous"),
             "parameters": tuple(e[0] for e in dfs if e[1] == "parameters"),
         }
 
-        return symbols
-
-    def __update_equations__(self):
+    def _set_equations(self):
 
         mod = self
         variables = mod.variables
@@ -259,39 +205,16 @@ class Modfile(Model):
         assert len(mm) == 1
 
         from dolang.grammar import sanitize, str_expression, stringify, stringify_symbol
-        from dolang.function_compiler import FlatFunctionFactory as FFF
-        from dolang.function_compiler import make_method_from_factory
 
         symbols = self.symbols
         variables = self.variables
 
-        equations = []
+        self.equations = []
         for ll in mm[0].children:
             eq_tree = ll.children[-1]
             eq = sanitize(eq_tree, variables=variables)
-            eq = stringify(eq)
-            eq = str_expression(eq)
+            streq = str_expression(eq)
+            self.equations.append(streq)
 
-            if "=" in eq:
-                lhs, rhs = eq.split("=")
-                eq = f"({rhs}) - ({lhs})"
 
-            equations.append(eq)
-
-        n = len(equations)
-
-        dict_eq = {f"out{i+1}": equations[i] for i in range(n)}
-
-        spec = dict(
-            y_f=[stringify_symbol((e, 1)) for e in symbols["endogenous"]],
-            y_0=[stringify_symbol((e, 0)) for e in symbols["endogenous"]],
-            y_p=[stringify_symbol((e, -1)) for e in symbols["endogenous"]],
-            e=[stringify_symbol((e, 0)) for e in symbols["exogenous"]],
-            p=[stringify_symbol(e) for e in symbols["parameters"]],
-        )
-
-        fff = FFF(dict(), dict_eq, spec, "f_dynamic")
-
-        fun = make_method_from_factory(fff, compile=False, debug=False)
-
-        self.__functions__ = {"dynamic": fun}
+4
