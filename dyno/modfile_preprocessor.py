@@ -33,6 +33,9 @@ class Modfile(Model):
         self.symbols = {}
         for t in ["endogenous", "exogenous", "parameters"]:
             self.symbols[t] = [s["name"] for s in self.data["modfile"][t]]
+        self.symbols["model_local_variables"] = [
+            loc["variable"] for loc in self.data["modfile"]["model_local_variables"]
+        ]
 
     def _set_equations(self: Self) -> None:
         """sets equations attribute of Model from json data"""
@@ -78,6 +81,16 @@ class Modfile(Model):
                         pass  # ignore native statement if it is not a parameter definition
                 case _:
                     pass
+
+        self.locals = {}
+        for loc in self.data["modfile"]["model_local_variables"]:
+            var = loc["variable"]
+            try:
+                val = evaluate(loc["value"], calibration)
+            except:
+                continue  # TODO: Real evaluation and error checking
+            calibration[var] = val
+            self.locals[var] = val
 
     def _set_exogenous(self: Self) -> None:
         self.exogenous = None
