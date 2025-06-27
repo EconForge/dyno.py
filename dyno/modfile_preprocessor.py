@@ -8,6 +8,8 @@ import numpy as np
 from typing_extensions import Self
 from typing import Any
 
+from dyno.util_json import json_safe_eval
+
 
 class Modfile(Model):
 
@@ -40,21 +42,14 @@ class Modfile(Model):
     def _set_equations(self: Self) -> None:
         """sets equations attribute of Model from json data"""
 
-        # self.equations = [
-        #     f"{eq['lhs']} = {eq['rhs']}" for eq in self.data["modfile"]["model"]
-        # ]
-
-        # Above doesn't work since it's in Dynare's format
-        # whereas Dolang expects yaml-like format for equations
-
         self.equations = [
-            self.str_from_ast(eq["AST"])
-            for eq in self.data["modfile"]["abstract_syntax_tree"]
+            f"{eq['lhs']} = {eq['rhs']}" for eq in self.data["modfile"]["model"]
         ]
 
     def _set_calibration(self: Self) -> None:
         """retrieves calibration values and exogenous variable definitions from json data"""
-        self.calibration = {}
+
+        self.calibration = {v: float("nan") for v in self.variables + self.parameters}
         calibration = self.calibration
         statements = self.data["modfile"]["statements"]
 
@@ -173,53 +168,22 @@ class Modfile(Model):
         else:
             self.exogenous = Normal(Σ=covar)
 
-    def str_from_ast(self, ast: dict[str, Any]) -> str:
-        match ast["node_type"]:
-            # Bases cases
-            case "NumConstNode":
-                value = ast["value"]
-                return f"({value})"
+    def _set_dynamic(self: Self) -> None:
+        pass
 
-            case "VariableNode":
-                name = ast["name"]
-                if name in self.parameters:
-                    return name
-                lag = ast["lag"]
-                if lag == 0:
-                    return f"{name}[t]"
-                elif lag > 0:
-                    return f"{name}[t+{lag}]"
-                else:
-                    return f"{name}[t-{-lag}]"
-
-            # Inductive cases
-            case "BinaryOpNode":
-                arg1 = self.str_from_ast(ast["arg1"])
-                arg2 = self.str_from_ast(ast["arg2"])
-                op = ast["op"]
-                if op in ["=", "+"]:
-                    return f"{arg1} {op} {arg2}"
-                elif op == "-":
-                    return f"{arg1} {op} ({arg2})"
-                else:
-                    return f"({arg1}) {op} ({arg2})"
-
-            case "UnaryOpNode":
-                op = ast["op"]
-                arg = self.str_from_ast(ast["arg"])
-                match op:
-                    case "uminus":
-                        return f"-({arg})"
-                    case "uplus":
-                        return f"+({arg})"
-                    case _:
-                        if op not in _get_allowed_functions():
-                            raise UnsupportedDynareFeature(
-                                f"Function {op} is not supported (yet)"
-                            )
-                        return f"{op}({arg})"
-
-            case _:
-                raise UnsupportedDynareFeature(
-                    f"Node type {ast['node_type']} is not supported (yet)"
-                )
+    def _dynamic(self, y0, y1, y2, e, p, r) -> None:
+        endo = self.symbols["endogenous"]
+        exo = self.symbols["exogenous"]
+        params = self.symbols["parameters"]
+        local_vars = self.symbols["model_local_variables"]
+        context = {
+            "endogenous_present": {v: y1[i] for i, v in enumerate(endo)},
+            "endogenous_future": {v: y0[i] for i, v in enumerate(endo)},
+            "endogenous_past": {v: y2[i] for i, v in enumerate(endo)},
+            "exogenous": {v: e[i] for i, v in enumerate(exo)},
+            "parameters": {v: p[i] for i, v in enumerate(params)},
+            "local_variables": self.locals,
+        }
+        ast = self.data["modfile"]["abstract_syntax_tree"]
+        assert r.shape[0] == len(ast)
+        r = np.array(json_safe_eval(eq, context) for eq in ast)
