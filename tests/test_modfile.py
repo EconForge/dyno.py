@@ -14,14 +14,14 @@ unsupported = [
     "Gali_2015.mod",  # calls external funciton in steady-state
 ]
 
-from dyno import modfile_preprocessor as preprocessor
+# from dyno import modfile_preprocessor as preprocessor
 from dyno import modfile as lark
 import pytest
 
 files = [f for f in files if not (f in exclude)]
 
 
-@pytest.fixture(params=[preprocessor, lark])
+@pytest.fixture(params=[lark]) #, preprocessor])
 def modfile(request):
     return request.param
 

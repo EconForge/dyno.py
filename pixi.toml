@@ -24,6 +24,7 @@ pytest-cov = ">=4.0.0"
 
 [feature.test.tasks]
 test = "pytest --cov=dyno --durations=0 -vv tests/"
+ci-test = "pytest --cov=./ --cov-report=xml"
 
 [feature.lint.dependencies]
 mypy = ">=1.0.0"
@@ -36,6 +37,7 @@ black = ">=24.10.0"
 [feature.lint.tasks]
 typecheck = "mypy dyno --ignore-missing-imports"
 black = "black"
+ci-qc = "black . --check"
 
 [feature.gui.dependencies]
 mock = ">=5.1.0"
@@ -67,7 +69,15 @@ python-markdown-math = ">=0.8"
 [feature.docs.tasks]
 docs = "mkdocs serve"
 
+[feature.py310.dependencies]
+python = "3.10.*"
+
+[feature.py311.dependencies]
+python = "3.11.*"
+
 [environments]
 prod = ["base", "gui", "jupyter"]
 test = ["base", "test", "gui", "jupyter"]
 dev = ["base", "test", "gui", "lint", "jupyter", "docs"]
+py310 = ["base", "test", "lint", "py310"]
+py311 = ["base", "test", "lint", "py311"]

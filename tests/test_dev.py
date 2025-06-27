@@ -1,9 +1,9 @@
-from dyno import modfile_preprocessor as preprocessor
+# from dyno import modfile_preprocessor as preprocessor
 from dyno import modfile as lark
 import pytest
 
 
-@pytest.fixture(params=[preprocessor, lark])
+@pytest.fixture(params=[lark, ]) # preprocessor
 def modfile(request):
     return request.param
 

@@ -1,0 +1,32 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["py310", "py311"] # "py312" ] # requires dolang to move dependencies up
+
+    name: Dyno Python Version ${{ matrix.python-version }}
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Install Pixi
+        uses: prefix-dev/setup-pixi@v0.8.10
+
+      - name: Code Quality
+        run: pixi run -e ${{ matrix.python-version }} ci-qc
+
+      - name: Test with pytest
+        run: pixi run -e ${{ matrix.python-version }} ci-test 
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./coverage.xml
+          flags: unittests
