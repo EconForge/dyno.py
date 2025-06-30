@@ -21,7 +21,7 @@ def dyno_gui(filename, parchoice={}):
 
     txt = open(filename).read()
 
-    from dyno.modfile import Modfile
+    from dyno.modfile_preprocessor import Modfile
 
     model = Modfile(txt=txt)
     dr0 = model.solve()
@@ -113,7 +113,7 @@ def dyno_gui(filename, parchoice={}):
             else:
                 method = "ti"
 
-            parms = {k: v for k, v in parameters.items()}
+            parms = {k: float(v.value) for k, v in parameters.items()}
 
             dr.value = model.solve(method=method, calibration=parms)
 

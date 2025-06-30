@@ -12,7 +12,9 @@ from typing import Callable, overload, Literal, Any
 from typing_extensions import Self
 from .typedefs import TVector, TMatrix, IRFType, Solver, SymbolType, DynamicFunction
 from pandas import DataFrame
-from .language import Normal
+from .language import Exogenous, Normal, Deterministic, ProductNormal
+
+from dyno.util_json import get_allowed_functions, UnsupportedDynareFeature
 
 
 class RecursiveSolution:
@@ -57,14 +59,132 @@ class RecursiveSolution:
 class Model(ABC):
     """Abstract class representing an economic model"""
 
+    name: str | None
+    """Name of the model if described in input"""
+
     symbols: dict[SymbolType, list[str]]
-    exogenous: Normal
-    __functions__: dict[Literal["dynamic"], DynamicFunction]
+    """Symbols dictionary, allowed keys are 'endogenous', 'exogenous' and 'parameters'"""
+
+    equations: list[str]
+    """List of the equations of the model written in the form LHS = RHS"""
+
+    calibration: dict[str, float]
+    """Dictionary of parameter values and initial values of endogenous and exogenous variables"""
+
+    exogenous: Exogenous | None
+    """Description of shocks on exogenous variables, only stochastic shocks are supported for now"""
+
+    _dynamic: DynamicFunction
+    """Temporary storage for dynamic method"""
+
+    data: Any
+    """Format-dependant internal representation of the data"""
+
+    def __init__(
+        self: Self, filename: str | None = None, txt: str | None = None
+    ) -> None:
+        match filename, txt:
+            case (None, None):
+                raise ValueError(
+                    "Neither the file name nor content were passed to constructor. One of the two should be passed."
+                )
+            case (filename, None):
+                assert filename is not None  # to reassure Mypy
+                self.import_file(filename)
+            case (None, txt):
+                assert txt is not None
+                self.import_model(txt)
+            case _:
+                raise ValueError(
+                    "File name and content were both passed to constructor. Only one of the two should be passed."
+                )
+        self._set_name()
+        self._set_symbols()
+        self._set_equations()
+        self._set_calibration()
+        self._set_exogenous()
+        self._set_dynamic()
+
+    def _set_name(self: Self) -> None:
+        # should be overridden for file types with name information
+        self.name = None
 
     @abstractmethod
-    def get_calibration(self: Self) -> dict[str, float]:
-        """Returns a dictionary containing the value of each parameter and variable of the model, indexed by their symbols"""
+    def _set_symbols(self: Self) -> None:
         pass
+
+    @abstractmethod
+    def _set_equations(self: Self) -> None:
+        pass
+
+    @abstractmethod
+    def _set_calibration(self: Self) -> None:
+        pass
+
+    @abstractmethod
+    def _set_exogenous(self: Self) -> None:
+        pass
+
+    @abstractmethod
+    def import_model(self: Self, txt: str) -> None:
+        """sets data attribute from model text description"""
+        pass
+
+    def import_file(self: Self, filename: str) -> None:
+        """sets data attribute from file"""
+        txt = open(filename, "rt", encoding="utf-8").read()
+        assert txt is not None
+        return self.import_model(txt)
+
+    def get_calibration(self, **kwargs):
+        c = self.calibration.copy()
+        c.update(**kwargs)
+        return c
+
+    @property
+    def variables(self):
+        return self.symbols["endogenous"] + self.symbols["exogenous"]
+
+    @property
+    def parameters(self):
+        return self.symbols["parameters"]
+
+    def _set_dynamic(self: Self) -> None:
+        """generates dynamic method from the equations of the model using Dolang"""
+        from dolang import stringify
+
+        str_equations = [stringify(eq) for eq in self.equations]
+
+        equations = []
+        for streq in str_equations:
+            lst = streq.split("=")
+
+            match len(lst):
+                case 1:
+                    eq = streq.strip()
+                case 2:
+                    eq = f"({lst[0].strip()}) - ({lst[1].strip()})"
+                case _:
+                    raise ValueError("More than one equation on the same line")
+
+            equations.append(eq)
+
+        dict_eq = {f"out{i+1}": eq for i, eq in enumerate(equations)}
+        symbols = self.symbols
+        from dolang.symbolic import stringify_symbol
+        from dolang.function_compiler import FlatFunctionFactory as FFF
+        from dolang.function_compiler import make_method_from_factory
+
+        spec = dict(
+            y_f=[stringify_symbol((e, 1)) for e in symbols["endogenous"]],
+            y_0=[stringify_symbol((e, 0)) for e in symbols["endogenous"]],
+            y_p=[stringify_symbol((e, -1)) for e in symbols["endogenous"]],
+            e=[stringify_symbol((e, 0)) for e in symbols["exogenous"]],
+            p=[stringify_symbol(e) for e in symbols["parameters"]],
+        )
+        fff = FFF(dict(), dict_eq, spec, "f_dynamic")
+        fun = make_method_from_factory(fff, compile=False, debug=False)
+        self._dynamic = fun
 
     def describe(self: Self) -> str:
         """Returns a string representation of the model's symbols"""
@@ -118,7 +238,7 @@ symbols: {self.symbols}
             value of f(y0, y1, y2, e, p), as well as partial derivatives w.r.t. y0, y1, y2 and e if diff is set to True
         """
         r = np.zeros(len(y0))
-        self.__functions__["dynamic"](y0, y1, y2, e, p, r)
+        self._dynamic(y0, y1, y2, e, p, r)
         d = np.zeros(len(self.symbols["exogenous"]))
 
         if diff:
@@ -197,14 +317,17 @@ symbols: {self.symbols}
 
         v = self.symbols["endogenous"]
         e = self.symbols["exogenous"]
-
-        Σ = self.exogenous.Σ
-
-        # a bit stupid
-        c = self.get_calibration(**calibration)
-        v = self.symbols["endogenous"]
         p = self.symbols["parameters"]
 
+        # TODO add support for Deterministic
+        assert isinstance(self.exogenous, Normal) or isinstance(
+            self.exogenous, ProductNormal
+        )
+        Σ = self.exogenous.Σ
+
+        c = self.get_calibration(**calibration)
+
+        # a bit stupid
         endogenous_values = [c[e] for e in v]
         parameter_values = [c[e] for e in p]
         # Reshapes necessary for static type checking
@@ -242,3 +365,82 @@ def irfs(
         res[e] = irf(dr, i, type=type)
 
     return res
+
+
+def evaluate(expression: str, calibration: dict[str, float] = {}) -> float:
+    """safely evaluates mathematical expression based on calibration
+
+    Two safety checks are in place to avoid arbitrary code execution :
+        1. The abstract syntax tree of the expression is computed and each of its nodes is checked against a whitelist of allowed AST nodes.
+        2. A dictionary containing only allowed functions is passed to `eval` eliminating the possibility of using arbitrary function calls.
+
+    Parameters
+    ----------
+    expression : str
+        mathematical expression that only makes use of supported functions (see below) and variables defined in calibration
+
+    calibration: dict[str,float], optional
+        dictionary of previously defined variables, by default {}
+
+    Returns
+    -------
+    float
+        result of evaluation
+
+    Note
+    ----
+    - `^` is assumed to be the exponentiation operator and not exclusive or (as opposed to python syntax)
+    - List of supported functions : exp, log, ln, log10, sqrt, cbrt,
+                    sign, abs, max, min, sin, cos, tan, asin, acos,
+                    atan, sinh, cosh, tanh, asinh, acosh, atanh
+
+    Examples
+    --------
+    >>> evaluate("exp(a)", {'a': 1})
+    2.718281828459045
+    >>> evaluate("a^b", {'a': 2, 'b': 4})
+    16.0
+    >>> evaluate("cbrt(8)")
+    2.0
+    >>> evaluate("(x > 0) + (x < 0.5)", {'x': 0.25})
+    2.0
+    """
+    import ast
+
+    expression = expression.replace("^", "**")
+    tree = ast.parse(expression, mode="eval")
+
+    whitelist = (
+        ast.Expression,
+        ast.Call,
+        ast.Name,
+        ast.Load,
+        ast.BinOp,
+        ast.UnaryOp,
+        ast.operator,
+        ast.unaryop,
+        ast.cmpop,
+        ast.Num,
+        ast.Compare,
+    )
+
+    valid = all(isinstance(node, whitelist) for node in ast.walk(tree))
+
+    if valid:
+        safe_dict = get_allowed_functions()
+        safe_dict.update(calibration)
+        try:
+            return float(
+                eval(
+                    compile(tree, filename="", mode="eval"),
+                    {"__builtins__": None},
+                    safe_dict,
+                )
+            )
+        except (UnsupportedDynareFeature, NameError, TypeError) as e:
+            print(f"Error evaluating: {expression}")
+            print(f"Calibration:\n{calibration}")
+            raise UnsupportedDynareFeature("Function or operator not supported (yet)")
+
+    else:
+        raise ValueError("Invalid Mathematical expression")
