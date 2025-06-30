@@ -107,6 +107,10 @@ def json_safe_eval(ast: dict[str, Any], context: dict[str, dict[str, Any]]):
                     return float(arg1 == arg2)
                 case "!=":
                     return float(arg1 != arg2)
+                case "max":
+                    return float(max(arg1, arg2))
+                case "min":
+                    return float(min(arg1, arg2))
                 case _:
                     raise ValueError("Unknown binary operator")
 
