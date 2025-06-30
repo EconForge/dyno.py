@@ -113,7 +113,7 @@ def dyno_gui(filename, parchoice={}):
             else:
                 method = "ti"
 
-            parms = {k: v for k, v in parameters.items()}
+            parms = {k: float(v.value) for k, v in parameters.items()}
 
             dr.value = model.solve(method=method, calibration=parms)
 
