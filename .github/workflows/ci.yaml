@@ -9,30 +9,23 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12" ]
+        python-version: ["py310", "py311"] # "py312" ] # requires dolang to move dependencies up
 
-    name: Dolo Python Version ${{ matrix.python-version }}
+    name: Dyno Python Version ${{ matrix.python-version }}
     steps:
-
+    
       - uses: actions/checkout@v3
 
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          architecture: x64
+      - name: Install Pixi
+        uses: prefix-dev/setup-pixi@v0.8.10
 
-      - name: Install Poetry
-        uses: Gr1N/setup-poetry@v8
-
-      - name: Install dependencies
-        run: poetry install
-        
       - name: Code Quality
-        run: poetry run black . --check
+        run: pixi run --environment dev black . --check
+        run: pixi run --environment ${{ matrix.python-version }} black . --check
 
       - name: Test with pytest
-        run: poetry run pytest --cov=./ --cov-report=xml
+        run: pixi run --environment test pytest --cov=./ --cov-report=xml
+        run: pixi run --environment ${{ matrix.python-version }} pytest --cov=./ --cov-report=xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
