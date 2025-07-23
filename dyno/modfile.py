@@ -10,7 +10,7 @@ from .typedefs import TVector, TMatrix
 
 class Modfile(Model):
 
-    def import_model(self: Self, txt: str, deriv_order = 1, params_deriv_order = 0) -> None:
+    def import_model(self: Self, txt: str, deriv_order=1, params_deriv_order=0) -> None:
         """imports model written in `.mod` format into data attribute using Dynare's preprocessor
 
         Parameters
@@ -37,7 +37,7 @@ class Modfile(Model):
 
     def _set_exogenous(self: Self) -> None:
         self.exogenous = None
-        assert(len(self.data.trajectories) == 0 or len(self.data.covariances) == 0)
+        assert len(self.data.trajectories) == 0 or len(self.data.covariances) == 0
         isdeterministic = len(self.data.trajectories) > 0
         exo = self.symbols["exogenous"]
         if isdeterministic:
@@ -45,11 +45,11 @@ class Modfile(Model):
             for var, traj in self.data.trajectories.items():
                 for p1, p2, val in traj:
                     pad_list(det_vals[var], p2)
-                    det_vals[var][p1 - 1: p2] = [val] * (p2 - p1 + 1)
+                    det_vals[var][p1 - 1 : p2] = [val] * (p2 - p1 + 1)
             self.exogenous = Deterministic(det_vals)
         else:
             n = len(exo)
-            covar = np.zeros((n,n))
+            covar = np.zeros((n, n))
             index = {name: i for (i, name) in enumerate(exo)}
             for (var1, var2), val in self.data.covariances.items():
                 covar[index[var1], index[var2]] = val
@@ -58,7 +58,6 @@ class Modfile(Model):
 
     def _set_dynamic(self: Self) -> None:
         pass
-
 
     def dynamic(
         self: Self,
@@ -87,19 +86,19 @@ class Modfile(Model):
         Vector|tuple[Vector, Matrix, Matrix, Matrix, Matrix]
             value of f(y0, y1, y2, e, p), as well as partial derivatives w.r.t. y0, y1, y2 and e if diff is set to True
         """
-        
+
         y0 = list(y0)
         y1 = list(y1)
         y2 = list(y2)
         e = list(e)
         p = list(p)
-        args = [y0,y1,y2,e,e,p]
+        args = [y0, y1, y2, e, e, p]
         if isinstance(self.exogenous, Deterministic):
             args[3] = []
         else:
             args[4] = []
         r = np.array(self.data.dynamic_function(*args))
-        
+
         if diff:
             jacobians = self.data.jacobians(*args)
             if isinstance(self.exogenous, Deterministic):
@@ -108,13 +107,19 @@ class Modfile(Model):
                 del jacobians[4]
             n = len(self.equations)
             lengths = [n] * 3 + [len(e), len(p)]
-            r1, r2, r3, r4 = [sparse_to_dense(n, length, j) for (j,length) in zip(jacobians[:-1], lengths)]
+            r1, r2, r3, r4 = [
+                sparse_to_dense(n, length, j)
+                for (j, length) in zip(jacobians[:-1], lengths)
+            ]
             return r, r1, r2, r3, r4
-        
+
         return r
 
-def sparse_to_dense(lines: int, cols: int, sparse: dict[tuple[int,int], float]) -> TMatrix:
-    res = np.zeros((lines,cols))
-    for (i,j),v in sparse.items():
-        res[i,j] = v
+
+def sparse_to_dense(
+    lines: int, cols: int, sparse: dict[tuple[int, int], float]
+) -> TMatrix:
+    res = np.zeros((lines, cols))
+    for (i, j), v in sparse.items():
+        res[i, j] = v
     return res

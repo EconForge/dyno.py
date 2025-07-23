@@ -128,6 +128,7 @@ class YAMLFile(Model):
         # equations = [f"({stringify(eq.children[1])})-({stringify(eq.children[0])})"  for eq in tree.children]
         self.equations = [str_expression(eq) for eq in self._tree.children]
 
+
 class UnsupportedDynareFeature(Exception):
 
     pass
