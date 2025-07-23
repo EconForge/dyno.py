@@ -21,7 +21,7 @@ def dyno_gui(filename, parchoice={}):
 
     txt = open(filename).read()
 
-    from dyno.modfile_preprocessor import Modfile
+    from dyno.modfile import Modfile
 
     model = Modfile(txt=txt)
     dr0 = model.solve()
