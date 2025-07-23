@@ -10,25 +10,18 @@ files = [
 exclude = ["NK_baseline.mod"]  # uses an external steady_state file
 
 unsupported = [
+    "example1.mod", # Uses native statement
     "example3.mod",  # calls steady_state function
     "Gali_2015.mod",  # calls external funciton in steady-state
 ]
 
-# from dyno import modfile_preprocessor as preprocessor
-from dyno import modfile as lark
+from dyno import modfile
 import pytest
 
 files = [f for f in files if not (f in exclude)]
 
-
-@pytest.fixture(params=[lark])  # , preprocessor])
-def modfile(request):
-    return request.param
-
-
-# @pytest.mark.nondestructive
 @pytest.mark.parametrize("filename", files)
-def test_modfile_import(filename, modfile):
+def test_modfile_import(filename):
 
     f = filename
 
@@ -43,9 +36,6 @@ def test_modfile_import(filename, modfile):
         assert True
 
     except Exception as e:
-
-        from dyno.util_json import UnsupportedDynareFeature
-
         assert f in unsupported
 
-        assert isinstance(e, UnsupportedDynareFeature)
+        assert isinstance(e, modfile.UnsupportedFeatureException)

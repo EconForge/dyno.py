@@ -10,7 +10,7 @@ platforms = ["linux-64"]
 python = ">=3.10,<3.13"
 
 [feature.base.dependencies]
-dynare-preprocessor-pylib = "*"
+dynare-preprocessor-pylib = "0.0.0.dev1.*"
 dolang = ">=0.0.20"
 numpy = ">=2.0.0"
 scipy = ">=1.12.0"

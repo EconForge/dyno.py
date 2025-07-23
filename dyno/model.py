@@ -14,8 +14,6 @@ from .typedefs import TVector, TMatrix, IRFType, Solver, SymbolType, DynamicFunc
 from pandas import DataFrame
 from .language import Exogenous, Normal, Deterministic, ProductNormal
 
-from dyno.util_json import get_allowed_functions, UnsupportedDynareFeature
-
 
 class RecursiveSolution:
     """VAR(1) representing a linearized model
@@ -365,82 +363,3 @@ def irfs(
         res[e] = irf(dr, i, type=type)
 
     return res
-
-
-def evaluate(expression: str, calibration: dict[str, float] = {}) -> float:
-    """safely evaluates mathematical expression based on calibration
-
-    Two safety checks are in place to avoid arbitrary code execution :
-        1. The abstract syntax tree of the expression is computed and each of its nodes is checked against a whitelist of allowed AST nodes.
-        2. A dictionary containing only allowed functions is passed to `eval` eliminating the possibility of using arbitrary function calls.
-
-    Parameters
-    ----------
-    expression : str
-        mathematical expression that only makes use of supported functions (see below) and variables defined in calibration
-
-    calibration: dict[str,float], optional
-        dictionary of previously defined variables, by default {}
-
-    Returns
-    -------
-    float
-        result of evaluation
-
-    Note
-    ----
-    - `^` is assumed to be the exponentiation operator and not exclusive or (as opposed to python syntax)
-    - List of supported functions : exp, log, ln, log10, sqrt, cbrt,
-                    sign, abs, max, min, sin, cos, tan, asin, acos,
-                    atan, sinh, cosh, tanh, asinh, acosh, atanh
-
-    Examples
-    --------
-    >>> evaluate("exp(a)", {'a': 1})
-    2.718281828459045
-    >>> evaluate("a^b", {'a': 2, 'b': 4})
-    16.0
-    >>> evaluate("cbrt(8)")
-    2.0
-    >>> evaluate("(x > 0) + (x < 0.5)", {'x': 0.25})
-    2.0
-    """
-    import ast
-
-    expression = expression.replace("^", "**")
-    tree = ast.parse(expression, mode="eval")
-
-    whitelist = (
-        ast.Expression,
-        ast.Call,
-        ast.Name,
-        ast.Load,
-        ast.BinOp,
-        ast.UnaryOp,
-        ast.operator,
-        ast.unaryop,
-        ast.cmpop,
-        ast.Num,
-        ast.Compare,
-    )
-
-    valid = all(isinstance(node, whitelist) for node in ast.walk(tree))
-
-    if valid:
-        safe_dict = get_allowed_functions()
-        safe_dict.update(calibration)
-        try:
-            return float(
-                eval(
-                    compile(tree, filename="", mode="eval"),
-                    {"__builtins__": None},
-                    safe_dict,
-                )
-            )
-        except (UnsupportedDynareFeature, NameError, TypeError) as e:
-            print(f"Error evaluating: {expression}")
-            print(f"Calibration:\n{calibration}")
-            raise UnsupportedDynareFeature("Function or operator not supported (yet)")
-
-    else:
-        raise ValueError("Invalid Mathematical expression")

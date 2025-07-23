@@ -1,220 +1,120 @@
-import os
-import dolang
-from lark import Token, Lark
+from dynare_preprocessor import DynareModel, UnsupportedFeatureException
+from dyno.model import Model
+from dyno.language import pad_list, Normal, Deterministic
 import numpy as np
 
-
-# def ast_to_yaml(node, indent=""):
-#     indent += "  "
-#     if isinstance(node, Token):
-#         yield f"{indent}- type: {node.type}"
-#         yield f"{indent}  value: {repr(node.value)}"
-#     else:
-#         yield f"{indent}- type: {node.data}"
-#         yield f"{indent}  children:"
-#         for child in node.children:
-#             yield from ast_to_yaml(child, indent)
-
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-
-modfile_grammar = open(f"{dir_path}/modfile_grammar.lark").read()
-modfile_parser = Lark(modfile_grammar, propagate_positions=True)
-
-from dyno.util_json import UnsupportedDynareFeature
-
-from dyno.model import Model
-from lark import Visitor
-
-
-class CheckFunCalls(Visitor):
-
-    def call(self, tree):
-
-        funname = tree.children[0].value
-        if funname == "steady_state":
-            raise UnsupportedDynareFeature(
-                "Calling 'steady_state' value within model is not supported (yet)."
-            )
-        else:
-            accepted = ["sin", "cos", "exp", "log"]
-            if funname not in accepted:
-                raise UnsupportedDynareFeature(
-                    f"Calling external function `{funname}` is not allowed."
-                )
+from typing_extensions import Self
+from typing import Any
+from .typedefs import TVector, TMatrix
 
 
 class Modfile(Model):
 
-    def import_model(self, txt):
-        try:
-            self.data = modfile_parser.parse(txt)
-        except Exception as e:
-            raise e
-        self._check_supported()
+    def import_model(self: Self, txt: str, deriv_order = 1, params_deriv_order = 0) -> None:
+        """imports model written in `.mod` format into data attribute using Dynare's preprocessor
 
-    def _check_supported(self):
-        CheckFunCalls().visit(self.data)
+        Parameters
+        ----------
+        txt : str
+            the model being imported in `.mod` form
+        """
+        self.data = DynareModel(txt, deriv_order, params_deriv_order)
 
-    def _set_exogenous(self):
+    def _set_symbols(self: Self) -> None:
+        """sets symbols attribute of Model"""
+        self.symbols = {}
+        self.symbols["endogenous"] = self.data.endogenous
+        self.symbols["exogenous"] = self.data.exogenous + self.data.exogenous_det
+        self.symbols["parameters"] = self.data.parameters
 
-        import numpy as np
-        from dyno.language import Normal
+    def _set_equations(self: Self) -> None:
+        """sets equations attribute of Model"""
+        self.equations = self.data.equations
 
-        ne = len(self.symbols["exogenous"])
+    def _set_calibration(self: Self) -> None:
+        """retrieves calibration values"""
+        self.calibration = self.data.context
 
-        Sigma = np.zeros((ne, ne))
+    def _set_exogenous(self: Self) -> None:
+        self.exogenous = None
+        assert(len(self.data.trajectories) == 0 or len(self.data.covariances) == 0)
+        isdeterministic = len(self.data.trajectories) > 0
+        exo = self.symbols["exogenous"]
+        if isdeterministic:
+            det_vals = {v: [] for v in exo}
+            for var, traj in self.data.trajectories.items():
+                for p1, p2, val in traj:
+                    pad_list(det_vals[var], p2)
+                    det_vals[var][p1 - 1: p2] = [val] * (p2 - p1 + 1)
+            self.exogenous = Deterministic(det_vals)
+        else:
+            n = len(exo)
+            covar = np.zeros((n,n))
+            index = {name: i for (i, name) in enumerate(exo)}
+            for (var1, var2), val in self.data.covariances.items():
+                covar[index[var1], index[var2]] = val
+                covar[index[var2], index[var1]] = val
+            self.exogenous = Normal(Σ=covar)
 
-        for l in self.data.children:
-
-            if l.data.value == "shocks_block":
-
-                for ch in l.children:
-
-                    if (
-                        ch.data.value == "setstdvar_stmt"
-                        or ch.data.value == "setvar_stmt"
-                    ):
-
-                        k = ch.children[0].children[0].value
-                        ve = ch.children[1]  # .value
-
-                        if isinstance(ve, str):
-                            v = ve
-                        else:
-                            v = dolang.str_expression(ve)
-
-                        from math import exp
-
-                        context = {"exp": exp}
-                        cc = self.calibration.copy()
-                        vv = eval(v.replace("^", "**"), context, cc)
-                        i = self.symbols["exogenous"].index(k)
-                        if ch.data.value == "setstdvar_stmt":
-                            Sigma[i, i] = vv**2
-                        else:
-                            Sigma[i, i] = vv
-
-                    elif ch.data.value == "setcovar_stmt":
-
-                        k = ch.children[0].children[0].value
-                        l = ch.children[1].children[0].value
-                        ve = ch.children[2]
-
-                        if isinstance(ve, str):
-                            v = ve
-                        else:
-                            v = dolang.str_expression(ve)
-
-                        context = {"exp": exp}
-                        cc = self.calibration.copy()
-
-                        vv = eval(v.replace("^", "**"), context, cc)
-
-                        i = self.symbols["exogenous"].index(k)
-                        j = self.symbols["exogenous"].index(l)
-
-                        Sigma[i, j] = vv
-                        Sigma[j, i] = vv
-
-        self.exogenous = Normal(Σ=Sigma)
-
-    def _set_calibration(self):
-        calibration = {}
-        for l in self.data.children:
-
-            if l.data.value == "parassignment":
-
-                k = l.children[0].children[0].value
-                ve = l.children[1]
-
-                v = dolang.str_expression(ve)
-                try:
-                    vv = eval(v.replace("^", "**"))
-                except:
-                    vv = v
-
-                calibration[k] = vv
-
-            elif l.data.value == "initval_block":
-                for ll in l.children:
-                    k = ll.children[0].children[0].value
-                    ve = ll.children[1]
-
-                    v = dolang.str_expression(ve)
-                    try:
-                        vv = eval(v.replace("^", "**"))  # code injection risk?
-                    except:
-                        vv = v
-                    calibration[k] = vv
-
-            elif l.data.value == "steady_block":
-                for ll in l.children:
-                    k = ll.children[0].children[0].value
-                    ve = ll.children[1]
-
-                    v = dolang.str_expression(ve)
-                    try:
-                        vv = eval(v.replace("^", "**"))
-                    except:
-                        vv = v
-                    calibration[k] = vv
-
-        for k in self.symbols["endogenous"] + self.symbols["exogenous"]:
-            if k not in calibration.keys():
-                calibration[k] = 0.0
-
-        for k in self.symbols["parameters"]:
-            if k not in calibration.keys():
-                calibration[k] = np.nan
-
-        self.calibration = calibration
-
-    def _set_symbols(self):
-
-        # so far we discard latex and names
-        get_name = lambda x: x.children[0].children[0].value
-
-        dfs = []
-        for l in self.data.children:
-            if l.data.value == "var_statement":
-                for tp in l.children:
-                    name = get_name(tp)
-                    dfs.append((name, "endogenous"))
-            elif l.data.value == "varexo_statement":
-                for tp in l.children:
-                    name = get_name(tp)
-                    dfs.append((name, "exogenous"))
-            elif l.data.value == "par_statement":
-                for tp in l.children:
-                    name = get_name(tp)
-                    dfs.append((name, "parameters"))
-
-        self.symbols = {
-            "endogenous": tuple(e[0] for e in dfs if e[1] == "endogenous"),
-            "exogenous": tuple(e[0] for e in dfs if e[1] == "exogenous"),
-            "parameters": tuple(e[0] for e in dfs if e[1] == "parameters"),
-        }
-
-    def _set_equations(self):
-
-        mod = self
-        variables = mod.variables
-
-        mm = [e for e in mod.data.children if e.data == "model_block"]
-        assert len(mm) == 1
-
-        from dolang.grammar import sanitize, str_expression, stringify, stringify_symbol
-
-        symbols = self.symbols
-        variables = self.variables
-
-        self.equations = []
-        for ll in mm[0].children:
-            eq_tree = ll.children[-1]
-            eq = sanitize(eq_tree, variables=variables)
-            streq = str_expression(eq)
-            self.equations.append(streq)
+    def _set_dynamic(self: Self) -> None:
+        pass
 
 
-4
+    def dynamic(
+        self: Self,
+        y0: TVector,
+        y1: TVector,
+        y2: TVector,
+        e: TVector,
+        p: TVector,
+        diff: bool = False,
+    ) -> TVector | tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
+        """function f describing the behavior of the dynamic system $f(y_{t+1}, y_t, y_{t-1}, ε_t, p) = 0$
+
+        Parameters
+        ----------
+        y0,y1,y2 : Vector
+            the system's endogenous variable values at times t+1, t and t-1 respectively
+        e : Vector
+            exogenous variable values
+        p : Vector
+            parameter values
+        diff : bool, optional
+            if set to True returns the function's partial derivatives with regards to y0, y1, y2 and e as well, by default False
+
+        Returns
+        -------
+        Vector|tuple[Vector, Matrix, Matrix, Matrix, Matrix]
+            value of f(y0, y1, y2, e, p), as well as partial derivatives w.r.t. y0, y1, y2 and e if diff is set to True
+        """
+        
+        y0 = list(y0)
+        y1 = list(y1)
+        y2 = list(y2)
+        e = list(e)
+        p = list(p)
+        args = [y0,y1,y2,e,e,p]
+        if isinstance(self.exogenous, Deterministic):
+            args[3] = []
+        else:
+            args[4] = []
+        r = np.array(self.data.dynamic_function(*args))
+        
+        if diff:
+            jacobians = self.data.jacobians(*args)
+            if isinstance(self.exogenous, Deterministic):
+                del jacobians[3]
+            else:
+                del jacobians[4]
+            n = len(self.equations)
+            lengths = [n] * 3 + [len(e), len(p)]
+            r1, r2, r3, r4 = [sparse_to_dense(n, length, j) for (j,length) in zip(jacobians[:-1], lengths)]
+            return r, r1, r2, r3, r4
+        
+        return r
+
+def sparse_to_dense(lines: int, cols: int, sparse: dict[tuple[int,int], float]) -> TMatrix:
+    res = np.zeros((lines,cols))
+    for (i,j),v in sparse.items():
+        res[i,j] = v
+    return res
