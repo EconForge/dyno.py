@@ -3,14 +3,14 @@ from numpy.linalg import solve as linsolve
 import numpy as np
 import yaml
 
-from .solver import solve
+from .solver import solve, moments
 from .misc import jacobian
 
 from abc import ABC, abstractmethod
 
 from typing import Callable, overload, Literal, Any
 from typing_extensions import Self
-from .typedefs import TVector, TMatrix, IRFType, Solver, SymbolType, DynamicFunction
+from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
 from pandas import DataFrame
 from .language import Exogenous, Normal, Deterministic, ProductNormal
 
@@ -23,7 +23,7 @@ class RecursiveSolution:
     X, Y, Σ: (N,N) Matrix
         parameters of the stationary VAR process $y_t = Xy_{t-1} + Yε_t$, where Σ is the covariance matrix of $ε_t$
 
-    symbols: dict[SymbolType, list[str]]
+    symbols: dict[str, list[str]]
         dictionary containing the symbols used in the model, the only allowed keys are "endogenous", "exogenous" and "parameters"
 
     x0: N Vector | None
@@ -39,7 +39,7 @@ class RecursiveSolution:
         X: TMatrix,
         Y: TMatrix,
         Σ: TMatrix,
-        symbols: dict[SymbolType, list[str]],
+        symbols: dict[str, list[str]],
         x0: TVector | None = None,
         evs: TVector | None = None,
     ) -> None:
@@ -52,6 +52,51 @@ class RecursiveSolution:
         self.evs = evs
 
         self.symbols = symbols
+    
+    def _repr_html_(self):
+        evv = DataFrame(
+            [np.abs(self.evs)], columns=[i + 1 for i in range(len(self.evs))], index=["λ"]
+        )
+        ss = DataFrame(
+            [self.x0], columns=["{}".format(e) for e in self.symbols["endogenous"]]
+        )
+        hh_y = self.X
+        hh_e = self.Y
+
+        df = DataFrame(
+            np.concatenate([hh_y, hh_e], axis=1),
+            columns=["{}[t-1]".format(e) for e in self.symbols["endogenous"]]
+            + ["{}[t]".format(e) for e in (self.symbols["exogenous"])],
+        )
+        df.index = ["{}[t]".format(e) for e in self.symbols["endogenous"]]
+
+        Σ0, Σ = moments(self.X, self.Y, self.Σ)
+
+        df_cmoments = DataFrame(
+            Σ0,
+            columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+            index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        )
+
+        df_umoments = DataFrame(
+            Σ,
+            columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+            index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        )
+
+        html = f"""
+        <h3>Eigenvalues</h3>
+        {evv.to_html()}
+        <h3>Steady-state</h3>
+        {ss.to_html()}
+        <h3>Decision Rule</h3>
+        {df.to_html()}
+        <h3>Unconditional moments</h3>
+        {df_umoments.to_html()}
+        <h3>Conditional moments</h3>
+        {df_cmoments.to_html()}
+        """
+        return html
 
 
 class Model(ABC):
@@ -60,7 +105,7 @@ class Model(ABC):
     name: str | None
     """Name of the model if described in input"""
 
-    symbols: dict[SymbolType, list[str]]
+    symbols: dict[str, list[str]]
     """Symbols dictionary, allowed keys are 'endogenous', 'exogenous' and 'parameters'"""
 
     equations: list[str]
