@@ -90,7 +90,7 @@ class RecursiveSolution:
         <h3>Eigenvalues</h3>
         {evv.to_html()}
         <h3>Steady-state</h3>
-        {ss.to_html()}
+        {ss.to_html(index=False)}
         <h3>Decision Rule</h3>
         {df.to_html()}
         <h3>Unconditional moments</h3>
