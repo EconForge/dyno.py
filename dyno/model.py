@@ -52,10 +52,12 @@ class RecursiveSolution:
         self.evs = evs
 
         self.symbols = symbols
-    
+
     def _repr_html_(self):
         evv = DataFrame(
-            [np.abs(self.evs)], columns=[i + 1 for i in range(len(self.evs))], index=["λ"]
+            [np.abs(self.evs)],
+            columns=[i + 1 for i in range(len(self.evs))],
+            index=["λ"],
         )
         ss = DataFrame(
             [self.x0], columns=["{}".format(e) for e in self.symbols["endogenous"]]
