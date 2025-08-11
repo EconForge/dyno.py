@@ -24,6 +24,13 @@ backend = { name = "pixi-build-python", version = "==0.3.2" }
 [package.host-dependencies] 
 hatchling = "==1.26.3"
 
+[package.run-dependencies]
+dynare-preprocessor-pylib = "0.0.0.dev1.*"
+numpy = ">=2.0.0"
+scipy = ">=1.12.0"
+pandas = ">=2.2.2"
+typing_extensions = ">=4.12.0"
+
 [feature.test.dependencies]
 pytest = ">=8.3.3"
 coverage = ">=6.4.4"
