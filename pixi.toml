@@ -1,8 +1,6 @@
 [workspace]
-name = "dyno"
 authors = ["Pablo Winant <pablo.winant@gmail.com>","Ousema Bouaneni <ousema.bouaneni@polytechnique.edu>"]
 description = "Macroeconomic model solver"
-version = "0.1.5"
 channels = ["conda-forge"]
 preview = ["pixi-build"]
 platforms = ["linux-64"]
