@@ -16,7 +16,11 @@ scipy = ">=1.12.0"
 pandas = ">=2.2.2"
 typing_extensions = ">=4.12.0"
 
-[package.build] 
+[package]
+name = "dyno"
+version = "0.1.5"
+
+[package.build]
 backend = { name = "pixi-build-python", version = "==0.3.2" }
 
 [package.host-dependencies] 
