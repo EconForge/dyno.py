@@ -11,9 +11,9 @@ from abc import ABC, abstractmethod
 from typing import Callable, overload, Literal, Any
 from typing_extensions import Self
 from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
-from pandas import DataFrame
+import pandas as pd
 from .language import Exogenous, Normal, Deterministic, ProductNormal
-
+import plotly.express as px
 
 class RecursiveSolution:
     """VAR(1) representing a linearized model
@@ -42,6 +42,7 @@ class RecursiveSolution:
         symbols: dict[str, list[str]],
         x0: TVector | None = None,
         evs: TVector | None = None,
+        model = None
     ) -> None:
 
         self.x0 = x0
@@ -52,20 +53,21 @@ class RecursiveSolution:
         self.evs = evs
 
         self.symbols = symbols
+        self._model = model
 
     def _repr_html_(self):
-        evv = DataFrame(
+        evv = pd.DataFrame(
             [np.abs(self.evs)],
             columns=[i + 1 for i in range(len(self.evs))],
             index=["λ"],
         )
-        ss = DataFrame(
+        ss = pd.DataFrame(
             [self.x0], columns=["{}".format(e) for e in self.symbols["endogenous"]]
         )
         hh_y = self.X
         hh_e = self.Y
 
-        df = DataFrame(
+        df = pd.DataFrame(
             np.concatenate([hh_y, hh_e], axis=1),
             columns=["{}[t-1]".format(e) for e in self.symbols["endogenous"]]
             + ["{}[t]".format(e) for e in (self.symbols["exogenous"])],
@@ -74,17 +76,27 @@ class RecursiveSolution:
 
         Σ0, Σ = moments(self.X, self.Y, self.Σ)
 
-        df_cmoments = DataFrame(
+        df_cmoments = pd.DataFrame(
             Σ0,
             columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
             index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
         )
 
-        df_umoments = DataFrame(
+        df_umoments = pd.DataFrame(
             Σ,
             columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
             index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
         )
+
+        sim = irfs(self._model, self, type="log-deviation")
+        plots = sim_to_nsim(sim)
+
+        fig = px.line(
+            plots, x="t", y="value", color="shock", facet_col="variable", facet_col_wrap=2
+        )
+        fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+        fig.update_yaxes(title_text="", matches=None)
+        fig.update_xaxes(title_text="")
 
         html = f"""
         <h3>Eigenvalues</h3>
@@ -97,6 +109,8 @@ class RecursiveSolution:
         {df_umoments.to_html()}
         <h3>Conditional moments</h3>
         {df_cmoments.to_html()}
+        <h3>IRFs</h3>
+        {fig.to_html()}
         """
         return html
 
@@ -380,13 +394,13 @@ symbols: {self.symbols}
         p0 = np.reshape(parameter_values, len(parameter_values))
 
         return RecursiveSolution(
-            X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0
+            X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0, model=self
         )
 
 
 def irfs(
     model: Model, dr: RecursiveSolution, type: IRFType = "log-deviation"
-) -> dict[str, DataFrame]:
+) -> dict[str, pd.DataFrame]:
     """Impulse response function simulation in response to shocks on each exogenous variable
 
     Parameters
@@ -410,3 +424,12 @@ def irfs(
         res[e] = irf(dr, i, type=type)
 
     return res
+
+def sim_to_nsim(irfs):
+
+    pdf = pd.concat(irfs).reset_index()
+    ppdf = pdf.rename(columns={"level_0": "shock", "level_1": "t"})
+
+    ppdf = ppdf.melt(id_vars=["shock", "t"])
+
+    return ppdf
