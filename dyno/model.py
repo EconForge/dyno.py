@@ -15,6 +15,7 @@ import pandas as pd
 from .language import Exogenous, Normal, Deterministic, ProductNormal
 import plotly.express as px
 
+
 class RecursiveSolution:
     """VAR(1) representing a linearized model
 
@@ -42,7 +43,7 @@ class RecursiveSolution:
         symbols: dict[str, list[str]],
         x0: TVector | None = None,
         evs: TVector | None = None,
-        model = None
+        model=None,
     ) -> None:
 
         self.x0 = x0
@@ -92,7 +93,12 @@ class RecursiveSolution:
         plots = sim_to_nsim(sim)
 
         fig = px.line(
-            plots, x="t", y="value", color="shock", facet_col="variable", facet_col_wrap=2
+            plots,
+            x="t",
+            y="value",
+            color="shock",
+            facet_col="variable",
+            facet_col_wrap=2,
         )
         fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
         fig.update_yaxes(title_text="", matches=None)
@@ -424,6 +430,7 @@ def irfs(
         res[e] = irf(dr, i, type=type)
 
     return res
+
 
 def sim_to_nsim(irfs):
 
