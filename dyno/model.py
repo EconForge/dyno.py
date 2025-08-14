@@ -116,7 +116,7 @@ class RecursiveSolution:
         <h3>Conditional moments</h3>
         {df_cmoments.to_html()}
         <h3>IRFs</h3>
-        {fig.to_html()}
+        {fig.to_html(full_html=False, include_plotlyjs=True)}
         """
         return html
 
