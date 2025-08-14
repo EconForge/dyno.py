@@ -13,6 +13,7 @@ numpy = ">=2.0.0"
 scipy = ">=1.12.0"
 pandas = ">=2.2.2"
 typing_extensions = ">=4.12.0"
+plotly = ">=5.18.0"
 
 [package]
 name = "dyno"
@@ -51,7 +52,6 @@ ci-qc = "black . --check"
 [feature.gui.dependencies]
 mock = ">=5.1.0"
 ipyvuetify = ">=1.8.10"
-plotly = ">=5.18.0"
 solara = ">=1.34.0"
 solara-ui = ">=1.34.0"
 solara-server = ">=1.34.0"
