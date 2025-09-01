@@ -9,6 +9,7 @@ requires-python = ">= 3.11,<3.14"
 version = "0.1.5"
 authors = [{name = "Pablo Winant", email = "pablo.winant@gmail.com"}, {name = "Ousema Bouaneni", email="ousema.bouaneni@polytechnique.edu"}]
 
+
 [tool.pixi.package]
 name = "dyno"
 version = "0.1.5.dev2"
@@ -28,6 +29,7 @@ hatchling = "*"
 [tool.pixi.workspace]
 channels = ["https://prefix.dev/conda-forge"]
 preview = ["pixi-build"]
+platforms = ["win-64", "linux-64", "osx-arm64", "osx-64"]
 
 
 [tool.pixi.pypi-dependencies]
