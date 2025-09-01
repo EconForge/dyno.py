@@ -1,18 +1,8 @@
-# from dyno import modfile_preprocessor as preprocessor
-from dyno import modfile as lark
+from dyno import modfile
 import pytest
 
 
-@pytest.fixture(
-    params=[
-        lark,
-    ]
-)  # preprocessor
-def modfile(request):
-    return request.param
-
-
-def test_modfile_describe(modfile):
+def test_modfile_describe():
     files = [
         # "example1.mod",
         # "example2.mod",

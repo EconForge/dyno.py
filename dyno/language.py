@@ -48,14 +48,11 @@ class Deterministic(Exogenous):
         empty fields are assumed to be zero
     """
 
-    horizon: int
-    """time horizon over which the model will be simulated"""
-
     values: dict[str, list[float]]
     """values taken on by each exogenous variable"""
 
-    def __init__(self, horizon: int, values_dict: dict[str, list[float]]):
-        horizon = max(horizon, max([len(periods) for periods in values_dict.values()]))
+    def __init__(self, values_dict: dict[str, list[float]]):
+        horizon = max([len(periods) for periods in values_dict.values()])
         for var, values in values_dict.items():
             if len(values) < horizon:
                 values_dict[var] = pad_list(values, horizon)

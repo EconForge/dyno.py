@@ -3,18 +3,17 @@ from numpy.linalg import solve as linsolve
 import numpy as np
 import yaml
 
-from .solver import solve
+from .solver import solve, moments
 from .misc import jacobian
 
 from abc import ABC, abstractmethod
 
 from typing import Callable, overload, Literal, Any
 from typing_extensions import Self
-from .typedefs import TVector, TMatrix, IRFType, Solver, SymbolType, DynamicFunction
-from pandas import DataFrame
+from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
+import pandas as pd
 from .language import Exogenous, Normal, Deterministic, ProductNormal
-
-from dyno.util_json import get_allowed_functions, UnsupportedDynareFeature
+import plotly.express as px
 
 
 class RecursiveSolution:
@@ -25,7 +24,7 @@ class RecursiveSolution:
     X, Y, Σ: (N,N) Matrix
         parameters of the stationary VAR process $y_t = Xy_{t-1} + Yε_t$, where Σ is the covariance matrix of $ε_t$
 
-    symbols: dict[SymbolType, list[str]]
+    symbols: dict[str, list[str]]
         dictionary containing the symbols used in the model, the only allowed keys are "endogenous", "exogenous" and "parameters"
 
     x0: N Vector | None
@@ -41,9 +40,10 @@ class RecursiveSolution:
         X: TMatrix,
         Y: TMatrix,
         Σ: TMatrix,
-        symbols: dict[SymbolType, list[str]],
+        symbols: dict[str, list[str]],
         x0: TVector | None = None,
         evs: TVector | None = None,
+        model=None,
     ) -> None:
 
         self.x0 = x0
@@ -54,6 +54,71 @@ class RecursiveSolution:
         self.evs = evs
 
         self.symbols = symbols
+        self._model = model
+
+    def _repr_html_(self):
+        evv = pd.DataFrame(
+            [np.abs(self.evs)],
+            columns=[i + 1 for i in range(len(self.evs))],
+            index=["λ"],
+        )
+        ss = pd.DataFrame(
+            [self.x0], columns=["{}".format(e) for e in self.symbols["endogenous"]]
+        )
+        hh_y = self.X
+        hh_e = self.Y
+
+        df = pd.DataFrame(
+            np.concatenate([hh_y, hh_e], axis=1),
+            columns=["{}[t-1]".format(e) for e in self.symbols["endogenous"]]
+            + ["{}[t]".format(e) for e in (self.symbols["exogenous"])],
+        )
+        df.index = ["{}[t]".format(e) for e in self.symbols["endogenous"]]
+
+        Σ0, Σ = moments(self.X, self.Y, self.Σ)
+
+        df_cmoments = pd.DataFrame(
+            Σ0,
+            columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+            index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        )
+
+        df_umoments = pd.DataFrame(
+            Σ,
+            columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+            index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        )
+
+        sim = irfs(self._model, self, type="log-deviation")
+        plots = sim_to_nsim(sim)
+
+        fig = px.line(
+            plots,
+            x="t",
+            y="value",
+            color="shock",
+            facet_col="variable",
+            facet_col_wrap=2,
+        )
+        fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+        fig.update_yaxes(title_text="", matches=None)
+        fig.update_xaxes(title_text="")
+
+        html = f"""
+        <h3>Eigenvalues</h3>
+        {evv.to_html()}
+        <h3>Steady-state</h3>
+        {ss.to_html(index=False)}
+        <h3>Decision Rule</h3>
+        {df.to_html()}
+        <h3>Unconditional moments</h3>
+        {df_umoments.to_html()}
+        <h3>Conditional moments</h3>
+        {df_cmoments.to_html()}
+        <h3>IRFs</h3>
+        {fig.to_html(full_html=False, include_plotlyjs=True)}
+        """
+        return html
 
 
 class Model(ABC):
@@ -62,7 +127,7 @@ class Model(ABC):
     name: str | None
     """Name of the model if described in input"""
 
-    symbols: dict[SymbolType, list[str]]
+    symbols: dict[str, list[str]]
     """Symbols dictionary, allowed keys are 'endogenous', 'exogenous' and 'parameters'"""
 
     equations: list[str]
@@ -335,13 +400,13 @@ symbols: {self.symbols}
         p0 = np.reshape(parameter_values, len(parameter_values))
 
         return RecursiveSolution(
-            X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0
+            X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0, model=self
         )
 
 
 def irfs(
     model: Model, dr: RecursiveSolution, type: IRFType = "log-deviation"
-) -> dict[str, DataFrame]:
+) -> dict[str, pd.DataFrame]:
     """Impulse response function simulation in response to shocks on each exogenous variable
 
     Parameters
@@ -367,80 +432,11 @@ def irfs(
     return res
 
 
-def evaluate(expression: str, calibration: dict[str, float] = {}) -> float:
-    """safely evaluates mathematical expression based on calibration
+def sim_to_nsim(irfs):
 
-    Two safety checks are in place to avoid arbitrary code execution :
-        1. The abstract syntax tree of the expression is computed and each of its nodes is checked against a whitelist of allowed AST nodes.
-        2. A dictionary containing only allowed functions is passed to `eval` eliminating the possibility of using arbitrary function calls.
+    pdf = pd.concat(irfs).reset_index()
+    ppdf = pdf.rename(columns={"level_0": "shock", "level_1": "t"})
 
-    Parameters
-    ----------
-    expression : str
-        mathematical expression that only makes use of supported functions (see below) and variables defined in calibration
+    ppdf = ppdf.melt(id_vars=["shock", "t"])
 
-    calibration: dict[str,float], optional
-        dictionary of previously defined variables, by default {}
-
-    Returns
-    -------
-    float
-        result of evaluation
-
-    Note
-    ----
-    - `^` is assumed to be the exponentiation operator and not exclusive or (as opposed to python syntax)
-    - List of supported functions : exp, log, ln, log10, sqrt, cbrt,
-                    sign, abs, max, min, sin, cos, tan, asin, acos,
-                    atan, sinh, cosh, tanh, asinh, acosh, atanh
-
-    Examples
-    --------
-    >>> evaluate("exp(a)", {'a': 1})
-    2.718281828459045
-    >>> evaluate("a^b", {'a': 2, 'b': 4})
-    16.0
-    >>> evaluate("cbrt(8)")
-    2.0
-    >>> evaluate("(x > 0) + (x < 0.5)", {'x': 0.25})
-    2.0
-    """
-    import ast
-
-    expression = expression.replace("^", "**")
-    tree = ast.parse(expression, mode="eval")
-
-    whitelist = (
-        ast.Expression,
-        ast.Call,
-        ast.Name,
-        ast.Load,
-        ast.BinOp,
-        ast.UnaryOp,
-        ast.operator,
-        ast.unaryop,
-        ast.cmpop,
-        ast.Num,
-        ast.Compare,
-    )
-
-    valid = all(isinstance(node, whitelist) for node in ast.walk(tree))
-
-    if valid:
-        safe_dict = get_allowed_functions()
-        safe_dict.update(calibration)
-        try:
-            return float(
-                eval(
-                    compile(tree, filename="", mode="eval"),
-                    {"__builtins__": None},
-                    safe_dict,
-                )
-            )
-        except (UnsupportedDynareFeature, NameError, TypeError) as e:
-            print(f"Error evaluating: {expression}")
-            print(f"Calibration:\n{calibration}")
-            raise UnsupportedDynareFeature("Function or operator not supported (yet)")
-
-    else:
-        raise ValueError("Invalid Mathematical expression")
+    return ppdf

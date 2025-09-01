@@ -23,8 +23,6 @@ class YAMLFile(Model):
 
         from dolang.symbolic import remove_timing
 
-        from .model import evaluate
-
         symbols = self.symbols
         calibration = dict()
         for k, v in self.data.get("calibration", {}).items():
@@ -129,3 +127,119 @@ class YAMLFile(Model):
     def _set_equations(self: Self):
         # equations = [f"({stringify(eq.children[1])})-({stringify(eq.children[0])})"  for eq in tree.children]
         self.equations = [str_expression(eq) for eq in self._tree.children]
+
+
+class UnsupportedDynareFeature(Exception):
+
+    pass
+
+
+def get_allowed_functions():
+    from math import exp, log, log10, sqrt
+    from numpy import cbrt, sign
+    from math import sin, cos, tan
+    from math import asin, acos, atan
+    from math import sinh, cosh, tanh
+    from math import asinh, acosh, atanh
+
+    # abs, max and min are builtins
+    safe_list = [
+        exp,
+        log,
+        log10,
+        sqrt,
+        cbrt,
+        sign,
+        abs,
+        max,
+        min,
+        sin,
+        cos,
+        tan,
+        asin,
+        acos,
+        atan,
+        sinh,
+        cosh,
+        tanh,
+        asinh,
+        acosh,
+        atanh,
+    ]
+    safe_dict = {f.__name__: f for f in safe_list}  # type: ignore
+    safe_dict["ln"] = log  # Add alias for compatibility with Dynare
+    return safe_dict
+
+
+def evaluate(expression: str, calibration: dict[str, float] = {}) -> float:
+    """safely evaluates mathematical expression based on calibration
+
+    Two safety checks are in place to avoid arbitrary code execution :
+        1. The abstract syntax tree of the expression is computed and each of its nodes is checked against a whitelist of allowed AST nodes.
+        2. A dictionary containing only allowed functions is passed to `eval` eliminating the possibility of using arbitrary function calls.
+
+    Parameters
+    ----------
+    expression : str
+        mathematical expression that only makes use of supported functions (see below) and variables defined in calibration
+
+    calibration: dict[str,float], optional
+        dictionary of previously defined variables, by default {}
+
+    Returns
+    -------
+    float
+        result of evaluation
+
+    Note
+    ----
+    - `^` is assumed to be the exponentiation operator and not exclusive or (as opposed to python syntax)
+    - List of supported functions : exp, log, ln, log10, sqrt, cbrt,
+                    sign, abs, max, min, sin, cos, tan, asin, acos,
+                    atan, sinh, cosh, tanh, asinh, acosh, atanh
+
+    Examples
+    --------
+    >>> evaluate("exp(a)", {'a': 1})
+    2.718281828459045
+    >>> evaluate("a^b", {'a': 2, 'b': 4})
+    16.0
+    >>> evaluate("cbrt(8)")
+    2.0
+    >>> evaluate("(x > 0) + (x < 0.5)", {'x': 0.25})
+    2.0
+    """
+    import ast
+
+    expression = expression.replace("^", "**")
+    tree = ast.parse(expression, mode="eval")
+
+    whitelist = (
+        ast.Expression,
+        ast.Call,
+        ast.Name,
+        ast.Load,
+        ast.BinOp,
+        ast.UnaryOp,
+        ast.operator,
+        ast.unaryop,
+        ast.cmpop,
+        ast.Num,
+        ast.Compare,
+    )
+
+    valid = all(isinstance(node, whitelist) for node in ast.walk(tree))
+
+    if valid:
+        safe_dict = get_allowed_functions()
+        safe_dict.update(calibration)
+        return float(
+            eval(
+                compile(tree, filename="", mode="eval"),
+                {"__builtins__": None},
+                safe_dict,
+            )
+        )
+
+    else:
+        raise ValueError("Invalid Mathematical expression")
