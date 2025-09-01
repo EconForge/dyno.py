@@ -1,3 +1,6 @@
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+*/__pycache__/*
+src/dyno/__pycache__/*
+src/dyno/gui/__pycache__/*
