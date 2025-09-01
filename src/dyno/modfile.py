@@ -97,7 +97,7 @@ class Modfile(Model):
             args[3] = []
         else:
             args[4] = []
-        r = np.array(self.data.dynamic_function(*args))
+        r = np.array(self.data.residuals(*args))
 
         if diff:
             jacobians = self.data.jacobians(*args)
