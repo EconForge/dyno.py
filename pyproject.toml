@@ -1,36 +1,100 @@
-[tool.poetry]
-name = "dynopy"
-version = "0.1.4"
-description = ""
-authors = ["Pablo Winant <pablo.winant@gmail.com>"]
-readme = "README.md"
-packages = [{include = "dyno"}]
-
-
-[tool.poetry.dependencies]
-python = ">=3.10, <3.13"
-dolang = "^0.0.21"
-numpy = "^2.0.0"
-scipy = "^1.12.0"
-pandas = "^2.2.2"
-typing_extensions = "^4.12.0"
-
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.0.0"
-pandas-stubs = "^2.2.2"
-scipy-stubs = "^1.12.0"
-types-mock = "^5.0.0.0"
-types-PyYAML = "^6.0.12"
-pytest = "^8.3.3"
-black = "^24.10.0"
-mkdocs = "^1.6.1"
-mkdocstrings-python = "^1.16.0"
-mkdocs-material = "^9.6.0"
-coverage = "^6.4.4"
-pytest-cov = "^4.0.0"
-pymdown-extensions = "^10.12"
-python-markdown-math = "^0.8"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dyno"
+requires-python = ">= 3.11,<3.14"
+version = "0.1.5"
+authors = [{name = "Pablo Winant", email = "pablo.winant@gmail.com"}, {name = "Ousema Bouaneni", email="ousema.bouaneni@polytechnique.edu"}]
+
+[tool.pixi.package]
+name = "dyno"
+version = "0.1.5.dev2"
+authors = ["Pablo Winant <pablo.winant@gmail.com>", "Ousema Bouanini <ousema.bouaneni@polytechnique.edu>"]
+
+[tool.pixi.package.build.backend] 
+name = "pixi-build-python"
+version = "==0.3.2"
+channels = ["https://prefix.dev/conda-forge"]
+
+[tool.pixi.package.build.config]
+noarch = true  # Build platform-specific package
+
+[tool.pixi.package.host-dependencies]
+hatchling = "*"
+
+[tool.pixi.workspace]
+channels = ["https://prefix.dev/conda-forge"]
+preview = ["pixi-build"]
+
+
+[tool.pixi.pypi-dependencies]
+dyno = { path = ".", editable = true }
+
+[tool.pixi.package.run-dependencies]
+dynare-preprocessor-pylib = ">=0.0.0.dev1,<0.0.0.dev2"
+dolang = ">=0.0.18,<0.0.19"
+numpy = ">=2.2.6,<3"
+scipy = ">=1.16.1,<2"
+pandas = ">=2.3.2,<3"
+typing_extensions = ">=4.15.0,<5"
+
+[tool.pixi.feature.docs.dependencies]
+mkdocs = ">=1.6.1"
+mkdocstrings-python = ">=1.16.0"
+mkdocs-material = ">=9.6.0"
+pymdown-extensions = ">=10.12"
+python-markdown-math = ">=0.8"
+
+[tool.pixi.feature.docs.tasks]
+docs = "mkdocs serve"
+
+[tool.pixi.feature.test.dependencies]
+pytest = "*"
+coverage = "*"
+pytest-cov = "*"
+
+[tool.pixi.feature.test.tasks]
+test = "pytest"
+durations = "pytest --durations=0 -vv"
+cov = "pytest --cov=./ --cov-report=xml"
+
+[tool.pixi.feature.lint.dependencies]
+mypy = "*"
+pandas-stubs = "*"
+scipy-stubs = "*"
+types-mock = "*"
+types-pyyaml = "*"
+black = "*"
+
+[tool.pixi.feature.lint.tasks]
+typecheck = "mypy src/dyno --ignore-missing-imports"
+black = "black ."
+ci-qc = "black . --check"
+
+[tool.pixi.feature.jupyter.dependencies]
+jupyterlab = ">=4.0.9"
+ipykernel = ">=6.29.0"
+matplotlib = ">=3.10.0"
+
+[tool.pixi.feature.jupyter.tasks]
+notebook = "ipython kernel install --name $PIXI_ENVIRONMENT_NAME --user && jupyter notebook"
+ipython = "ipython"
+
+[tool.pixi.feature.gui.dependencies]
+mock = ">=5.1.0"
+ipyvuetify = ">=1.8.10"
+plotly = ">=5.18.0"
+solara = ">=1.34.0"
+solara-ui = ">=1.34.0"
+solara-server = ">=1.34.0"
+
+[tool.pixi.feature.gui.tasks]
+solara = "solara run t_dyno.py"
+
+[tool.pixi.environments]
+prod = ["gui","jupyter"]
+test = ["test","gui","jupyter"]
+dev = ["test", "gui", "lint", "jupyter", "docs"]

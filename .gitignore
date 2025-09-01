@@ -1,13 +1,3 @@
-*.pyc
-*.whl
-*.tar.gz
+# pixi environments
 .pixi/*
-.vscode/*
-pixi.lock
-poetry.lock
-.coverage
-**/__pycache__/*
-temp*.yml
-.mypy*
-*ipynb*
-.github/workflows/.ci_pixi.yaml
+!.pixi/config.toml

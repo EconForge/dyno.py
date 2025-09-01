@@ -14,6 +14,8 @@ from .typedefs import TVector, TMatrix, IRFType, Solver, SymbolType, DynamicFunc
 from pandas import DataFrame
 from .language import Exogenous, Normal, Deterministic, ProductNormal
 
+from dyno.util_json import get_allowed_functions, UnsupportedDynareFeature
+
 
 class RecursiveSolution:
     """VAR(1) representing a linearized model
@@ -425,7 +427,7 @@ def evaluate(expression: str, calibration: dict[str, float] = {}) -> float:
     valid = all(isinstance(node, whitelist) for node in ast.walk(tree))
 
     if valid:
-        safe_dict = _get_allowed_functions()
+        safe_dict = get_allowed_functions()
         safe_dict.update(calibration)
         try:
             return float(
@@ -436,49 +438,9 @@ def evaluate(expression: str, calibration: dict[str, float] = {}) -> float:
                 )
             )
         except (UnsupportedDynareFeature, NameError, TypeError) as e:
+            print(f"Error evaluating: {expression}")
+            print(f"Calibration:\n{calibration}")
             raise UnsupportedDynareFeature("Function or operator not supported (yet)")
 
     else:
         raise ValueError("Invalid Mathematical expression")
-
-
-def _get_allowed_functions():
-    from math import exp, log, log10, sqrt
-    from numpy import cbrt, sign
-    from math import sin, cos, tan
-    from math import asin, acos, atan
-    from math import sinh, cosh, tanh
-    from math import asinh, acosh, atanh
-
-    # abs, max and min are builtins
-    safe_list = [
-        exp,
-        log,
-        log10,
-        sqrt,
-        cbrt,
-        sign,
-        abs,
-        max,
-        min,
-        sin,
-        cos,
-        tan,
-        asin,
-        acos,
-        atan,
-        sinh,
-        cosh,
-        tanh,
-        asinh,
-        acosh,
-        atanh,
-    ]
-    safe_dict = {f.__name__: f for f in safe_list}  # type: ignore
-    safe_dict["ln"] = log  # Add alias for compatibility with Dynare
-    return safe_dict
-
-
-class UnsupportedDynareFeature(Exception):
-
-    pass
