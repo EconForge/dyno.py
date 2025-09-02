@@ -13,7 +13,7 @@ version = "0.1.5.dev6"
 dyno = { path = "." }
 
 [package.run-dependencies]
-dynare-preprocessor-pylib = { version = "==0.0.0.dev1", build = "py311hcc915ae_2" }
+dynare-preprocessor-pylib = "==0.0.0.dev1"
 dolang = ">=0.0.20"
 numpy = ">=2.0.0, <2.3.0" # Compatibility with notebook.link scipy
 scipy = ">=1.12.0"
@@ -27,7 +27,7 @@ backend = { name = "pixi-build-python", version = "==0.3.2" }
 
 [package.host-dependencies] 
 hatchling = "==1.26.3"
-python = "<3.13,>=3.10"
+python = "<3.14,>=3.11"
 
 [feature.test.dependencies]
 pytest = ">=8.3.3"
@@ -87,9 +87,17 @@ python = "3.10.*"
 [feature.py311.dependencies]
 python = "3.11.*"
 
+[feature.py312.dependencies]
+python = "3.12.*"
+
+[feature.py313.dependencies]
+python = "3.13.*"
+
 [environments]
 prod = ["gui", "jupyter"]
 test = ["test", "gui", "jupyter"]
 dev = ["test", "gui", "lint", "jupyter", "docs"]
 py310 = ["test", "lint", "py310"]
 py311 = ["test", "lint", "py311"]
+py312 = ["test", "lint", "py312"]
+py313 = ["test", "lint", "py313"]
