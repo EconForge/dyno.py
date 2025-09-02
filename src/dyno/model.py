@@ -13,6 +13,7 @@ from typing_extensions import Self
 from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
 import pandas as pd
 from .language import Exogenous, Normal, Deterministic, ProductNormal
+
 import plotly.express as px
 
 
@@ -100,10 +101,11 @@ class RecursiveSolution:
             facet_col="variable",
             facet_col_wrap=2,
         )
+
         fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
         fig.update_yaxes(title_text="", matches=None)
         fig.update_xaxes(title_text="")
-
+        
         html = f"""
         <h3>Eigenvalues</h3>
         {evv.to_html()}
@@ -116,10 +118,9 @@ class RecursiveSolution:
         <h3>Conditional moments</h3>
         {df_cmoments.to_html()}
         <h3>IRFs</h3>
-        {fig.to_html(full_html=False, include_plotlyjs=True)}
+        {fig.to_html(full_html=False, include_plotlyjs=False)}
         """
         return html
-
 
 class Model(ABC):
     """Abstract class representing an economic model"""
