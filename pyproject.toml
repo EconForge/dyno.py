@@ -1,7 +1,7 @@
 [project]
 name = "dyno"
 version = "0.1.5"
-requires-python = ">= 3.10,<3.13"
+requires-python = ">= 3.10,<3.14"
 
 [build-system]
 build-backend = "hatchling.build"
