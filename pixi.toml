@@ -20,7 +20,6 @@ scipy = ">=1.12.0"
 pandas = ">=2.2.2"
 typing_extensions = ">=4.12.0"
 plotly = ">=5.18.0"
-python-kaleido = ">=1.0.0,<2"
 
 [package.build]
 backend = { name = "pixi-build-python", version = "==0.3.2" }
