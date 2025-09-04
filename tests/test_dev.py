@@ -1,4 +1,4 @@
-from dyno import modfile
+from dyno import DynareModel
 import pytest
 
 
@@ -18,7 +18,7 @@ def test_modfile_describe():
 
     filename = "examples/modfiles/" + f
 
-    model = modfile.Modfile(filename)
+    model = modfile.DynareModel(filename)
 
     print(model.describe())
 

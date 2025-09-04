@@ -21,9 +21,9 @@ def dyno_gui(filename, parchoice={}):
 
     txt = open(filename).read()
 
-    from dyno.modfile import Modfile
+    from dyno.modfile import DynareModel
 
-    model = Modfile(txt=txt)
+    model = DynareModel(txt=txt)
     dr0 = model.solve()
 
     simul_type = solara.reactive("log-deviation")
@@ -74,7 +74,7 @@ def dyno_gui(filename, parchoice={}):
         try:
 
             ta = time.time()
-            model = Modfile(txt=txt)
+            model = DynareModel(txt=txt)
             tb = time.time()
             # model_description.value = model.describe()
             ok_import.value = True

@@ -30,7 +30,7 @@ def test_modfile_import(filename):
 
     try:
 
-        mod = modfile.Modfile(filename)
+        mod = modfile.DynareModel(filename)
         sol = mod.compute()
         print(sol)
 

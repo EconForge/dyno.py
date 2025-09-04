@@ -44,7 +44,7 @@ class CheckFunCalls(Visitor):
                 )
 
 
-class Modfile(Model):
+class DynareModel(Model):
 
     def import_model(self, txt):
         try:

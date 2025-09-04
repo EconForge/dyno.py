@@ -1,4 +1,5 @@
-from dynare_preprocessor import DynareModel, UnsupportedFeatureException
+from dynare_preprocessor import DynareModel as Modfile
+from dynare_preprocessor import UnsupportedFeatureException
 from dyno.model import Model
 from dyno.language import pad_list, Normal, Deterministic
 import numpy as np
@@ -8,7 +9,7 @@ from typing import Any
 from .typedefs import TVector, TMatrix
 
 
-class Modfile(Model):
+class DynareModel(Model):
 
     def import_model(self: Self, txt: str, deriv_order=1, params_deriv_order=0) -> None:
         """imports model written in `.mod` format into data attribute using Dynare's preprocessor
@@ -18,7 +19,7 @@ class Modfile(Model):
         txt : str
             the model being imported in `.mod` form
         """
-        self.data = DynareModel(txt, deriv_order, params_deriv_order)
+        self.data = Modfile(txt, deriv_order, params_deriv_order)
 
     def _set_symbols(self: Self) -> None:
         """sets symbols attribute of Model"""

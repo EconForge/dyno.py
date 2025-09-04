@@ -57,17 +57,20 @@ ipyvuetify = ">=1.8.10"
 solara = ">=1.34.0"
 solara-ui = ">=1.34.0"
 solara-server = ">=1.34.0"
+anywidget = ">=0.9.18,<0.10"
 
 [feature.gui.tasks]
-solara = "solara run t_dyno.py"
+solara = "solara run examples/rbc_gui.py"
 
 [feature.jupyter.dependencies]
 jupyterlab = ">=4.0.9"
 ipykernel = ">=6.29.0"
 matplotlib = ">=3.10.0"
+notebook = ">=7.4.5,<8"
 
 [feature.jupyter.tasks]
 notebook = "ipython kernel install --name $PIXI_ENVIRONMENT_NAME --user && jupyter notebook"
+jlab = "ipython kernel install --name $PIXI_ENVIRONMENT_NAME --user && jupyter lab"
 ipython = "ipython"
 
 [feature.docs.dependencies]
@@ -93,8 +96,9 @@ python = "3.12.*"
 python = "3.13.*"
 
 [environments]
-prod = ["gui", "jupyter"]
-test = ["test", "gui", "jupyter"]
+test = ["test"]
+prod = ["jupyter"]
+solara = ["gui"]
 dev = ["test", "gui", "lint", "jupyter", "docs"]
 py310 = ["test", "lint", "py310"]
 py311 = ["test", "lint", "py311"]

@@ -109,13 +109,15 @@ class RecursiveSolution:
         html = f"""
         <h3>Eigenvalues</h3>
         {evv.to_html()}
-        <h3>Steady-state</h3>
-        {ss.to_html(index=False)}
         <h3>Decision Rule</h3>
+        <h4>Steady-state</h4>
+        {ss.to_html(index=False)}
+        <h4>Jacobian</h4>
         {df.to_html()}
-        <h3>Unconditional moments</h3>
+        <h3>Moments</h3>
+        <h4>Unconditional moments</h4>
         {df_umoments.to_html()}
-        <h3>Conditional moments</h3>
+        <h4>Conditional moments</h4>
         {df_cmoments.to_html()}
         <h3>IRFs</h3>
         {fig.to_html(full_html=False, include_plotlyjs=False)}
@@ -255,9 +257,27 @@ class Model(ABC):
 
     def describe(self: Self) -> str:
         """Returns a string representation of the model's symbols"""
-        return f"""
-symbols: {self.symbols}
-        """
+        return f"""<h3>Model</h3>
+<ul>
+<li>name: {self.name if self.name is not None else "Unnamed"}</li>
+<li>symbols:
+    <ul>
+        <li>variables:
+            <ul>
+                <li>endogenous: {str.join(",",self.symbols["endogenous"])}</li>
+                <li>exogenous: {str.join(",",self.symbols["exogenous"])}</li>
+            </ul>
+        </li>
+        <li> parameters: {str.join(",",self.symbols["parameters"])}</li>
+    </ul>
+</li>
+</ul>
+"""
+
+    def _repr_html_(self):
+        from IPython.display import display, Markdown, HTML
+        txt = self.describe()
+        return txt
 
     @overload
     def dynamic(
