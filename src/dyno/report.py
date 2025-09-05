@@ -19,17 +19,30 @@ class Report:
 
 def dsge_report(txt: str=None, filename: str=None) -> Report:
 
-    from dyno.modfile import DynareModel
 
     elements = []
-
     try:
-        if filename is not None:
-            model = DynareModel(filename=filename)
-        elif txt is not None:
-            model = DynareModel(txt=txt)
+        if txt is not None:
+            if filename is None:
+                filename = "unknown"
+        elif filename is not None:
+            txt = open(filename).read()
         else:
             raise ValueError("Either `txt` or `filename` must be provided.")
+    except Exception as e:
+        elements.append(e)
+        return Report(*elements)
+
+    try:
+        if filename.endswith(".mod"):
+            from dyno.modfile import DynareModel
+            model = DynareModel(txt=txt)
+        elif filename.endswith(".dyno.yaml"):
+            from dyno.yamlfile import YAMLFile
+            model = YAMLFile(txt=txt)
+        else:
+            raise ValueError("Unsupported Model type")
+            
         elements.append(model)
     except Exception as e:
         elements.append(e)
