@@ -17,9 +17,11 @@ class Report:
         
         return html
 
-def dsge_report(txt: str=None, filename: str=None) -> Report:
+def dsge_report(txt: str=None, filename: str=None, **options) -> Report:
 
+    import time
 
+    t1 = time.time()
     elements = []
     try:
         if txt is not None:
@@ -35,7 +37,11 @@ def dsge_report(txt: str=None, filename: str=None) -> Report:
 
     try:
         if filename.endswith(".mod"):
-            from dyno.modfile import DynareModel
+            preprocessor = options.get("modfile_preprocessor", 'dynare')
+            if preprocessor == "dynare":
+                from dyno.modfile import DynareModel
+            else:
+                from dyno.modfile_lark import DynareModel
             model = DynareModel(txt=txt)
         elif filename.endswith(".dyno.yaml"):
             from dyno.yamlfile import YAMLFile
@@ -65,4 +71,8 @@ def dsge_report(txt: str=None, filename: str=None) -> Report:
         elements.append(e)
         return Report(*elements)
 
+    t2 = time.time()
+
+    elements.append(f"Time: {t2 - t1:.2f} sec")
+    
     return Report(*elements)

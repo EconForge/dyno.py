@@ -21,7 +21,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 modfile_grammar = open(f"{dir_path}/modfile_grammar.lark").read()
 modfile_parser = Lark(modfile_grammar, propagate_positions=True)
 
-from dyno.util_json import UnsupportedDynareFeature
+# from dyno.util_json import UnsupportedDynareFeature
 
 from dyno.model import Model
 from lark import Visitor
