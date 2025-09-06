@@ -12,12 +12,13 @@ class Report:
                 reprs.append(r._repr_html_())
             else:
                 reprs.append(f"<pre>{str(r)}</pre>")
-        
+
         html = "<br>".join([str(e) for e in reprs])
-        
+
         return html
 
-def dsge_report(txt: str=None, filename: str=None, **options) -> Report:
+
+def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
 
     import time
 
@@ -37,7 +38,7 @@ def dsge_report(txt: str=None, filename: str=None, **options) -> Report:
 
     try:
         if filename.endswith(".mod"):
-            preprocessor = options.get("modfile_preprocessor", 'dynare')
+            preprocessor = options.get("modfile_preprocessor", "dynare")
             if preprocessor == "dynare":
                 from dyno.modfile import DynareModel
             else:
@@ -45,10 +46,11 @@ def dsge_report(txt: str=None, filename: str=None, **options) -> Report:
             model = DynareModel(txt=txt)
         elif filename.endswith(".dyno.yaml"):
             from dyno.yamlfile import YAMLFile
+
             model = YAMLFile(txt=txt)
         else:
             raise ValueError("Unsupported Model type")
-            
+
         elements.append(model)
     except Exception as e:
         elements.append(e)
@@ -74,5 +76,5 @@ def dsge_report(txt: str=None, filename: str=None, **options) -> Report:
     t2 = time.time()
 
     elements.append(f"Time: {t2 - t1:.2f} sec")
-    
+
     return Report(*elements)
