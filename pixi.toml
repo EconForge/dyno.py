@@ -48,8 +48,8 @@ black = ">=24.10.0"
 
 [feature.lint.tasks]
 typecheck = "mypy dyno --ignore-missing-imports"
-black = "black src"
-ci-qc = "black src --check"
+black = "black src tests"
+ci-qc = "black src tests --check"
 
 [feature.gui.dependencies]
 mock = ">=5.1.0"
