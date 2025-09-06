@@ -7,7 +7,7 @@ platforms = ["linux-64"]
 
 [package]
 name = "dyno"
-version = "0.1.5.dev8"
+version = "0.1.5"
 
 [dependencies]
 dyno = { path = "." }
