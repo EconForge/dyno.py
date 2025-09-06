@@ -18,7 +18,8 @@ def test_modfile_describe():
 
     filename = "examples/modfiles/" + f
 
-    model = modfile.DynareModel(filename)
+    from dyno.modfile_lark import DynareModel
+    model = DynareModel(filename)
 
     print(model.describe())
 
