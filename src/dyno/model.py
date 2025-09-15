@@ -275,7 +275,7 @@ class Model(ABC):
 """
 
     def _repr_html_(self):
-        from IPython.display import display, Markdown, HTML
+        # from IPython.display import display, Markdown, HTML
 
         txt = self.describe()
         return txt

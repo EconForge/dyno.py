@@ -6,6 +6,7 @@ from dyno.dynsym.grammar import parser, str_expression
 from dyno.dynsym.analyze import FormulaEvaluator
 from typing_extensions import Self
 
+import numpy as np
 
 class DynoModel(Model):
 
@@ -24,7 +25,7 @@ class DynoModel(Model):
 
         # count variable in equations and compute residuals
         fe.steady_state = True
-        residuals = [fe.visit(eq) for eq in fe.equations]
+        self.residuals = [fe.visit(eq) for eq in fe.equations]
         fe.steady_state = False
 
 
@@ -91,6 +92,9 @@ class DynoModel(Model):
             value of the dynamic function at the state described by calibration, as well as its partial derivatives if diff is set to True
         """
 
+        if not diff:
+            return np.array(self.residuals)
+        
         from dyno.dynsym.analyze import DN
 
         assert len(calibration)==0, "calibration not supported yet"

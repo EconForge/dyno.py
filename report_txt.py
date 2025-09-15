@@ -1,9 +1,21 @@
-from dyno.yamlfile import YAMLFile
+# from dyno.yamlfile import YAMLFile
 
-model = YAMLFile('examples/neo.yaml')
+# model = YAMLFile('examples/neo.yaml')
 
-print(model)
+# print(model)
 
-dr = model.solve()
+# dr = model.solve()
 
-print(dr)
+# print(dr)
+
+from dyno.report import dsge_report
+
+report = dsge_report(filename='RBC.dyno')
+print(report)
+
+print(report._repr_html_())
+
+report = dsge_report(filename='RBC.dyno')
+print(report)
+
+print(report._repr_html_())

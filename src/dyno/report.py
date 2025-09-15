@@ -46,8 +46,10 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             model = DynareModel(txt=txt)
         elif filename.endswith(".dyno.yaml"):
             from dyno.yamlfile import YAMLFile
-
             model = YAMLFile(txt=txt)
+        elif filename.endswith(".dyno"):
+            from dyno.dynofile import DynoModel
+            model = DynoModel(txt=txt)
         else:
             raise ValueError("Unsupported Model type")
 
