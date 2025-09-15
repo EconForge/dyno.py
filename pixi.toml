@@ -11,6 +11,8 @@ version = "0.1.5"
 
 [dependencies]
 dyno = { path = "." }
+rich = ">=14.1.0,<15"
+interegular = ">=0.3.3,<0.4"
 
 [package.run-dependencies]
 dynare-preprocessor-pylib = "==0.0.0.dev1"

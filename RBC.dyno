@@ -1,0 +1,31 @@
+# parameters
+beta <- 0.985
+delta <- 0.025
+nss <- 0.33
+eta <- 1.0
+alpha <- .33
+rho <- .95
+khi <- (1-alpha)*(1-nss)^eta/nss*(1/beta-1+delta)/(1/beta-1+delta-delta*alpha)
+
+# equations
+1/c[t] = beta*(r[t+1]+1-delta)/c[t+1]
+w[t] = khi*c[t]/(1-n[t])^eta
+k[t] = (1-delta)*k[t-1]+i[t]
+y[t] = a[t]*k[t-1]^alpha*n[t]^(1-alpha)
+log(a[t]) = rho*log(a[t-1])+epsilon[t]
+w[t] = (1-alpha)*y[t]/n[t]
+r[t] = alpha*y[t]/k[t-1]
+y[t] = c[t]+i[t]
+
+# steady state
+a[~] <- 1
+r[~] <- 1/beta-1+delta
+n[~] <- nss
+k[~] <- (alpha/r[~])^(1/(1-alpha))*n[~]
+y[~] <- k[~]^alpha*n[~]^(1-alpha)
+w[~] <- (1-alpha)*y[~]/n[~]
+i[~] <- delta*k[~]
+c[~] <- y[~]-i[~]
+
+
+epsilon[t] <- N(0,0.009)

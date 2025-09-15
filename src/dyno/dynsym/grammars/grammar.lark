@@ -1,0 +1,79 @@
+?start: formula
+
+equation_block: _NEWLINE? (equation) (_NEWLINE equation )* _NEWLINE?
+assignment_block: _NEWLINE? (assignment) (_NEWLINE assignment )* _NEWLINE?
+free_block: _NEWLINE? (equation | assignment | quantified_assignment) (_NEWLINE (equation | assignment | quantified_assignment) )* _NEWLINE?
+
+
+?equation: equality | formula
+
+equality: formula "=" formula
+
+assignment: symbol _ASSIGN formula
+
+COMPARISON:  ("<="|"<"|">"|">=")
+// t_inequality: "t" COMPARISON formula -> t_bound
+t_double_bound: formula "<=" "t" "<" formula
+// t_inequalities: (t_inequality) ("," t_inequality)* -> t_bounds
+
+// predicate: [quantifier "," t_condition] (equality | inequality)
+
+quantified_assignment: _FORALL "t" ["," t_double_bound] ":" variable _ASSIGN formula
+
+_FORALL.1: ("∀" | "forall")
+_ASSIGN.1: (":=" | "<-")
+
+
+?formula: sum
+
+?sum: product
+    | sum "+" product   -> add
+    | sum "-" product   -> sub
+    | "-" product         -> neg
+?product: atom|pow
+    | product "*" (atom|pow)  -> mul
+    | product "/" (atom|pow)  -> div
+?pow: atom _POW atom -> pow
+
+_POW: "^" | "**"
+
+?atom: NUMBER           -> number
+        | symbol            
+        | "(" sum ")"
+        | call
+
+?symbol: constant | value | variable
+
+constant: cname -> constant
+
+value: cname  "[" time "]" -> value
+
+
+variable: cname  "[" time_index time_shift  "]" -> variable
+
+!time_index: ("t"|"~") -> index
+!time_shift: [SIGNED_INT2] -> shift
+
+!time: SIGNED_INT -> time
+
+!cname: NAME -> name
+    
+?call: cname "(" formula ("," formula)* ")" -> call
+
+SIGNED_INT2: ("+"|"-") INT
+
+_NEWLINE: NEWLINE
+UNICODE_LETTER: /[^\W\d_\$]/
+NAME: UNICODE_LETTER ("_"|UNICODE_LETTER|DIGIT)*
+
+%import common.SIGNED_INT
+%import common.DIGIT
+%import common.INT
+%import common.NUMBER
+%import common.WS_INLINE
+%import common.NEWLINE
+
+COMMENT.10 : /#[^\r\n]+\n/
+%ignore COMMENT
+
+%ignore WS_INLINE
