@@ -4,8 +4,11 @@ delt <- 0.02
 bet <- 0.05
 aa <- 0.5
 
-c[t] + k[t] - aa*x[t]*k[t-1]^alph - (1-delt)*k[t-1]
-c[t]^(-gam) - (1+bet)^(-1)*(aa*alph*x[t+1]*k[t]^(alph-1) + 1 - delt)*c[t+1]^(-gam)
+T <- 50
+
+# formulas are not copied to the model, only variables and parameters
+0 = c[t] + k[t] - aa*x[t]*k[t-1]^alph - (1-delt)*k[t-1]
+0 = c[t]^(-gam) - (1+bet)^(-1)*(aa*alph*x[t+1]*k[t]^(alph-1) + 1 - delt)*c[t+1]^(-gam)
 
 x[~] <- 1
 k[~] <- ((delt+bet)/(1.0*aa*alph))^(1/(alph-1))

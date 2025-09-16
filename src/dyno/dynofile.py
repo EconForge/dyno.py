@@ -36,7 +36,8 @@ class DynoModel(Model):
 
     def _set_calibration(self: Self) -> None:
 
-        pass
+        self.calibration = self.get_calibration()
+
 
     def get_calibration(self, **kwargs):
 
