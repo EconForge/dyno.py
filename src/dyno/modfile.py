@@ -47,7 +47,9 @@ class DynareModel(Model):
                 for p1, p2, val in traj:
                     pad_list(det_vals[var], p2)
                     det_vals[var][p1 - 1 : p2] = [val] * (p2 - p1 + 1)
-            self.exogenous = Deterministic(det_vals)
+            self.paths = Deterministic(det_vals)
+            self.processes = None
+            self.exogenous = self.paths
         else:
             n = len(exo)
             covar = np.zeros((n, n))
@@ -55,7 +57,10 @@ class DynareModel(Model):
             for (var1, var2), val in self.data.covariances.items():
                 covar[index[var1], index[var2]] = val
                 covar[index[var2], index[var1]] = val
-            self.exogenous = Normal(Σ=covar)
+            self.processes = Normal(Σ=covar)
+            self.paths = None
+            self.exogenous = self.processes
+
 
     def _set_dynamic(self: Self) -> None:
         pass

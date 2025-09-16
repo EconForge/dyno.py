@@ -144,7 +144,7 @@ class ProductNormal(Exogenous):
         TMatrix
             Covariance matrix of the process
         """
-        assert len(self.processes) == 1
+        # assert len(self.processes) == 1
         return self.processes[0].Σ
 
 

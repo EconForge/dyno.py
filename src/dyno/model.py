@@ -408,19 +408,20 @@ class Model(ABC):
         p = self.symbols["parameters"]
 
         # TODO add support for Deterministic
-        assert isinstance(self.exogenous, Normal) or isinstance(
-            self.exogenous, ProductNormal
+        assert isinstance(self.processes, Normal) or isinstance(
+            self.processes, ProductNormal
         )
-        Σ = self.exogenous.Σ
+
+        Σ = self.processes.Σ
 
         c = self.get_calibration(**calibration)
 
         # a bit stupid
+
         endogenous_values = [c[e] for e in v]
-        parameter_values = [c[e] for e in p]
+
         # Reshapes necessary for static type checking
         y0 = np.reshape(endogenous_values, len(endogenous_values))
-        p0 = np.reshape(parameter_values, len(parameter_values))
 
         return RecursiveSolution(
             X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0, model=self

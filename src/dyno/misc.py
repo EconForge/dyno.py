@@ -4,7 +4,7 @@ from typing import Callable
 
 
 def jacobian(
-    func: Callable[[TVector], TVector], initial: TVector, delta: float = 1e-3
+    func: Callable[[TVector], TVector], initial: TVector, delta: float = 1e-8
 ) -> TMatrix:
     """Jacobian calculation with finite differences
 

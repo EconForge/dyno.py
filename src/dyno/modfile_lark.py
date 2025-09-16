@@ -125,7 +125,7 @@ class DynareModel(Model):
 
             if l.data.value == "parassignment":
 
-                k = l.children[0].children[0].value
+                k = l.children[0].children[0].valueKom
                 ve = l.children[1]
 
                 v = dolang.str_expression(ve)
@@ -168,7 +168,9 @@ class DynareModel(Model):
             if k not in calibration.keys():
                 calibration[k] = np.nan
 
-        self.calibration = calibration
+        from dolang.triangular_solver import solve_triangular_system
+        self.calibration = solve_triangular_system(calibration)
+
 
     def _set_symbols(self):
 
