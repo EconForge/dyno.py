@@ -203,7 +203,7 @@ class Model(ABC):
     def checks(self):
         checks = {}
         
-        checks['deterministic'] = False if self.exogenous is not None else True
+        checks['deterministic'] = False if self.processes is not None else True
         
         return checks
 

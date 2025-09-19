@@ -116,6 +116,26 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 {[endif]}
                             
 
+{[if sim is not None and model.checks['deterministic']==False]}
+
+## Simulation
+
+:::::{dropdown} IRFS
+                            
+::::{tab-set}     
+{[for k in sim.keys()]}
+:::{tab-item} {[k]}
+:sync: tab1
+{[sim[k].to_html()]}
+:::
+{[endfor]}
+::::
+
+::::::
+---                   
+{[endif]}
+                            
+
 {[if sim is not None]}
 
 ## Simulation
@@ -124,7 +144,7 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
                             
 ::::{tab-set}     
 {[for k in sim.keys()]}
-:::{tab-item} Shock {[k]}
+:::{tab-item} {[k]}
 :sync: tab1
 {[sim[k].to_html()]}
 :::
@@ -297,25 +317,33 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
         report(e)
         return report
 
+    try:
+        r = model.compute()
+        err = abs(r).max()
+        report(residuals=r)
+        if err > 1e-6:
+            raise Exception(f"Steady-State Error\n. Residuals: {abs(r)}")
+    except Exception as e:
+        report(e)
+        return report
+
     if model.checks['deterministic']:
+        print("Deterministic model")
         try:
-            from dyno.solver import solve_deterministic
-            sim = solve_deterministic(model)
-            report(sim=sim)
+            from dyno.solver import deterministic_solve
+            sim = deterministic_solve(model)
+            report(sim={'Perfect Foresight': sim})
+        except Exception as e:
+            report(e)
+            return report
+        
+        try:
+            sim.plot()
         except Exception as e:
             report(e)
             return report
     else:
-
-        try:
-            r = model.compute()
-            err = abs(r).max()
-            report(residuals=r)
-            if err > 1e-6:
-                raise Exception(f"Steady-State Error\n. Residuals: {abs(r)}")
-        except Exception as e:
-            report(e)
-            return report
+        print("Stochastic model")
 
         try:
             dr = model.solve()
@@ -331,11 +359,11 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             report(e)
             return report
 
-    try:
-        fig = dr.plot()
-        report(fig=fig)
-    except Exception as e:
-        report(e)
-        return report
+        try:
+            fig = dr.plot()
+            report(fig=fig)
+        except Exception as e:
+            report(e)
+            return report
 
     return report

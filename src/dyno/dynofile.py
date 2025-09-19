@@ -47,9 +47,12 @@ class DynoModel(Model):
 
         from dyno.language import ProductNormal, Normal
 
-        self.processes = ProductNormal(
-            *[Normal([[e.sigma**2]], [e.mu]) for e in self.evaluator.processes.values()]
-        )
+        if len(self.evaluator.processes.values())==0:
+            self.processes = None
+        else:
+            self.processes = ProductNormal(
+                *[Normal([[e.sigma**2]], [e.mu]) for e in self.evaluator.processes.values()]
+            )
 
         self.paths = self.evaluator.values
 
@@ -173,4 +176,164 @@ class DynoModel(Model):
         return self.compute_derivatives(ys,ys,ys,es)
 
         import copy
-       
+    
+
+    def deterministic_guess(model, T=None):
+
+        if T is None:
+            T = model.calibration.get('T', 50)
+
+        y,e = model.steady_state()
+
+        # initial guess
+        v0 = np.concatenate([y,e])[None,:].repeat(T+1,axis=0)
+
+        y,e = model.steady_state()
+
+        # works if the is one and exactly one exogenous variable?
+        # does it?
+        for key,value in model.evaluator.values.items():
+            i = model.variables.index(key)
+            for a,b in value.items():
+                v0[a,i] = b
+
+        return v0
+        
+    def deterministic_residuals(model, v, jac=False, **kwargs):
+
+        if jac:
+            return model.deterministic_residuals_with_jacobian(v, **kwargs)
+
+        flat = v.ndim == 1
+
+        p = len(model.variables)
+        T = int(np.prod(v.shape)/p-1)
+
+        v = v.reshape((T+1,p))
+
+        v_f = np.concatenate([v[1:,:], v[-1,:][None,:]], axis=0)
+        v_b = np.concatenate([v[0,:][None,:], v[:-1,:]], axis=0)
+
+        context = {}
+        for i,name in enumerate(model.variables):
+            context[name] = { -1: v_b[:,i], 0: v[:,i], 1: v_f[:,i] }
+
+        E = (model.evaluator)
+        E.variables.update(context)
+
+        results = [E.visit(eq) for eq in E.equations]
+
+        # number of variables not pinned down by dynamic equations
+        n_exo = len(model.symbols['variables']) - len(results)
+
+        # the following works if there is one and exactly one exogenous variable
+        assert n_exo ==1
+        
+        y,e = model.steady_state()
+        
+        v1 = np.concatenate([y,e])[None,:].repeat(T+1,axis=0)
+        for key,value in model.evaluator.values.items():
+            i = model.variables.index(key)
+            for a,b in value.items():
+                v1[a,i] = b
+
+        exo = v1[:,-1].copy()
+
+        res = np.column_stack(
+            results + [v[:,-1] - exo]
+        )
+
+        res[0,:] = v[0,:] - y # slightly inconsistent
+
+        if flat:
+            return res.ravel()
+        else:
+            return res
+
+    def deterministic_residuals_with_jacobian(model, v, sparsify=False):
+
+        from dyno.dynsym.autodiff import DNumber
+
+        flat = v.ndim == 1
+
+        p = len(model.variables)
+        T = int(np.prod(v.shape)/p-1)
+
+        v = v.reshape((T+1,p))
+
+        v_f = np.concatenate([v[1:,:], v[-1,:][None,:]], axis=0)
+        v_b = np.concatenate([v[0,:][None,:], v[:-1,:]], axis=0)
+
+        context = {}
+        for i,name in enumerate(model.variables):
+            context[name] = {
+                -1: DNumber(v_b[:,i], {(name,-1): 1.0}),
+                0: DNumber(v[:,i], {(name,0): 1.0}),
+                1: DNumber(v_f[:,i],  {(name,1): 1.0})
+            }
+
+        E = (model.evaluator)
+        E.variables.update(context)
+
+        results = [E.visit(eq) for eq in E.equations]
+        
+        y,e = model.steady_state()
+
+        # get exo values
+        # works if the is one and exactly one exogenous variable?
+        # does it?
+        v1 = np.concatenate([y,e])[None,:].repeat(T+1,axis=0)
+        for key,value in model.evaluator.values.items():
+            i = model.variables.index(key)
+            for a,b in value.items():
+                v1[a,i] = b
+
+        exo = v1[:,-1].copy()
+
+        res = np.column_stack(
+            [e.value for e in results] + [v[:,-1] - exo]
+        )
+        
+        res[0,:] = v[0,:] - y # slightly inconsistent
+
+        N = v.shape[0]
+
+        p = len(model.variables)
+        q = len(model.equations)
+        
+        D = np.zeros( (N, q, p, 3 ))  # would be easier with 4d struct
+
+        for i_q in range(q):
+            
+            for k,deriv in results[i_q].derivatives.items():
+                s,t = k # symbol, time
+                i_var = model.variables.index(s)
+                D[:, i_q, i_var, t+1] = deriv
+
+        # add exogenous equations
+        DD = np.zeros( (N, p, p, 3))
+        DD[:,:q,:,:] = D
+        DD[:,2,2,1] = 1.0
+
+        if not flat:
+            return res, DD
+        else:
+            J = np.zeros((N*p, N*p))
+            for n in range(N):
+                if n==0:
+                    # J[p*n:p*(n+1),p*n:p*(n+1)] = DD[n,:,:,0] + DD[n,:,:,1]
+                    # J[p*n:p*(n+1),p*(n+1):p*(n+2)] = DD[n,:,:,2]
+                    J[p*n:p*(n+1),p*n:p*(n+1)] = np.eye(p,p)
+                elif n==N-1:
+                    J[p*n:p*(n+1),p*(n-1):p*(n)] = DD[n,:,:,0]
+                    J[p*n:p*(n+1),p*n:p*(n+1)] = DD[n,:,:,1] + DD[n,:,:,2]
+                else:
+                    J[p*n:p*(n+1),p*(n-1):p*(n)] = DD[n,:,:,0]
+                    J[p*n:p*(n+1),p*n:p*(n+1)] = DD[n,:,:,1]
+                    J[p*n:p*(n+1),p*(n+1):p*(n+2)] = DD[n,:,:,2]
+
+            if sparsify:
+                import scipy
+                J = scipy.sparse.csr_matrix(J)
+
+            return res.ravel(), J

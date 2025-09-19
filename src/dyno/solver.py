@@ -253,3 +253,32 @@ def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
     Γ = (np.linalg.inv(np.eye(n**2) - np.kron(X, X)) @ Γ0.flatten()).reshape(n, n)
 
     return Γ0, Γ
+
+
+def deterministic_solve(model, x0=None, T=None, method='hybr'):
+
+    import scipy.optimize
+    import pandas
+
+    if x0 is None:
+        v0 = model.deterministic_guess(T=T)
+    else:
+        v0 = np.array(x0)
+
+    T = v0.shape[0]-1
+    u0 = np.array(v0).ravel(),
+
+    res = scipy.optimize.root(
+        lambda u: model.deterministic_residuals(u, jac=True),
+        u0,
+        method=method,
+        jac=True
+    )
+    
+    w0 = res.x.reshape(v0.shape)
+
+    df = pandas.DataFrame({e: w0[:,i] for i,e in enumerate(model.variables)})
+    df.index=range(T+1)
+    df.index.name='t'
+
+    return df
