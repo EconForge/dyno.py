@@ -1,6 +1,148 @@
 from IPython.display import display, HTML, Markdown, TextDisplayObject
 import time
 import rich
+import pandas
+import altair
+import tempita
+
+import altair as alt
+# load a simple dataset as a pandas DataFrame
+from vega_datasets import data
+
+cars = data.cars()
+ch = alt.Chart(cars).mark_point().encode(
+    x='Horsepower',
+    y='Miles_per_Gallon',
+    color='Origin',
+)
+
+
+# :::{dropdown} Code
+# ```{code}
+# :linenos:
+# :emphasize-lines: {[ str.join(",",[str(e.token.line) for e in errors]) ]}
+# {[code]}
+# ```
+# :::
+
+# {[if len(errors)>0]}      
+
+# {[for e in errors]}
+                                     
+# :::{error} UnexpectedToken `{[e.token.value]}` at {[(e.token.line, e.token.column)]}
+# :class: dropdown
+# ```
+# {[str(e.get_context(text=code))]}
+# {[str(e)]}
+# ```
+# :::
+                            
+# {[endfor]} 
+# {[endif]}
+
+
+
+template = tempita.Template(r"""
+{[default model=None]}
+{[default dr=None]}
+{[default bk_check=None]}
+{[default sim=None]}
+{[default fig=None]}                        
+                            
+# Dyno Report
+                
+
+{[if model is not None]}
+                            
+## Model Summary
+
+- *name*:  {[model.name]}
+- *variables*:  {[str.join(", ", model.variables)]}
+- *parameters*:  {[str.join(", ", model.parameters)]}
+
+:::{dropdown} Calibration
+Parameter values
+```{code} python
+{[ str(model.calibration) ]}
+```
+Steady state values
+```{code} python
+{[ str(model.steady_state()) ]}
+```
+:::
+                            
+{[if abs(residuals).max() > 1e-6]}
+:::{warning} Non zero residuals
+:class: dropdown
+The model has non zero residuals after calibration. This may be due to a missing steady-state
+calculation or an error in the model equations.
+```{code} python
+{[ str(residuals) ]}
+```
+:::
+{[endif]}
+
+---
+{[endif]}
+
+
+{[if dr is not None]}
+                    
+## Solution
+                            
+First order approximation.
+                            
+Ressiduals: {[residuals]}
+                                
+System Eigenvalues: {[dr.evs.real]}
+
+Blanchard-Kahn conditions: {[ "satisfied" if bk_check else "not satisfied" ]}
+
+:::{dropdown} Recursive Decision Rule
+                            
+$$y_t = \overline{y} + A (y_{t-1} - \overline{y}) + B \varepsilon_t$$
+$$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
+
+### Steady-state
+
+{[jacs[0].to_html()]}
+                            
+### Jacobian 
+
+{[jacs[1].to_html()]}
+
+:::
+---
+{[endif]}
+                            
+
+{[if sim is not None]}
+
+## Simulation
+
+:::::{dropdown} IRFS
+                            
+::::{tab-set}     
+{[for k in sim.keys()]}
+:::{tab-item} Shock {[k]}
+:sync: tab1
+{[sim[k].to_html()]}
+:::
+{[endfor]}
+::::
+
+::::::
+---                   
+{[endif]}
+                            
+                            
+{[for er in errors]}
+```
+{[str(er)]}
+```
+{[endfor]}
+""", delimiters=('{[', ']}'))
+
 
 class Report:
 
@@ -9,6 +151,13 @@ class Report:
         self.elements = {}
         self.output_type = options.get("output_type", "markdown")
         self.t_start = time.time()
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, type, value, traceback):
+
+        self("Elapsed time: {:.3f} sec".format(time.time() - self.t_start))
 
 
     # def __repr__(self):
@@ -21,7 +170,6 @@ class Report:
 
     def _repr_html_(self):
         import time
-        self("Elapsed time: {:.3f} sec".format(time.time() - self.t_start))
 
 
         if self.output_type == "text":
@@ -56,58 +204,27 @@ class Report:
     def _repr_markdown_(self):
 
         self("Elapsed time: {:.3f} sec".format(time.time() - self.t_start))
+    
+        errors = [w for w in self.elements.values() if isinstance(w, Exception)]
+        context = {"errors": errors, "alt": altair}
+        if 'dr' in self.elements:
+            dr = self.elements['dr']
+            evs = abs(dr.evs)
+            n = len(evs)//2
+            if evs[n-1] < 1 < evs[n]:
+                bk_check = True
+            else:
+                bk_check = False
+            context.update({"bk_check": bk_check,"jacs": dr.coefficients_as_df()})
 
-        if self.output_type != "markdown":
-            return None
+        d = {k: w for k,w in self.elements.items() if not isinstance(k,int)} | context
 
-        code = f"""
-# Model: {self.elements.get("name")}
+        txt = template.substitute(**d)
 
+        if 'fig' in self.elements:
+            display(self.elements['fig'])
 
-
-::: {{note}} Equations
-:class: dropdown
-
-{str.join("\n\n", self.elements['model'].equations)})
-
-:::
-
-Here's some *text*
-
-1. a list
-
-> a quote
-
-{{emphasis}}`content`
-
-
-::: {{tip}} Code
-:class: dropdown
-```{{code-block}} python
-:linenos:
-:emphasize-lines: 2,3
-
-{self.elements['code']}
-```
-:::
-
-![](clippy.png)
-
-
-# Decision Rule
-
-::: {{tip}} Eigenvalues
-
-{self.elements['dr'].evs}
-
-:::
-
-# Simulation
-
----
-""" + str.join("\n", [str(e) for e in self.elements.values()])
-
-        return code
+        return txt
 
     def __call__(self, *s, **options):
 
@@ -180,22 +297,45 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
         report(e)
         return report
 
+    if model.checks['deterministic']:
+        try:
+            from dyno.solver import solve_deterministic
+            sim = solve_deterministic(model)
+            report(sim=sim)
+        except Exception as e:
+            report(e)
+            return report
+    else:
+
+        try:
+            r = model.compute()
+            err = abs(r).max()
+            report(residuals=r)
+            if err > 1e-6:
+                raise Exception(f"Steady-State Error\n. Residuals: {abs(r)}")
+        except Exception as e:
+            report(e)
+            return report
+
+        try:
+            dr = model.solve()
+            report(dr=dr)
+        except Exception as e:
+            report(e)
+            return report
+        
+        try:
+            sim = dr.irfs()
+            report(sim=sim)
+        except Exception as e:
+            report(e)
+            return report
+
     try:
-        r = model.compute()
-        err = abs(r).max()
-        report(residuals=r)
-        if err > 1e-6:
-            raise Exception(f"Steady-State Error\n. Residuals: {abs(r)}")
+        fig = dr.plot()
+        report(fig=fig)
     except Exception as e:
         report(e)
         return report
-
-    try:
-        dr = model.solve()
-        report(dr=dr)
-    except Exception as e:
-        report(e)
-        return report
-
 
     return report

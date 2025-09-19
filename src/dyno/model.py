@@ -57,40 +57,59 @@ class RecursiveSolution:
         self.symbols = symbols
         self._model = model
 
-    def _repr_html_(self):
-        evv = pd.DataFrame(
-            [np.abs(self.evs)],
-            columns=[i + 1 for i in range(len(self.evs))],
-            index=["λ"],
-        )
+    def moments(self):
+
+        return moments(self.X, self.Y, self.Σ)
+    
+    def coefficients_as_df(self):
+        import pandas as pd
         ss = pd.DataFrame(
             [self.x0], columns=["{}".format(e) for e in self.symbols["endogenous"]]
         )
         hh_y = self.X
         hh_e = self.Y
-
         df = pd.DataFrame(
             np.concatenate([hh_y, hh_e], axis=1),
             columns=["{}[t-1]".format(e) for e in self.symbols["endogenous"]]
             + ["{}[t]".format(e) for e in (self.symbols["exogenous"])],
         )
         df.index = ["{}[t]".format(e) for e in self.symbols["endogenous"]]
+        return ss, df
 
+
+    def _repr_html_(self):
+        
         Σ0, Σ = moments(self.X, self.Y, self.Σ)
 
-        df_cmoments = pd.DataFrame(
-            Σ0,
-            columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-            index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-        )
+        # df_cmoments = pd.DataFrame(
+        #     Σ0,
+        #     columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        #     index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        # )
 
-        df_umoments = pd.DataFrame(
-            Σ,
-            columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-            index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-        )
+        # df_umoments = pd.DataFrame(
+        #     Σ,
+        #     columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        #     index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        # )
 
-        sim = irfs(self._model, self, type="log-deviation")
+        html = f"""
+        <h3>Decision Rule</h3>
+        <h4>Steady-state</h4>
+        {ss.to_html(index=False)}
+        <h4>Jacobian</h4>
+        {df.to_html()}
+        """
+        return html
+
+    def irfs(self, type: IRFType = "log-deviation"):
+
+        sim = irfs(self._model, self, type=IRFType)
+        return sim
+    
+    def plot(self,  type: IRFType = "log-deviation"):
+        
+        sim = self.irfs(type=type)
         plots = sim_to_nsim(sim)
 
         fig = px.line(
@@ -106,23 +125,25 @@ class RecursiveSolution:
         fig.update_yaxes(title_text="", matches=None)
         fig.update_xaxes(title_text="")
 
-        html = f"""
-        <h3>Eigenvalues</h3>
-        {evv.to_html()}
-        <h3>Decision Rule</h3>
-        <h4>Steady-state</h4>
-        {ss.to_html(index=False)}
-        <h4>Jacobian</h4>
-        {df.to_html()}
-        <h3>Moments</h3>
-        <h4>Unconditional moments</h4>
-        {df_umoments.to_html()}
-        <h4>Conditional moments</h4>
-        {df_cmoments.to_html()}
-        <h3>IRFs</h3>
-        {fig.to_html(full_html=False, include_plotlyjs=False)}
-        """
-        return html
+        return fig
+
+        # html = f"""
+        # <h3>Eigenvalues</h3>
+        # {evv.to_html()}
+        # <h3>Decision Rule</h3>
+        # <h4>Steady-state</h4>
+        # {ss.to_html(index=False)}
+        # <h4>Jacobian</h4>
+        # {df.to_html()}
+        # <h3>Moments</h3>
+        # <h4>Unconditional moments</h4>
+        # {df_umoments.to_html()}
+        # <h4>Conditional moments</h4>
+        # {df_cmoments.to_html()}
+        # <h3>IRFs</h3>
+        # {fig.to_html(full_html=False, include_plotlyjs=False)}
+        # """
+        # return html
 
 
 class Model(ABC):
@@ -177,6 +198,14 @@ class Model(ABC):
     def _set_name(self: Self) -> None:
         # should be overridden for file types with name information
         self.name = None
+
+    @property
+    def checks(self):
+        checks = {}
+        
+        checks['deterministic'] = False if self.exogenous is not None else True
+        
+        return checks
 
     @abstractmethod
     def _set_symbols(self: Self) -> None:

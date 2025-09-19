@@ -76,6 +76,13 @@ class DynoModel(Model):
 
         self.equations = [str_expression(eq) for eq in self.evaluator.equations]
 
+    def latex_equations(self):
+
+        from dyno.dynsym.latex import latex
+        eqs_str = [latex(eq) for eq in self.evaluator.equations]
+        latex_str = str.join("\n",["$${}$$".format(eq) for eq in eqs_str])
+        return latex_str
+
     def compute_residuals():
             pass
 
