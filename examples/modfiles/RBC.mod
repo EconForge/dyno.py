@@ -11,7 +11,7 @@ rho=.95;
 khi=(1-alpha)*(1-nss)^eta/nss*(1/beta-1+delta)/(1/beta-1+delta-delta*alpha);
 
 model;
-1/c = beta*(r(1)+1-delta)/c(1);
+1/c = beta*(r(+1)+1-delta)/c(1);
 w = khi*c/(1-n)^eta;
 k = (1-delta)*k(-1)+i;
 y = a*k(-1)^alpha*n^(1-alpha);

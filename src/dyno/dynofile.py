@@ -14,7 +14,6 @@ from lark.exceptions import UnexpectedInput
 class DynoModel(Model):
 
 
-
     def import_model(self: Self, txt: str) -> None:
 
         try:

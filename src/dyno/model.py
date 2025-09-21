@@ -16,136 +16,7 @@ from .language import Exogenous, Normal, Deterministic, ProductNormal
 
 from .errors import SteadyStateError
 
-
-class RecursiveSolution:
-    """VAR(1) representing a linearized model
-
-    Attributes
-    ----------
-    X, Y, Σ: (N,N) Matrix
-        parameters of the stationary VAR process $y_t = Xy_{t-1} + Yε_t$, where Σ is the covariance matrix of $ε_t$
-
-    symbols: dict[str, list[str]]
-        dictionary containing the symbols used in the model, the only allowed keys are "endogenous", "exogenous" and "parameters"
-
-    x0: N Vector | None
-        the state around which the linearization is done, generally the steady state, by default None
-
-    evs: 2N Vector | None
-        eigenvalues containing information about the stability of the model,
-        only available if the qz solver was used for linearization, by default None
-    """
-
-    def __init__(
-        self: Self,
-        X: TMatrix,
-        Y: TMatrix,
-        Σ: TMatrix,
-        symbols: dict[str, list[str]],
-        x0: TVector | None = None,
-        evs: TVector | None = None,
-        model=None,
-    ) -> None:
-
-        self.x0 = x0
-        self.X = X
-        self.Y = Y
-        self.Σ = Σ
-
-        self.evs = evs
-
-        self.symbols = symbols
-        self._model = model
-
-    def moments(self):
-
-        return moments(self.X, self.Y, self.Σ)
-    
-    def coefficients_as_df(self):
-        import pandas as pd
-        ss = pd.DataFrame(
-            [self.x0], columns=["{}".format(e) for e in self.symbols["endogenous"]]
-        )
-        hh_y = self.X
-        hh_e = self.Y
-        df = pd.DataFrame(
-            np.concatenate([hh_y, hh_e], axis=1),
-            columns=["{}[t-1]".format(e) for e in self.symbols["endogenous"]]
-            + ["{}[t]".format(e) for e in (self.symbols["exogenous"])],
-        )
-        df.index = ["{}[t]".format(e) for e in self.symbols["endogenous"]]
-        return ss, df
-
-
-    def _repr_html_(self):
-        
-        Σ0, Σ = moments(self.X, self.Y, self.Σ)
-
-        # df_cmoments = pd.DataFrame(
-        #     Σ0,
-        #     columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-        #     index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-        # )
-
-        # df_umoments = pd.DataFrame(
-        #     Σ,
-        #     columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-        #     index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-        # )
-
-        html = f"""
-        <h3>Decision Rule</h3>
-        <h4>Steady-state</h4>
-        {ss.to_html(index=False)}
-        <h4>Jacobian</h4>
-        {df.to_html()}
-        """
-        return html
-
-    def irfs(self, type: IRFType = "log-deviation"):
-
-        from .simul import irfs
-        sim = irfs(self._model, self, type=IRFType)
-        return sim
-    
-    def plot(self,  type: IRFType = "log-deviation"):
-        
-        sim = self.irfs(type=type)
-        plots = sim_to_nsim(sim)
-
-        fig = px.line(
-            plots,
-            x="t",
-            y="value",
-            color="shock",
-            facet_col="variable",
-            facet_col_wrap=2,
-        )
-
-        fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-        fig.update_yaxes(title_text="", matches=None)
-        fig.update_xaxes(title_text="")
-
-        return fig
-
-        # html = f"""
-        # <h3>Eigenvalues</h3>
-        # {evv.to_html()}
-        # <h3>Decision Rule</h3>
-        # <h4>Steady-state</h4>
-        # {ss.to_html(index=False)}
-        # <h4>Jacobian</h4>
-        # {df.to_html()}
-        # <h3>Moments</h3>
-        # <h4>Unconditional moments</h4>
-        # {df_umoments.to_html()}
-        # <h4>Conditional moments</h4>
-        # {df_cmoments.to_html()}
-        # <h3>IRFs</h3>
-        # {fig.to_html(full_html=False, include_plotlyjs=False)}
-        # """
-        # return html
-
+from dyno.solver import RecursiveSolution
 
 class Model(ABC):
     """Abstract class representing an economic model"""
@@ -195,7 +66,7 @@ class Model(ABC):
         self._set_equations()
         self._set_calibration()
         self._set_exogenous()
-        self._set_dynamic()
+        # self._set_dynamic()
 
     def _set_name(self: Self) -> None:
         # should be overridden for file types with name information
@@ -249,42 +120,42 @@ class Model(ABC):
     def parameters(self):
         return self.symbols["parameters"]
 
-    def _set_dynamic(self: Self) -> None:
-        """generates dynamic method from the equations of the model using Dolang"""
-        from dolang import stringify
+    # def _set_dynamic(self: Self) -> None:
+    #     """generates dynamic method from the equations of the model using Dolang"""
+    #     from dolang import stringify
 
-        str_equations = [stringify(eq) for eq in self.equations]
+    #     str_equations = [stringify(eq) for eq in self.equations]
 
-        equations = []
-        for streq in str_equations:
-            lst = streq.split("=")
+    #     equations = []
+    #     for streq in str_equations:
+    #         lst = streq.split("=")
 
-            match len(lst):
-                case 1:
-                    eq = streq.strip()
-                case 2:
-                    eq = f"({lst[0].strip()}) - ({lst[1].strip()})"
-                case _:
-                    raise ValueError("More than one equation on the same line")
+    #         match len(lst):
+    #             case 1:
+    #                 eq = streq.strip()
+    #             case 2:
+    #                 eq = f"({lst[0].strip()}) - ({lst[1].strip()})"
+    #             case _:
+    #                 raise ValueError("More than one equation on the same line")
 
-            equations.append(eq)
+    #         equations.append(eq)
 
-        dict_eq = {f"out{i+1}": eq for i, eq in enumerate(equations)}
-        symbols = self.symbols
-        from dolang.symbolic import stringify_symbol
-        from dolang.function_compiler import FlatFunctionFactory as FFF
-        from dolang.function_compiler import make_method_from_factory
+    #     dict_eq = {f"out{i+1}": eq for i, eq in enumerate(equations)}
+    #     symbols = self.symbols
+    #     from dolang.symbolic import stringify_symbol
+    #     from dolang.function_compiler import FlatFunctionFactory as FFF
+    #     from dolang.function_compiler import make_method_from_factory
 
-        spec = dict(
-            y_f=[stringify_symbol((e, 1)) for e in symbols["endogenous"]],
-            y_0=[stringify_symbol((e, 0)) for e in symbols["endogenous"]],
-            y_p=[stringify_symbol((e, -1)) for e in symbols["endogenous"]],
-            e=[stringify_symbol((e, 0)) for e in symbols["exogenous"]],
-            p=[stringify_symbol(e) for e in symbols["parameters"]],
-        )
-        fff = FFF(dict(), dict_eq, spec, "f_dynamic")
-        fun = make_method_from_factory(fff, compile=False, debug=False)
-        self._dynamic = fun
+    #     spec = dict(
+    #         y_f=[stringify_symbol((e, 1)) for e in symbols["endogenous"]],
+    #         y_0=[stringify_symbol((e, 0)) for e in symbols["endogenous"]],
+    #         y_p=[stringify_symbol((e, -1)) for e in symbols["endogenous"]],
+    #         e=[stringify_symbol((e, 0)) for e in symbols["exogenous"]],
+    #         p=[stringify_symbol(e) for e in symbols["parameters"]],
+    #     )
+    #     fff = FFF(dict(), dict_eq, spec, "f_dynamic")
+    #     fun = make_method_from_factory(fff, compile=False, debug=False)
+    #     self._dynamic = fun
 
     def describe(self: Self) -> str:
         """Returns a string representation of the model's symbols"""
