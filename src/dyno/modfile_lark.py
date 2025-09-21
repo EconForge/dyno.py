@@ -18,8 +18,11 @@ import numpy as np
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-modfile_grammar = open(f"{dir_path}/modfile_grammar.lark").read()
-modfile_parser = Lark(modfile_grammar, propagate_positions=True)
+modfile_grammar = open(f"{dir_path}/dynsym/grammars/modfile_grammar.lark").read()
+
+from lark import Tree, Token
+from lark.visitors import Transformer
+
 
 # from dyno.util_json import UnsupportedDynareFeature
 
@@ -47,6 +50,10 @@ class CheckFunCalls(Visitor):
 class DynareModel(Model):
 
     def import_model(self, txt):
+        modfile_parser = Lark(
+            modfile_grammar,
+            propagate_positions=True
+        )
         try:
             self.data = modfile_parser.parse(txt)
         except Exception as e:
@@ -125,7 +132,7 @@ class DynareModel(Model):
 
             if l.data.value == "parassignment":
 
-                k = l.children[0].children[0].valueKom
+                k = l.children[0].children[0].value
                 ve = l.children[1]
 
                 v = dolang.str_expression(ve)
