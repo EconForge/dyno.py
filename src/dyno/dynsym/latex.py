@@ -18,7 +18,7 @@ class LatexTransformer(Transformer):
 
     def name(self, children):
         # children: [Token(NAME,...)]
-        name_latex = self._greek(children[0].value)
+        name_latex = self._greek(str(children[0]))
 
         return name_latex
 
@@ -27,11 +27,11 @@ class LatexTransformer(Transformer):
 
     def time(self, children):
         # time: SIGNED_INT -> time
-        return children[0].value
+        return str(children[0])
 
     def index(self, children):
         # time index: 't' or '~'
-        return children[0].value
+        return str(children[0])
 
     def shift(self, children):
         # shift: may be a token like '+1' or '-2' or the TimeFixer turned it into '0'

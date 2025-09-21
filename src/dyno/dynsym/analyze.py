@@ -156,7 +156,7 @@ class FormulaEvaluator(Interpreter):
         index = str(tree.children[1].children[0])  # Usually 't'
         shift = int(tree.children[2].children[0])
         
-        # TODO deal with index ~
+        # TODO deal with index ~ #### this should disappear
         if name not in self.variables:
             self.variables[name] = {}
         

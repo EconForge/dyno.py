@@ -6,18 +6,14 @@ modfile: (var_statement | par_statement | varexo_statement | pred_statement | pa
     (command_statement | steady_block | initval_block | steady_block | shocks_block )*
     
 
-varexo_statement: "varexo " (lsymbol ","?)* lsymbol ";"
-var_statement: "var " (lsymbol ","?)* lsymbol ";"
-par_statement: "parameters " (lsymbol ","?)* lsymbol ";"
-
+varexo_statement: "varexo" (lsymbol ","?)* lsymbol ";"
+var_statement: "var" (lsymbol ","?)* lsymbol ";"
+par_statement: "parameters" (lsymbol ","?)* lsymbol ";"
 pred_statement: "predetermined_variables " (symbol ","?)* symbol ";"
 
 ?parinit_statement: parassignment ";"
 
-lsymbol: symbol "$" latex_string "$" "(" properties ")"
-    | symbol "(" properties ")"
-    | symbol "$" latex_string "$"
-    | symbol 
+lsymbol: cname ["$" latex_string "$"] ["(" properties ")"]
 
 latex_string: LATEX_STRING
 
@@ -25,10 +21,10 @@ latex_string: LATEX_STRING
 # TODO
 
 command_statement:  COMMAND ";"
-    | COMMAND "(" symbol ")" ";"
-    | COMMAND (symbol *) ";" 
-    | COMMAND "(" (symbol "=" NUMBER ",")* symbol "=" NUMBER ")" ";"
-    | COMMAND "(" (symbol "=" NUMBER ",")* symbol "=" NUMBER ")" (symbol *) ";" 
+    | COMMAND "(" cname ")" ";"
+    | COMMAND (cname *) ";" 
+    | COMMAND "(" (cname "=" NUMBER ",")* cname "=" NUMBER ")" ";"
+    | COMMAND "(" (cname "=" NUMBER ",")* cname "=" NUMBER ")" (cname *) ";" 
 
 
 model_block.1: "model" ";" _list_of_equations _END_TOKEN ";"
@@ -48,8 +44,7 @@ setcovar_stmt: "var" symbol "," symbol "=" formula ";"
 _list_of_equations: (lequation) (";"  lequation )* ";"
 _list_of_parassignments: (parassignment) (";"  parassignment )* ";"
 
-lequation: equation
-    | "[" properties "]" equation
+lequation: ["[" properties "]"] equation
 
 properties: (pair ",")* pair
 pair:  NAME "=" "'" UNQUOTED_STRING "'"
@@ -58,7 +53,7 @@ pair:  NAME "=" "'" UNQUOTED_STRING "'"
 
 parassignment: symbol "=" formula
 
-assignment: variable "=" formula
+// vassignment: variable "=" formula
 
 // ?equation: equality | formula
 
@@ -115,9 +110,9 @@ variable: cname  "(" time_shift  ")" -> variable
 
 _END_TOKEN: "end"
 
-FUNCTION: "sin"|"cos"|"exp"|"log"|"steady_state"
+FUNCTION.1: "sin"|"cos"|"exp"|"log"|"steady_state"
 
-COMMAND: "steady"|"check"|"stoch_simul"
+COMMAND.1: "steady"|"check"|"stoch_simul"
 
 SIGNED_INT2: ("+"|"-") INT
 
