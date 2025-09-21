@@ -1,5 +1,4 @@
 from dynare_preprocessor import DynareModel as Modfile
-from dynare_preprocessor import UnsupportedFeatureException
 from dyno.model import Model
 from dyno.language import pad_list, Normal, Deterministic
 import numpy as np
@@ -8,6 +7,8 @@ from typing_extensions import Self
 from typing import Any
 from .typedefs import TVector, TMatrix
 
+from dynare_preprocessor import PreprocessorException
+from .errors import DynareParserError
 
 class DynareModel(Model):
 
@@ -19,7 +20,11 @@ class DynareModel(Model):
         txt : str
             the model being imported in `.mod` form
         """
-        self.data = Modfile(txt, deriv_order, params_deriv_order)
+        try:
+            self.data = Modfile(txt, deriv_order, params_deriv_order)
+        except PreprocessorException as e:
+            raise DynareParserError(e) from e
+
 
     def _set_symbols(self: Self) -> None:
         """sets symbols attribute of Model"""
@@ -35,6 +40,8 @@ class DynareModel(Model):
     def _set_calibration(self: Self) -> None:
         """retrieves calibration values"""
         self.calibration = self.data.context
+        self.steady_state = {k: v for (k, v) in self.calibration.items() if (k in self.symbols["endogenous"]) or (k in self.symbols["exogenous"])}
+        self.constants = {k: v for (k, v) in self.calibration.items() if (k in self.symbols["parameters"])}
 
     def _set_exogenous(self: Self) -> None:
         self.exogenous = None

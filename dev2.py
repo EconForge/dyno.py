@@ -74,7 +74,7 @@ def import_model(filename):
 
         return r, A,B,C,D
         
-    ys, es = steady_state()
+    ys, es = steady_state
     
     r, A, B, C, D = compute_derivatives(ys, ys, ys, es)
 

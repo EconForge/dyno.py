@@ -1,9 +1,12 @@
 from IPython.display import display, HTML, Markdown, TextDisplayObject
 import time
 import rich
+from rich import inspect
 import pandas
 import altair
 import tempita
+
+from dyno.errors import ParserError
 
 import altair as alt
 # load a simple dataset as a pandas DataFrame
@@ -40,7 +43,9 @@ ch = alt.Chart(cars).mark_point().encode(
 # {[endfor]} 
 # {[endif]}
 
-
+# :::{aside}
+# ![](/files/examples/clippy.png)
+# :::
 
 template = tempita.Template(r"""
 {[default model=None]}
@@ -50,7 +55,34 @@ template = tempita.Template(r"""
 {[default fig=None]}                        
                             
 # Dyno Report
-                
+                            
+
+                            
+:::{dropdown} Code
+```{code}
+:linenos:
+:emphasize-lines: {[ str.join(",",error_lines) ]}
+{[code]}
+```
+:::
+
+{[if len(errors)>0]}      
+
+{[for e in errors]}
+                                     
+:::{error} {[str(e)]}
+{[if hasattr(e,'details') and e.details is not None]}
+:class: dropdown
+```
+{[str(e)]}
+```
+{[endif]}
+:::
+                            
+{[endfor]} 
+{[endif]}
+
+---
 
 {[if model is not None]}
                             
@@ -67,10 +99,20 @@ Parameter values
 ```
 Steady state values
 ```{code} python
-{[ str(model.steady_state()) ]}
+{[ str(model.steady_state) ]}
 ```
 :::
-                            
+     
+
+---
+{[endif]}
+
+
+{[if dr is not None]}
+                    
+## Solution
+
+                                                   
 {[if abs(residuals).max() > 1e-6]}
 :::{warning} Non zero residuals
 :class: dropdown
@@ -81,22 +123,22 @@ calculation or an error in the model equations.
 ```
 :::
 {[endif]}
+                            
 
----
+{[if bk_check]}
+:::{tip} Blanchard Kan conditions are met
+{[else]}
+:::{warning} Blanchard Kan conditions are not met
 {[endif]}
+:class: dropdown
+System Eigenvalues:
+```{code} python
+{[dr.evs.real]}
+```
+:::
 
+                                                            
 
-{[if dr is not None]}
-                    
-## Solution
-                            
-First order approximation.
-                            
-Ressiduals: {[residuals]}
-                                
-System Eigenvalues: {[dr.evs.real]}
-
-Blanchard-Kahn conditions: {[ "satisfied" if bk_check else "not satisfied" ]}
 
 :::{dropdown} Recursive Decision Rule
                             
@@ -132,11 +174,11 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 ::::
 
 ::::::
----                   
+              
 {[endif]}
                             
 
-{[if sim is not None]}
+{[if sim is not None and model.checks['deterministic']==True]}
 
 ## Simulation
 
@@ -225,8 +267,11 @@ class Report:
 
         self("Elapsed time: {:.3f} sec".format(time.time() - self.t_start))
     
-        errors = [w for w in self.elements.values() if isinstance(w, Exception)]
-        context = {"errors": errors, "alt": altair}
+        errors = [e for e in self.elements.values() if isinstance(e, Exception)]
+        
+        error_lines = [str(e.line) for e in errors if isinstance(e, ParserError)]
+        from rich import inspect
+        context = {"errors": errors, "error_lines": error_lines, "alt": altair, "inspect": inspect}
         if 'dr' in self.elements:
             dr = self.elements['dr']
             evs = abs(dr.evs)
@@ -240,10 +285,10 @@ class Report:
         d = {k: w for k,w in self.elements.items() if not isinstance(k,int)} | context
 
         txt = template.substitute(**d)
-
-        if 'fig' in self.elements:
-            display(self.elements['fig'])
-
+        # for e in errors:
+        #     display(e)
+        # for e in errors:
+        #     print(e)
         return txt
 
     def __call__(self, *s, **options):
@@ -298,10 +343,11 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
     try:
         if filename.endswith(".mod"):
             preprocessor = options.get("modfile_preprocessor", "dynare")
-            if preprocessor == "dynare":
-                from dyno.modfile import DynareModel
-            else:
-                from dyno.modfile_lark import DynareModel
+            # if preprocessor == "dynare":
+            #     from dyno.modfile import DynareModel
+            # else:
+            #     from dyno.modfile_lark import DynareModel
+            from dyno.modfile import DynareModel
             model = DynareModel(txt=txt)
         elif filename.endswith(".dyno.yaml"):
             from dyno.yamlfile import YAMLFile
@@ -318,17 +364,18 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
         return report
 
     try:
+        from dyno.errors import SteadyStateError
         r = model.compute()
         err = abs(r).max()
         report(residuals=r)
-        if err > 1e-6:
-            raise Exception(f"Steady-State Error\n. Residuals: {abs(r)}")
+        # if err > 1e-6:
+        #     raise  SteadyStateError(r)
     except Exception as e:
         report(e)
         return report
 
     if model.checks['deterministic']:
-        print("Deterministic model")
+        
         try:
             from dyno.solver import deterministic_solve
             sim = deterministic_solve(model)
@@ -337,13 +384,8 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             report(e)
             return report
         
-        try:
-            sim.plot()
-        except Exception as e:
-            report(e)
-            return report
+
     else:
-        print("Stochastic model")
 
         try:
             dr = model.solve()
@@ -359,11 +401,16 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             report(e)
             return report
 
-        try:
-            fig = dr.plot()
-            report(fig=fig)
-        except Exception as e:
-            report(e)
-            return report
+    try:
+        # fig = dr.plot()
+        from dyno.plots import plot_irfs
+        fig = plot_irfs(sim)
+        report(fig=fig)
+    except Exception as e:
+        report(e)
+        return report
 
-    return report
+    from IPython.display import display, HTML, Markdown
+    display(Markdown(report._repr_markdown_()))
+    display(fig)
+    display(Markdown("---"))

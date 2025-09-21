@@ -8,11 +8,19 @@ from typing_extensions import Self
 
 import numpy as np
 
+from .errors import LARKParserError, ParserError
+from lark.exceptions import UnexpectedInput
+
 class DynoModel(Model):
+
+
 
     def import_model(self: Self, txt: str) -> None:
 
-        self.data = parser.parse(txt, start='free_block')
+        try:
+            self.data = parser.parse(txt, start='free_block')
+        except UnexpectedInput as e:
+            raise LARKParserError(e, txt) from e
 
         tree = self.data
 
@@ -89,6 +97,7 @@ class DynoModel(Model):
     def compute_residuals():
             pass
 
+    @property
     def steady_state(self):
 
         endogenous = self.symbols["endogenous"]
@@ -98,7 +107,6 @@ class DynoModel(Model):
         y = [fe.steady_states[name] for name in  (endogenous)]
         e = [fe.steady_states[name] for name in  (exogenous)]
         return y,e
-
 
     def compute_derivatives(self,y2,y1,y0,e):
 
@@ -171,7 +179,7 @@ class DynoModel(Model):
 
         assert len(calibration)==0, "calibration not supported yet"
 
-        ys, es = self.steady_state()
+        ys, es = self.steady_state
         
         return self.compute_derivatives(ys,ys,ys,es)
 
@@ -183,12 +191,12 @@ class DynoModel(Model):
         if T is None:
             T = model.calibration.get('T', 50)
 
-        y,e = model.steady_state()
+        y,e = model.steady_state
 
         # initial guess
         v0 = np.concatenate([y,e])[None,:].repeat(T+1,axis=0)
 
-        y,e = model.steady_state()
+        y,e = model.steady_state
 
         # works if the is one and exactly one exogenous variable?
         # does it?
@@ -229,7 +237,7 @@ class DynoModel(Model):
         # the following works if there is one and exactly one exogenous variable
         assert n_exo ==1
         
-        y,e = model.steady_state()
+        y,e = model.steady_state
         
         v1 = np.concatenate([y,e])[None,:].repeat(T+1,axis=0)
         for key,value in model.evaluator.values.items():
@@ -277,7 +285,7 @@ class DynoModel(Model):
 
         results = [E.visit(eq) for eq in E.equations]
         
-        y,e = model.steady_state()
+        y,e = model.steady_state
 
         # get exo values
         # works if the is one and exactly one exogenous variable?

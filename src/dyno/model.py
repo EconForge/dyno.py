@@ -14,7 +14,7 @@ from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
 import pandas as pd
 from .language import Exogenous, Normal, Deterministic, ProductNormal
 
-import plotly.express as px
+from .errors import SteadyStateError
 
 
 class RecursiveSolution:
@@ -104,6 +104,7 @@ class RecursiveSolution:
 
     def irfs(self, type: IRFType = "log-deviation"):
 
+        from .simul import irfs
         sim = irfs(self._model, self, type=IRFType)
         return sim
     
@@ -161,9 +162,10 @@ class Model(ABC):
     calibration: dict[str, float]
     """Dictionary of parameter values and initial values of endogenous and exogenous variables"""
 
-    exogenous: Exogenous | None
-    """Description of shocks on exogenous variables, only stochastic shocks are supported for now"""
+    processes: ProductNormal | None
 
+    values: dict[str, dict[int, float]] | None
+    
     _dynamic: DynamicFunction
     """Temporary storage for dynamic method"""
 
@@ -309,6 +311,15 @@ class Model(ABC):
         txt = self.describe()
         return txt
 
+    def residuals(self):
+
+        v = self.symbols["endogenous"]
+        p = self.symbols["parameters"]
+
+        p = [c[e] for e in p]
+        y,e = self.steady_state
+        return self.dynamic(y,y,y,e,p)
+    
     @overload
     def dynamic(
         self: Self, y0: TVector, y1: TVector, y2: TVector, e: TVector, p: TVector
@@ -456,40 +467,3 @@ class Model(ABC):
             X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0, model=self
         )
 
-
-def irfs(
-    model: Model, dr: RecursiveSolution, type: IRFType = "log-deviation"
-) -> dict[str, pd.DataFrame]:
-    """Impulse response function simulation in response to shocks on each exogenous variable
-
-    Parameters
-    ----------
-    dr : RecursiveSolution
-        linearized model, contains all variables and parameters
-    T : int, optional
-        time horizon over which the simulation is done, by default 40
-    type : IRFType, optional
-        can be "level", "log-deviation" or "deviation", by default "level"
-
-    Returns
-    -------
-    pd.DataFrame
-        impulse response function of all endogenous variables to shocks on each exogenous variable
-    """
-    from .simul import irf
-
-    res = {}
-    for i, e in enumerate(model.symbols["exogenous"]):
-        res[e] = irf(dr, i, type=type)
-
-    return res
-
-
-def sim_to_nsim(irfs):
-
-    pdf = pd.concat(irfs).reset_index()
-    ppdf = pdf.rename(columns={"level_0": "shock", "level_1": "t"})
-
-    ppdf = ppdf.melt(id_vars=["shock", "t"])
-
-    return ppdf

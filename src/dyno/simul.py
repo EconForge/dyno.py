@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from .model import RecursiveSolution
-
+from .model import Model
 from .typedefs import IRFType
 
 
@@ -61,6 +61,33 @@ def irf(
     return pd.DataFrame(res, columns=dr.symbols["endogenous"])
 
 
+def irfs(
+    model: Model, dr: RecursiveSolution, type: IRFType = "log-deviation"
+) -> dict[str, pd.DataFrame]:
+    """Impulse response function simulation in response to shocks on each exogenous variable
+
+    Parameters
+    ----------
+    dr : RecursiveSolution
+        linearized model, contains all variables and parameters
+    T : int, optional
+        time horizon over which the simulation is done, by default 40
+    type : IRFType, optional
+        can be "level", "log-deviation" or "deviation", by default "level"
+
+    Returns
+    -------
+    pd.DataFrame
+        impulse response function of all endogenous variables to shocks on each exogenous variable
+    """
+    from .simul import irf
+
+    res = {}
+    for i, e in enumerate(model.symbols["exogenous"]):
+        res[e] = irf(dr, i, type=type)
+
+    return res
+
 def simulate(dr: RecursiveSolution, T: int = 40) -> pd.DataFrame:
     """Simulates the evolution of the endogenous variables
 
@@ -95,3 +122,14 @@ def simulate(dr: RecursiveSolution, T: int = 40) -> pd.DataFrame:
     res = np.concatenate([e[None, :] for e in ss], axis=0)
 
     return pd.DataFrame(res, columns=dr.symbols["endogenous"])
+
+
+
+def sim_to_nsim(irfs):
+
+    pdf = pd.concat(irfs).reset_index()
+    ppdf = pdf.rename(columns={"level_0": "shock", "level_1": "t"})
+
+    ppdf = ppdf.melt(id_vars=["shock", "t"])
+
+    return ppdf

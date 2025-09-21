@@ -280,5 +280,5 @@ def deterministic_solve(model, x0=None, T=None, method='hybr'):
     df = pandas.DataFrame({e: w0[:,i] for i,e in enumerate(model.variables)})
     df.index=range(T+1)
     df.index.name='t'
-
+    df.reset_index(inplace=True)
     return df
