@@ -228,7 +228,7 @@ class FormulaEvaluator(Interpreter):
                 if name in self.processes:
                     raise Exception(f"Warning: invalid redefinition of process {name}.")
                 else:
-                    self.processes[name] = value
+                    self.processes[(name,)] = value
                     self.steady_states[name] = value.mu
 
         return value

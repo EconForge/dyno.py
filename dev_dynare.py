@@ -16,10 +16,6 @@ dr1 = model.solve();
 t2 = time.time()
 print("Model parsing time: ", t2-t1)
 
-from  dyno.dynsym.latex import latex
-for eq in model.evaluator.equations:
-    display(Math(latex(eq)))
-
 from dyno.modfile_lark import DynareModel
 
 t1 = time.time()
@@ -38,3 +34,12 @@ model = DynareModelPP(f_r);
 dr3 = model.solve();
 t2 = time.time()
 print("Model parsing time: ", t2-t1)
+
+
+from IPython.display import Math, display
+
+from  dyno.dynsym.latex import latex
+for eq in model.evaluator.equations:
+    display(Math(latex(eq)))
+
+

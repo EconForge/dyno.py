@@ -169,6 +169,14 @@ class InterpretModfile(FormulaEvaluator):
         self.covariances[(name, name)] = value
         return tree
     
+        
+    def setstdvar_stmt(self, tree):
+        name = str(tree.children[0].children[0].children[0])
+        formula = (tree.children[1])
+        value = self.visit(formula)
+        self.covariances[(name, name)] = value**2
+        return tree
+    
     # Function calls
     def call(self, tree):
         """Handle function calls: func_name(arg)"""

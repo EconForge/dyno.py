@@ -245,6 +245,7 @@ class LatexTransformer(Transformer):
             "upsilon": "\\upsilon",
             "phi": "\\phi",
             "chi": "\\chi",
+            "khi": "\\chi",
             "psi": "\\psi",
             "omega": "\\omega",
             # common alternative names
