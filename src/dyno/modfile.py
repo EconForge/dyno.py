@@ -1,5 +1,5 @@
 from dynare_preprocessor import DynareModel as Modfile
-from dyno.model import Model
+from dyno.model import DynoModel
 from dyno.language import pad_list, Normal, Deterministic
 import numpy as np
 
@@ -10,7 +10,7 @@ from .typedefs import TVector, TMatrix
 from dynare_preprocessor import PreprocessorException
 from .errors import DynareParserError
 
-class DynareModel(Model):
+class DynareModel(DynoModel):
 
     def import_model(self: Self, txt: str, deriv_order=1, params_deriv_order=0) -> None:
         """imports model written in `.mod` format into data attribute using Dynare's preprocessor
@@ -33,9 +33,15 @@ class DynareModel(Model):
         self.symbols["exogenous"] = self.data.exogenous + self.data.exogenous_det
         self.symbols["parameters"] = self.data.parameters
 
-    def _set_equations(self: Self) -> None:
-        """sets equations attribute of Model"""
-        self.equations = self.data.equations
+    # @property
+    # def _set_equations(self: Self) -> None:
+    #     """sets equations attribute of Model"""
+    #     self.equations = self.data.equations
+
+    @property
+    def equations(self):
+        return self.data.equations
+
 
     def _set_calibration(self: Self) -> None:
         """retrieves calibration values"""
@@ -64,6 +70,7 @@ class DynareModel(Model):
             for (var1, var2), val in self.data.covariances.items():
                 covar[index[var1], index[var2]] = val
                 covar[index[var2], index[var1]] = val
+            # self.processes = {tuple(exo): Normal(Σ=covar)}
             self.processes = Normal(Σ=covar)
             self.paths = None
             self.exogenous = self.processes

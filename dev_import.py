@@ -1,46 +1,44 @@
-from dynsym import read_model
-from rich import print, inspect
+from dyno.dynofile2 import LDynoModel
 
-filename = "tests/rbc.dyno"
+from rich import inspect, print
 
-# sol = read_model("tests/rbc.dyno")
-# # r, A, B, C, D = model.solve()
-# print(sol)
 
-txt = open(filename).read()
-# print(txt)
+# import time
+# model = LDynoModel("examples/RBC.dyno")
+# t1 = time.time()
+# model = LDynoModel("examples/RBC.dyno")
+# model.solve()
+# t2 = time.time()
+# print("Elsapsed time:", t2-t1)
 
-from dynsym.analyze import FormulaEvaluator
-from dynsym.grammar import parser
 
-tree = parser.parse(txt, start="free_block")
+# y,e = model.steady_state
+# model.compute_derivatives(y,y,y,e)
 
-from rich import print
-print(tree.children[-1].pretty())
 
-# print(tree.pretty())
 
-fe = FormulaEvaluator(diff=False, steady_state=True)
+import time
+model = LDynoModel("examples/modfiles/RBC.mod")
+t1 = time.time()
+model = LDynoModel("examples/modfiles/RBC.mod")
+dr = (model.solve())
+print(model.symbols)
+print(dr.Y)
+t2 = time.time()
+print("Elsapsed time:", t2-t1)
 
-res = fe.visit(tree)
 
-print(fe.symbol_table)
+# # Importing modfile with preprocessor
+# from dyno.modfile import DynareModel
+# import time
+# model = DynareModel("examples/modfiles/RBC.mod")
+# t1 = time.time()
+# model = DynareModel("examples/modfiles/RBC.mod")
+# # print(model.solve())
+# # print(model.symbols)
+# # print(dr.Y)
+# t2 = time.time()
+# print("Elsapsed time:", t2-t1)
 
-# print(res)
-# inspect(fe.symbols)
 
-# # inspect(res)
-def import_model(filename):
-    txt = open(filename).read()
-    tree = parser.parse(txt, start="free_block")
-    fe = FormulaEvaluator(diff=False, steady_state=True)
-    return fe.visit(tree), fe
-
-from time import time
-
-t1 = time()
-res, an = import_model(filename)
-t2 = time()
-
-inspect(an)
-print(f"Import time: {t2-t1:.4f} seconds")
+exit()

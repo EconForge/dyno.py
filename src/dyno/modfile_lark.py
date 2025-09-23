@@ -29,7 +29,7 @@ from lark.visitors import Transformer
 
 # from dyno.util_json import UnsupportedDynareFeature
 
-from dyno.model import Model
+from dyno.model import DynoModel
 from lark import Visitor
 
 from lark import Tree, Token, Lark
@@ -63,6 +63,8 @@ class ModFileTransformer(Transformer):
             name = str(child.children[0].children[0])
             if name not in self.variables_exo:
                 self.variables_exo.append(name)
+            if name not in self.variables:
+                self.variables.append(name)
         return tree
 
     
@@ -203,7 +205,7 @@ class InterpretModfile(FormulaEvaluator):
 from .errors import LARKParserError, ParserError
 from lark.exceptions import UnexpectedInput
 
-class DynareModel(Model):
+class DynareModel(DynoModel):
 
     def import_model(self, txt):
 

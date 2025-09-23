@@ -19,11 +19,7 @@ class DefinitionError(Exception):
         return f"({meta.line}, {meta.column}): {self.msg}"
 
 
-    
-class Normal:
-    def __init__(self, u,v):
-        self.mu = u
-        self.sigma = v
+from dyno.language import Normal
 
 class FormulaEvaluator(Interpreter):
     """
@@ -65,7 +61,7 @@ class FormulaEvaluator(Interpreter):
         from .autodiff import MATH_FUNCTIONS
         self.function_table.update(MATH_FUNCTIONS)
 
-        self.function_table.update({'N': (lambda u,v: Normal(u,v)) })
+        self.function_table.update({'N': (lambda u,v: Normal(Sigma=[[v]], Μ=[u])) })
 
     # Arithmetic operations
     def add(self, tree):
@@ -229,7 +225,7 @@ class FormulaEvaluator(Interpreter):
                     raise Exception(f"Warning: invalid redefinition of process {name}.")
                 else:
                     self.processes[(name,)] = value
-                    self.steady_states[name] = value.mu
+                    self.steady_states[name] = float(value.Μ)
 
         return value
     

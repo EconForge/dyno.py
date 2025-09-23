@@ -162,7 +162,13 @@ class Printer(Interpreter):
         return f"({a})/({b})"
 
     def call(self, tree):
-        funname = tree.children[0].children[0].value
+
+        # TODO: correct the small inconsistency below
+        # between modfile lark and dyno lark
+        try:
+            funname = tree.children[0].children[0].value
+        except:
+            funname = tree.children[0].value
         args = self.visit(tree.children[1])
         return f"{funname}({args})"
 

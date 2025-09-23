@@ -18,7 +18,7 @@ from .errors import SteadyStateError
 
 from dyno.solver import RecursiveSolution
 
-class Model(ABC):
+class DynoModel(ABC):
     """Abstract class representing an economic model"""
 
     name: str | None
@@ -44,26 +44,30 @@ class Model(ABC):
     """Format-dependant internal representation of the data"""
 
     def __init__(
-        self: Self, filename: str | None = None, txt: str | None = None
+        self: Self, filename: str = None, txt: str | None = None
     ) -> None:
         match filename, txt:
             case (None, None):
                 raise ValueError(
                     "Neither the file name nor content were passed to constructor. One of the two should be passed."
                 )
+            case (None, txt): # This can't happen because of the default value
+                assert txt is not None
+                filename = "<anonymous>.dyno"
+                self.filename = "anonymous.dyno"
+                self.import_model(txt)
             case (filename, None):
                 assert filename is not None  # to reassure Mypy
+                self.filename = filename
                 self.import_file(filename)
-            case (None, txt):
-                assert txt is not None
-                self.import_model(txt)
             case _:
-                raise ValueError(
-                    "File name and content were both passed to constructor. Only one of the two should be passed."
-                )
+                self.filename = filename
+                self.import_model(txt)
+                # raise ValueError(
+                #     "File name and content were both passed to constructor. Only one of the two should be passed."
+                # )
         self._set_name()
         self._set_symbols()
-        self._set_equations()
         self._set_calibration()
         self._set_exogenous()
         # self._set_dynamic()
@@ -82,10 +86,6 @@ class Model(ABC):
 
     @abstractmethod
     def _set_symbols(self: Self) -> None:
-        pass
-
-    @abstractmethod
-    def _set_equations(self: Self) -> None:
         pass
 
     @abstractmethod
@@ -319,9 +319,9 @@ class Model(ABC):
         p = self.symbols["parameters"]
 
         # TODO add support for Deterministic
-        assert isinstance(self.processes, Normal) or isinstance(
-            self.processes, ProductNormal
-        )
+        # assert isinstance(self.processes, Normal) or isinstance(
+        #     self.processes, ProductNormal
+        # )
 
         Σ = self.processes.Σ
 
