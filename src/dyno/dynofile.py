@@ -10,81 +10,30 @@ import numpy as np
 
 from .errors import LARKParserError, ParserError
 from lark.exceptions import UnexpectedInput
+from dyno.larkfiles import DynoFile, LModFile
+from dyno.language import ProductNormal, Normal
 
-class DynoModel(Model):
-
+class LDynoModel(DynoModel):
 
     def import_model(self: Self, txt: str) -> None:
 
         try:
-            self.data = parser.parse(txt, start='free_block')
+            if self.filename.endswith('.mod'):
+                self.data = LModFile(content=txt, filename=self.filename)
+            elif self.filename.endswith('.dyno'):
+                self.data = DynoFile(content=txt, filename=self.filename)
         except UnexpectedInput as e:
             raise LARKParserError(e, txt) from e
 
-        tree = self.data
-
-        fe = FormulaEvaluator()
-        self.evaluator = fe
-
-        # process assignments
-        from dyno.language import Normal
-        fe.visit(tree)
-
-        # count variable in equations and compute residuals
-        fe.steady_state = True
-        self.residuals = [fe.visit(eq) for eq in fe.equations]
-        fe.steady_state = False
+    def _set_context(self: Self) -> None:
+        context = self.data.context.copy()
+        self.context = context
 
 
+    @property
+    def equations(self):
 
-    def _set_name(self: Self):
-
-        self.name = "anonymous"
-
-    def _set_calibration(self: Self) -> None:
-
-        self.calibration = self.get_calibration()
-
-
-    def get_calibration(self, **kwargs):
-
-        return self.evaluator.constants | self.evaluator.steady_states
-
-    def _set_exogenous(self):
-
-        from dyno.language import ProductNormal, Normal
-
-        if len(self.evaluator.processes.values())==0:
-            self.processes = None
-        else:
-            self.processes = ProductNormal(
-                *[Normal([[e.sigma**2]], [e.mu]) for e in self.evaluator.processes.values()]
-            )
-
-        self.paths = self.evaluator.values
-
-    def _set_symbols(self: Self) -> None:
-        
-        fe = self.evaluator
-
-        variables = (fe.variables).keys()
-
-        exogenous = [v for v in variables if (v in fe.processes)]
-        endogenous = [v for v in variables if v not in exogenous]
-
-        self.symbols = {
-            "endogenous": endogenous,
-            "parameters": list(fe.constants.keys()),
-            "exogenous": exogenous,
-        }
-
-    def _set_dynamic(self):
-        
-        pass
-
-    def _set_equations(self: Self):
-
-        self.equations = [str_expression(eq) for eq in self.evaluator.equations]
+        return [str_expression(eq) for eq in self.data.equations]
 
     def latex_equations(self):
 
@@ -93,27 +42,34 @@ class DynoModel(Model):
         latex_str = str.join("\n",["$${}$$".format(eq) for eq in eqs_str])
         return latex_str
 
-    def compute_residuals():
-            pass
 
-    @property
-    def steady_state(self):
+    def compute_residuals(self, y2, y1, y0, e):
 
+        fe = self.data.evaluator
         endogenous = self.symbols["endogenous"]
         exogenous = self.symbols["exogenous"]
-        fe = self.evaluator
 
-        y = [fe.steady_states[name] for name in  (endogenous)]
-        e = [fe.steady_states[name] for name in  (exogenous)]
-        return y,e
+        for i,name in enumerate(endogenous):
+            fe.variables[name] = { 
+                -1: y0[i],
+                0: y1[i],
+                1: y2[i] }
+        for i,name in enumerate(exogenous):
+            fe.variables[name] = { 0: e[i] }
 
-    def compute_derivatives(self,y2,y1,y0,e):
+        results = [fe.visit(eq) for eq in fe.equations]
 
+        r = np.array([float(el) for el in results])
+
+        return r
+
+
+    def compute_jacobians(self,y2,y1,y0,e):
 
         import numpy as np
         from dyno.dynsym.autodiff import DNumber as DN
 
-        fe = self.evaluator
+        fe = self.data.evaluator
         endogenous = self.symbols["endogenous"]
         exogenous = self.symbols["exogenous"]
 
@@ -122,6 +78,7 @@ class DynoModel(Model):
                 -1: DN(y0[i], {(name,-1): 1}),
                 0: DN(y1[i], {(name,0): 1}),
                 1: DN(y2[i], {(name,1): 1}) }
+
         for i,name in enumerate(exogenous):
             fe.variables[name] = { 0: DN(e[i], {(name,0): 1}) }
 
@@ -153,54 +110,26 @@ class DynoModel(Model):
 
 
 
-    def compute(
-        self: Self, calibration: dict[str, float] = {}, diff: bool = False
-    ) -> TVector | tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
-        """Computes the dynamic function's value based on calibration state and parameters
 
-        Parameters
-        ----------
-        calibration : dict[str, float], optional
-            dictionary containing the value of each parameter and variable of the model, indexed by their symbols, by default {}
-        diff : bool, optional
-            if set to True returns the dynamic function's partial derivatives as well, by default False
 
-        Returns
-        -------
-        TVector|tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]
-            value of the dynamic function at the state described by calibration, as well as its partial derivatives if diff is set to True
-        """
 
-        if not diff:
-            return np.array(self.residuals)
-        
-        from dyno.dynsym.analyze import DN
 
-        assert len(calibration)==0, "calibration not supported yet"
-
-        ys, es = self.steady_state
-        
-        return self.compute_derivatives(ys,ys,ys,es)
-
-        import copy
-    
 
     def deterministic_guess(model, T=None):
 
         if T is None:
-            T = model.calibration.get('T', 50)
+            T = model.context['constants'].get('T', 50)
 
-        y,e = model.steady_state
+        y,e = model.__steady_state_vectors__
 
         # initial guess
         v0 = np.concatenate([y,e])[None,:].repeat(T+1,axis=0)
 
-        y,e = model.steady_state
 
         # works if the is one and exactly one exogenous variable?
         # does it?
-        for key,value in model.evaluator.values.items():
-            i = model.variables.index(key)
+        for key,value in model.data.evaluator.values.items():
+            i = model.symbols['variables'].index(key)
             for a,b in value.items():
                 v0[a,i] = b
 
@@ -213,7 +142,7 @@ class DynoModel(Model):
 
         flat = v.ndim == 1
 
-        p = len(model.variables)
+        p = len(model.symbols['variables'])
         T = int(np.prod(v.shape)/p-1)
 
         v = v.reshape((T+1,p))
@@ -222,10 +151,10 @@ class DynoModel(Model):
         v_b = np.concatenate([v[0,:][None,:], v[:-1,:]], axis=0)
 
         context = {}
-        for i,name in enumerate(model.variables):
+        for i,name in enumerate(model.symbols['variables']):
             context[name] = { -1: v_b[:,i], 0: v[:,i], 1: v_f[:,i] }
 
-        E = (model.evaluator)
+        E = (model.data.evaluator)
         E.variables.update(context)
 
         results = [E.visit(eq) for eq in E.equations]
@@ -239,8 +168,8 @@ class DynoModel(Model):
         y,e = model.steady_state
         
         v1 = np.concatenate([y,e])[None,:].repeat(T+1,axis=0)
-        for key,value in model.evaluator.values.items():
-            i = model.variables.index(key)
+        for key,value in model.data.evaluator.values.items():
+            i = model.symbols['variables'].index(key)
             for a,b in value.items():
                 v1[a,i] = b
 
@@ -263,7 +192,7 @@ class DynoModel(Model):
 
         flat = v.ndim == 1
 
-        p = len(model.variables)
+        p = len(model.symbols['variables'])
         T = int(np.prod(v.shape)/p-1)
 
         v = v.reshape((T+1,p))
@@ -272,26 +201,26 @@ class DynoModel(Model):
         v_b = np.concatenate([v[0,:][None,:], v[:-1,:]], axis=0)
 
         context = {}
-        for i,name in enumerate(model.variables):
+        for i,name in enumerate(model.symbols['variables']):
             context[name] = {
                 -1: DNumber(v_b[:,i], {(name,-1): 1.0}),
                 0: DNumber(v[:,i], {(name,0): 1.0}),
                 1: DNumber(v_f[:,i],  {(name,1): 1.0})
             }
 
-        E = (model.evaluator)
+        E = (model.data.evaluator)
         E.variables.update(context)
 
         results = [E.visit(eq) for eq in E.equations]
         
-        y,e = model.steady_state
+        y,e = model.__steady_state_vectors__
 
         # get exo values
         # works if the is one and exactly one exogenous variable?
         # does it?
         v1 = np.concatenate([y,e])[None,:].repeat(T+1,axis=0)
-        for key,value in model.evaluator.values.items():
-            i = model.variables.index(key)
+        for key,value in model.data.evaluator.values.items():
+            i = model.symbols['variables'].index(key)
             for a,b in value.items():
                 v1[a,i] = b
 
@@ -305,7 +234,7 @@ class DynoModel(Model):
 
         N = v.shape[0]
 
-        p = len(model.variables)
+        p = len(model.symbols['variables'])
         q = len(model.equations)
         
         D = np.zeros( (N, q, p, 3 ))  # would be easier with 4d struct
@@ -314,7 +243,7 @@ class DynoModel(Model):
             
             for k,deriv in results[i_q].derivatives.items():
                 s,t = k # symbol, time
-                i_var = model.variables.index(s)
+                i_var = model.symbols['variables'].index(s)
                 D[:, i_q, i_var, t+1] = deriv
 
         # add exogenous equations

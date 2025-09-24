@@ -412,8 +412,9 @@ def deterministic_solve(model, x0=None, T=None, method='hybr'):
     
     w0 = res.x.reshape(v0.shape)
 
-    df = pandas.DataFrame({e: w0[:,i] for i,e in enumerate(model.variables)})
+    df = pandas.DataFrame({e: w0[:,i] for i,e in enumerate(model.symbols['variables'])})
     df.index=range(T+1)
     df.index.name='t'
     df.reset_index(inplace=True)
+    
     return df

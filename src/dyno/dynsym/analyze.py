@@ -60,7 +60,6 @@ class FormulaEvaluator(Interpreter):
         # Add default mathematical functions
         from .autodiff import MATH_FUNCTIONS
         self.function_table.update(MATH_FUNCTIONS)
-
         self.function_table.update({'N': (lambda u,v: Normal(Sigma=[[v]], Μ=[u])) })
 
     # Arithmetic operations

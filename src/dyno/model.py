@@ -30,16 +30,10 @@ class DynoModel(ABC):
     equations: list[str]
     """List of the equations of the model written in the form LHS = RHS"""
 
-    calibration: dict[str, float]
-    """Dictionary of parameter values and initial values of endogenous and exogenous variables"""
-
     processes: ProductNormal | None
 
-    values: dict[str, dict[int, float]] | None
+    paths: dict[str, dict[int, float]] | None
     
-    _dynamic: DynamicFunction
-    """Temporary storage for dynamic method"""
-
     data: Any
     """Format-dependant internal representation of the data"""
 
@@ -54,7 +48,7 @@ class DynoModel(ABC):
             case (None, txt): # This can't happen because of the default value
                 assert txt is not None
                 filename = "<anonymous>.dyno"
-                self.filename = "anonymous.dyno"
+                self.filename = filename
                 self.import_model(txt)
             case (filename, None):
                 assert filename is not None  # to reassure Mypy
@@ -66,35 +60,19 @@ class DynoModel(ABC):
                 # raise ValueError(
                 #     "File name and content were both passed to constructor. Only one of the two should be passed."
                 # )
+
+        self.__steady_state__ = None
         self._set_name()
+        self._set_context()
         self._set_symbols()
-        self._set_calibration()
         self._set_exogenous()
         # self._set_dynamic()
 
-    def _set_name(self: Self) -> None:
-        # should be overridden for file types with name information
-        self.name = None
-
     @property
     def checks(self):
-        checks = {}
-        
-        checks['deterministic'] = False if self.processes is not None else True
-        
-        return checks
-
-    @abstractmethod
-    def _set_symbols(self: Self) -> None:
-        pass
-
-    @abstractmethod
-    def _set_calibration(self: Self) -> None:
-        pass
-
-    @abstractmethod
-    def _set_exogenous(self: Self) -> None:
-        pass
+        return {
+            "deterministic": self.processes is None
+        }
 
     @abstractmethod
     def import_model(self: Self, txt: str) -> None:
@@ -107,58 +85,96 @@ class DynoModel(ABC):
         assert txt is not None
         return self.import_model(txt)
 
-    def get_calibration(self, **kwargs):
-        c = self.calibration.copy()
-        c.update(**kwargs)
-        return c
+
+    def _set_name(self: Self) -> None:
+        # should be overridden for file types with name information
+        import os.path
+        filename = self.filename
+        self.name = os.path.basename(filename).split(".")[0]
+
+    def _set_symbols(self: Self) -> None:
+        
+        c = self.context
+
+        exo = set(sum(c['processes'].keys(), ()))
+        variables = [*c['variables'].keys()]
+
+        # this is needed because in dyno files
+        # some exogenous variables not appearing in equations
+        # are not declared as variables
+        variables = variables + [e for e in exo if e not in variables]
+                
+        exogenous = [v for v in variables if v in exo]
+        endogenous = [v for v in variables if v not in exogenous]
+
+        try:
+            # in mofdiles parameters and constants can differ
+            parameters = [*self.data.parameters]
+        except:
+            parameters = [*c['constants'].keys()]
+
+        self.symbols = {
+            "variables": variables,
+            "endogenous": endogenous,
+            "exogenous": exogenous,
+            "parameters": parameters,
+        }
+
+    def _set_exogenous(self):
+
+        from dyno.language import ProductNormal, Normal
+
+        pps = self.context['processes'].values()
+        if len(pps)==0:
+            self.processes = None
+        else:
+            self.processes = ProductNormal(
+                *[e for e in pps]
+            )
+
 
     @property
-    def variables(self):
-        return self.symbols["endogenous"] + self.symbols["exogenous"]
+    def steady_state(self):
+        if self.__steady_state__ is None:
+            self.__steady_state__ = self.context['steady_states']
+        return self.__steady_state__
+        
+    
+    @property
+    def residuals(self):
+        y,e = self.__steady_state_vectors__
+        return self.compute_residuals(y,y,y,e)
 
     @property
-    def parameters(self):
-        return self.symbols["parameters"]
+    def jacobians(self):
+        
+        y,e = self.__steady_state_vectors__
+        return self.compute_jacobians(y,y,y,e)
 
-    # def _set_dynamic(self: Self) -> None:
-    #     """generates dynamic method from the equations of the model using Dolang"""
-    #     from dolang import stringify
 
-    #     str_equations = [stringify(eq) for eq in self.equations]
+#     # def derivatives(order=1):
+#     #     """Computes the derivatives of the model up to the specified order at the steady-state. Caches the result."""
+#     #     raise Exception("Not implemented yet.")
 
-    #     equations = []
-    #     for streq in str_equations:
-    #         lst = streq.split("=")
+    @property
+    def __steady_state_vectors__(self):
 
-    #         match len(lst):
-    #             case 1:
-    #                 eq = streq.strip()
-    #             case 2:
-    #                 eq = f"({lst[0].strip()}) - ({lst[1].strip()})"
-    #             case _:
-    #                 raise ValueError("More than one equation on the same line")
+        # it would be nice to do steady_state("groups") to get groups of variables
+        # or steady_state.groups("all") to get all variables
+        c = self.steady_state
+        from math import nan
+        y = [c.get(name,nan) for name in self.symbols["endogenous"]]
+        e = [c.get(name,nan) for name in self.symbols["exogenous"]]
+        return y,e
+        # try:
+        # except KeyError as e:
+        #     raise Exception("Steady state not fully specified: missing value for `{str(e)}`")
 
-    #         equations.append(eq)
 
-    #     dict_eq = {f"out{i+1}": eq for i, eq in enumerate(equations)}
-    #     symbols = self.symbols
-    #     from dolang.symbolic import stringify_symbol
-    #     from dolang.function_compiler import FlatFunctionFactory as FFF
-    #     from dolang.function_compiler import make_method_from_factory
-
-    #     spec = dict(
-    #         y_f=[stringify_symbol((e, 1)) for e in symbols["endogenous"]],
-    #         y_0=[stringify_symbol((e, 0)) for e in symbols["endogenous"]],
-    #         y_p=[stringify_symbol((e, -1)) for e in symbols["endogenous"]],
-    #         e=[stringify_symbol((e, 0)) for e in symbols["exogenous"]],
-    #         p=[stringify_symbol(e) for e in symbols["parameters"]],
-    #     )
-    #     fff = FFF(dict(), dict_eq, spec, "f_dynamic")
-    #     fun = make_method_from_factory(fff, compile=False, debug=False)
-    #     self._dynamic = fun
-
-    def describe(self: Self) -> str:
+    def _repr_html_(self):
+        # from IPython.display import display, Markdown, HTML
         """Returns a string representation of the model's symbols"""
+        print(self.symbols)
         return f"""<h3>Model</h3>
 <ul>
 <li>name: {self.name if self.name is not None else "Unnamed"}</li>
@@ -170,128 +186,15 @@ class DynoModel(ABC):
                 <li>exogenous: {str.join(",",self.symbols["exogenous"])}</li>
             </ul>
         </li>
-        <li> parameters: {str.join(",",self.symbols["parameters"])}</li>
+        <li> constants: {str.join(",",self.symbols["parameters"])}</li>
     </ul>
 </li>
 </ul>
 """
 
-    def _repr_html_(self):
-        # from IPython.display import display, Markdown, HTML
-
-        txt = self.describe()
-        return txt
-
-    def residuals(self):
-
-        v = self.symbols["endogenous"]
-        p = self.symbols["parameters"]
-
-        p = [c[e] for e in p]
-        y,e = self.steady_state
-        return self.dynamic(y,y,y,e,p)
-    
-    @overload
-    def dynamic(
-        self: Self, y0: TVector, y1: TVector, y2: TVector, e: TVector, p: TVector
-    ) -> TVector:
-        pass
-
-    @overload
-    def dynamic(
-        self: Self,
-        y0: TVector,
-        y1: TVector,
-        y2: TVector,
-        e: TVector,
-        p: TVector,
-        diff: bool,
-    ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
-        pass
-
-    def dynamic(
-        self: Self,
-        y0: TVector,
-        y1: TVector,
-        y2: TVector,
-        e: TVector,
-        p: TVector,
-        diff: bool = False,
-    ) -> TVector | tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
-        """function f describing the behavior of the dynamic system $f(y_{t+1}, y_t, y_{t-1}, ε_t, p) = 0$
-
-        Parameters
-        ----------
-        y0,y1,y2 : Vector
-            the system's endogenous variable values at times t+1, t and t-1 respectively
-        e : Vector
-            exogenous variable values
-        p : Vector
-            parameter values
-        diff : bool, optional
-            if set to True returns the function's partial derivatives with regards to y0, y1, y2 and e as well, by default False
-
-        Returns
-        -------
-        Vector|tuple[Vector, Matrix, Matrix, Matrix, Matrix]
-            value of f(y0, y1, y2, e, p), as well as partial derivatives w.r.t. y0, y1, y2 and e if diff is set to True
-        """
-        r = np.zeros(len(y0))
-        self._dynamic(y0, y1, y2, e, p, r)
-        d = np.zeros(len(self.symbols["exogenous"]))
-
-        if diff:
-            f = lambda a, b, c, d, e: self.dynamic(a, b, c, d, e)
-            r1 = jacobian(lambda u: f(u, y1, y2, e, p), y0)
-            r2 = jacobian(lambda u: f(y0, u, y2, e, p), y1)
-            r3 = jacobian(lambda u: f(y0, y1, u, e, p), y2)
-            r4 = jacobian(lambda u: f(y0, y1, y2, u, p), d)
-            return r, r1, r2, r3, r4
-
-        return r
-
-    @overload
-    def compute(self: Self, calibration: dict[str, float] = {}) -> TVector:
-        pass
-
-    @overload
-    def compute(
-        self: Self, calibration: dict[str, float] = {}, diff: bool = False
-    ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
-        pass
-
-    def compute(
-        self: Self, calibration: dict[str, float] = {}, diff: bool = False
-    ) -> TVector | tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
-        """Computes the dynamic function's value based on calibration state and parameters
-
-        Parameters
-        ----------
-        calibration : dict[str, float], optional
-            dictionary containing the value of each parameter and variable of the model, indexed by their symbols, by default {}
-        diff : bool, optional
-            if set to True returns the dynamic function's partial derivatives as well, by default False
-
-        Returns
-        -------
-        TVector|tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]
-            value of the dynamic function at the state described by calibration, as well as its partial derivatives if diff is set to True
-        """
-        c = self.get_calibration(**calibration)
-        v = self.symbols["endogenous"]
-        p = self.symbols["parameters"]
-
-        endogenous_values = [c[e] for e in v]
-        parameter_values = [c[e] for e in p]
-        # Reshapes necessary for static type checking
-        y0 = np.reshape(endogenous_values, len(endogenous_values))
-        p0 = np.reshape(parameter_values, len(parameter_values))
-
-        e = np.zeros(len(self.symbols["exogenous"]))
-        return self.dynamic(y0, y0, y0, e, p0, diff=diff)
 
     def solve(
-        self: Self, calibration: dict[str, float] = {}, method: Solver = "qz"
+        self: Self, method: Solver = "qz"
     ) -> RecursiveSolution:
         """linearizes the model
 
@@ -309,32 +212,43 @@ class DynoModel(ABC):
         """
         from .solver import solve as solveit
 
-        r, A, B, C, D = self.compute(diff=True, calibration=calibration)
+        r, A, B, C, D = self.jacobians
 
         X, evs = solveit(A, B, C, method=method)
         Y = linsolve(A @ X + B, -D)
 
         v = self.symbols["endogenous"]
         e = self.symbols["exogenous"]
-        p = self.symbols["parameters"]
-
-        # TODO add support for Deterministic
-        # assert isinstance(self.processes, Normal) or isinstance(
-        #     self.processes, ProductNormal
-        # )
 
         Σ = self.processes.Σ
 
-        c = self.get_calibration(**calibration)
-
-        # a bit stupid
-
-        endogenous_values = [c[e] for e in v]
+        y,e = self.__steady_state_vectors__
 
         # Reshapes necessary for static type checking
-        y0 = np.reshape(endogenous_values, len(endogenous_values))
+        y0 = np.reshape(y, len(y))
 
         return RecursiveSolution(
             X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0, model=self
         )
 
+
+
+    def deterministic_guess(model, T=None):
+
+        if T is None:
+            T = model.calibration.get('T', 50)
+
+        y,e = model.steady_state
+
+        # initial guess
+        v0 = np.concatenate([y,e])[None,:].repeat(T+1,axis=0)
+
+
+        # works if the is one and exactly one exogenous variable?
+        # does it?
+        for key,value in model.data.evaluator.values.items():
+            i = model.symbols['variables'].index(key)
+            for a,b in value.items():
+                v0[a,i] = b
+
+        return v0

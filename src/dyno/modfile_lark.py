@@ -248,9 +248,6 @@ class DynareModel(DynoModel):
     # def _check_supported(self):
     #     CheckFunCalls().visit(self.data)
 
-    def _set_name(self: Self):
-
-        self.name = "anonymous"
 
     def _set_exogenous(self):
         

@@ -76,6 +76,7 @@ class DynoFile(SymbolicFile):
         # count variable in equations and compute residuals
         fe.steady_state = True
         self.residuals = [fe.visit(eq) for eq in fe.equations]
+        
         fe.steady_state = False
 
         self.equations = fe.equations
@@ -119,14 +120,6 @@ class LModFile(SymbolicFile):
         variables = trans.variables
         variables_exo = trans.variables_exo
         parameters = trans.parameters
-
-        from rich import print
-        print((
-            variables,
-            variables_exo,
-
-        ))
-        # variables_pred = trans.variables_pred
 
         self.symbols = {
             "variables": variables,

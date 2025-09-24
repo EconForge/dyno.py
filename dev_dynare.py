@@ -8,7 +8,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 f_r = "examples/modfiles/RBC.mod"
 f_o = "examples/RBC.dyno"
 
-from dyno.dynofile import DynoModel
+from dyno.dynofile_old import DynoModel
 
 t1 = time.time()
 model = DynoModel(f_o);

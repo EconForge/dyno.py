@@ -12,12 +12,6 @@ import altair as alt
 # load a simple dataset as a pandas DataFrame
 from vega_datasets import data
 
-cars = data.cars()
-ch = alt.Chart(cars).mark_point().encode(
-    x='Horsepower',
-    y='Miles_per_Gallon',
-    color='Origin',
-)
 
 
 # :::{dropdown} Code
@@ -43,9 +37,6 @@ ch = alt.Chart(cars).mark_point().encode(
 # {[endfor]} 
 # {[endif]}
 
-# :::{aside}
-# ![](/files/examples/clippy.png)
-# :::
 
 template = tempita.Template(r"""
 {[default model=None]}
@@ -65,6 +56,7 @@ template = tempita.Template(r"""
 {[code]}
 ```
 :::
+
 
 {[if len(errors)>0]}      
 
@@ -88,18 +80,19 @@ template = tempita.Template(r"""
                             
 ## Model Summary
 
+- *filename*:  {[model.filename]}
 - *name*:  {[model.name]}
-- *variables*:  {[str.join(", ", model.variables)]}
-- *parameters*:  {[str.join(", ", model.parameters)]}
+- *variables*:  {[str.join(", ", model.symbols['variables'])]}
+- *parameters*:  {[str.join(", ", model.symbols['parameters'])]}
 
 :::{dropdown} Calibration
 Parameter values
 ```{code} python
-{[ str(model.calibration) ]}
+{[ str(model.context['constants']) ]}
 ```
 Steady state values
 ```{code} python
-{[ str(model.steady_state) ]}
+{[ steady_values ]}
 ```
 :::
      
@@ -113,7 +106,7 @@ Steady state values
 ## Solution
 
                                                    
-{[if abs(residuals).max() > 1e-6]}
+{[if not abs(residuals).max() < 1e-6]}
 :::{warning} Non zero residuals
 :class: dropdown
 The model has non zero residuals after calibration. This may be due to a missing steady-state
@@ -123,7 +116,8 @@ calculation or an error in the model equations.
 ```
 :::
 {[endif]}
-                            
+
+                                       
 
 {[if bk_check]}
 :::{tip} Blanchard Kan conditions are met
@@ -269,9 +263,17 @@ class Report:
     
         errors = [e for e in self.elements.values() if isinstance(e, Exception)]
         
+   
         error_lines = [str(e.line) for e in errors if isinstance(e, ParserError)]
         from rich import inspect
         context = {"errors": errors, "error_lines": error_lines, "alt": altair, "inspect": inspect}
+    
+        if 'model' in self.elements:
+            model = self.elements['model']
+            from math import nan
+            steady_values = str({v: model.context['steady_states'].get(v,nan) for v in model.symbols['variables']}) 
+            context.update({'steady_values':steady_values})
+
         if 'dr' in self.elements:
             dr = self.elements['dr']
             evs = abs(dr.evs)
@@ -286,9 +288,9 @@ class Report:
 
         txt = template.substitute(**d)
         # for e in errors:
-        #     display(e)
+        # #     display(e)
         # for e in errors:
-        #     print(e)
+        #     raise(e)
         return txt
 
     def __call__(self, *s, **options):
@@ -342,19 +344,18 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
 
     try:
         if filename.endswith(".mod"):
-            preprocessor = options.get("modfile_preprocessor", "dynare")
-            # if preprocessor == "dynare":
-            #     from dyno.modfile import DynareModel
-            # else:
-            #     from dyno.modfile_lark import DynareModel
-            from dyno.modfile import DynareModel
-            model = DynareModel(txt=txt)
+            preprocessor = options.get("modfile-preprocessor", "dynare")
+            if preprocessor == "dynare":
+                from dyno.modfile import DynareModel as DynoModel
+            else:
+                from dyno.dynofile import LDynoModel as DynoModel
+            model = DynoModel(filename=filename, txt=txt) # =txt, filename=filename)
         elif filename.endswith(".dyno.yaml"):
             from dyno.yamlfile import YAMLFile
             model = YAMLFile(txt=txt)
         elif filename.endswith(".dyno"):
-            from dyno.dynofile import DynoModel
-            model = DynoModel(txt=txt)
+            from dyno.dynofile import LDynoModel
+            model = LDynoModel(filename=filename, txt=txt)
         else:
             raise ValueError("Unsupported Model type")
 
@@ -365,7 +366,7 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
 
     try:
         from dyno.errors import SteadyStateError
-        r = model.compute()
+        r = model.residuals
         err = abs(r).max()
         report(residuals=r)
         # if err > 1e-6:

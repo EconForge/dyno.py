@@ -26,43 +26,34 @@ class DynareModel(DynoModel):
             raise DynareParserError(e) from e
 
 
-    def _set_symbols(self: Self) -> None:
-        """sets symbols attribute of Model"""
-        self.symbols = {}
-        self.symbols["endogenous"] = self.data.endogenous
-        self.symbols["exogenous"] = self.data.exogenous + self.data.exogenous_det
-        self.symbols["parameters"] = self.data.parameters
-
-    # @property
-    # def _set_equations(self: Self) -> None:
-    #     """sets equations attribute of Model"""
-    #     self.equations = self.data.equations
-
-    @property
-    def equations(self):
-        return self.data.equations
-
-
-    def _set_calibration(self: Self) -> None:
+    def _set_context(self: Self) -> None:
         """retrieves calibration values"""
-        self.calibration = self.data.context
-        self.steady_state = {k: v for (k, v) in self.calibration.items() if (k in self.symbols["endogenous"]) or (k in self.symbols["exogenous"])}
-        self.constants = {k: v for (k, v) in self.calibration.items() if (k in self.symbols["parameters"])}
+        
+        c = self.data.context  # dynare preprocessor context
+        endogenous = self.data.endogenous
+        exogenous = self.data.exogenous
+        variables = endogenous + exogenous
+        parameters = self.data.parameters
+        
+        steady_states = {k: v for (k, v) in c.items() if (k in endogenous) or (k in exogenous)}
+        constants = {k: v for (k, v) in c.items() if (k in parameters)}
 
-    def _set_exogenous(self: Self) -> None:
-        self.exogenous = None
+        # read specification of exogenous shocks in the modfile
         assert len(self.data.trajectories) == 0 or len(self.data.covariances) == 0
         isdeterministic = len(self.data.trajectories) > 0
-        exo = self.symbols["exogenous"]
+        exo = exogenous
+
         if isdeterministic:
             det_vals = {v: [] for v in exo}
             for var, traj in self.data.trajectories.items():
                 for p1, p2, val in traj:
                     pad_list(det_vals[var], p2)
                     det_vals[var][p1 - 1 : p2] = [val] * (p2 - p1 + 1)
-            self.paths = Deterministic(det_vals)
-            self.processes = None
-            self.exogenous = self.paths
+            # self.paths = Deterministic(det_vals)
+            # self.processes = None
+            # self.exogenous = self.paths
+            values = det_vals
+            processes = {}
         else:
             n = len(exo)
             covar = np.zeros((n, n))
@@ -70,16 +61,44 @@ class DynareModel(DynoModel):
             for (var1, var2), val in self.data.covariances.items():
                 covar[index[var1], index[var2]] = val
                 covar[index[var2], index[var1]] = val
-            # self.processes = {tuple(exo): Normal(Σ=covar)}
-            self.processes = Normal(Σ=covar)
-            self.paths = None
-            self.exogenous = self.processes
+            # self.processes = 
+            values = {}
+            processes = {tuple(exo): Normal(Σ=covar)}
+
+        context = {
+            'constants': constants,
+            'variables': {v:{} for v in variables},
+            'values': values,
+            'processes': processes,
+            'steady_states': steady_states,
+        }
+            # self.paths = None
+            # self.exogenous = self.processes
+        self.context = context
 
 
-    def _set_dynamic(self: Self) -> None:
-        pass
+    @property
+    def equations(self):
 
-    def dynamic(
+        return self.data.equations
+    
+    def compute_residuals(self, y2, y1, y0, e):
+        p = [self.context['constants'][p] for p in self.data.parameters]
+        y,e = self.__steady_state_vectors__
+        return self._f_dynamic(y,y,y,e,p)
+
+    def compute_jacobians(self, y2, y1, y0, e):
+        p = [self.context['constants'][p] for p in self.data.parameters]
+        y,e = self.__steady_state_vectors__
+        return self._f_dynamic(y,y,y,e,p,diff=True)
+
+    def deterministic_residuals(self, v):
+
+        return v*0
+
+
+
+    def _f_dynamic(
         self: Self,
         y0: TVector,
         y1: TVector,
@@ -112,16 +131,20 @@ class DynareModel(DynoModel):
         y2 = list(y2)
         e = list(e)
         p = list(p)
+
         args = [y0, y1, y2, e, e, p]
-        if isinstance(self.exogenous, Deterministic):
+        if len(self.context['processes'])==0:
+            # this is a stochastic model
             args[3] = []
         else:
             args[4] = []
+            # this is a deterministic model
+        
         r = np.array(self.data.residuals(*args))
 
         if diff:
             jacobians = self.data.jacobians(*args)
-            if isinstance(self.exogenous, Deterministic):
+            if len(self.context['processes'])==0:
                 del jacobians[3]
             else:
                 del jacobians[4]
