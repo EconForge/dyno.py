@@ -39,7 +39,7 @@ class DynoModel(ABC):
 
     def __init__(
         self: Self, filename: str = None, txt: str | None = None
-    ) -> None:
+    , **kwargs) -> None:
         match filename, txt:
             case (None, None):
                 raise ValueError(
@@ -49,14 +49,14 @@ class DynoModel(ABC):
                 assert txt is not None
                 filename = "<anonymous>.dyno"
                 self.filename = filename
-                self.import_model(txt)
+                self.import_model(txt,**kwargs)
             case (filename, None):
                 assert filename is not None  # to reassure Mypy
                 self.filename = filename
-                self.import_file(filename)
+                self.import_file(filename,**kwargs)
             case _:
                 self.filename = filename
-                self.import_model(txt)
+                self.import_model(txt,**kwargs)
                 # raise ValueError(
                 #     "File name and content were both passed to constructor. Only one of the two should be passed."
                 # )
@@ -79,11 +79,11 @@ class DynoModel(ABC):
         """sets data attribute from model text description"""
         pass
 
-    def import_file(self: Self, filename: str) -> None:
+    def import_file(self: Self, filename: str, **kwargs) -> None:
         """sets data attribute from file"""
         txt = open(filename, "rt", encoding="utf-8").read()
         assert txt is not None
-        return self.import_model(txt)
+        return self.import_model(txt, **kwargs)
 
 
     def _set_name(self: Self) -> None:

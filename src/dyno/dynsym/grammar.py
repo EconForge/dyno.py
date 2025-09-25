@@ -227,7 +227,7 @@ def stringify_constant(p: str) -> str:
 def stringify_value(arg: Tuple[str, int]) -> str:
 
     s = arg[0]
-    time = arg[1]
+    time = int(arg[1])
 
     if time < 0:
         return "{}__m{}_".format(s, str(-time))
@@ -237,8 +237,8 @@ def stringify_value(arg: Tuple[str, int]) -> str:
 
 def stringify_variable(arg: Tuple[str, Tuple[str, int]]) -> str:
     s = arg[0]
-    time = arg[1][0]
-    shift = int(arg[1][1])
+    time = str(arg[1])
+    shift = int(arg[2])
 
     if shift < 0:
         return "{}__{}_m{}_".format(s, time, str(-shift))

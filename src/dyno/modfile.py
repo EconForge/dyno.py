@@ -82,15 +82,23 @@ class DynareModel(DynoModel):
 
         return self.data.equations
     
-    def compute_residuals(self, y2, y1, y0, e):
+    def compute_residuals(self, y1,y2,y3, e):
         p = [self.context['constants'][p] for p in self.data.parameters]
         y,e = self.__steady_state_vectors__
         return self._f_dynamic(y,y,y,e,p)
 
-    def compute_jacobians(self, y2, y1, y0, e):
+    def compute_jacobians(self, y1,y2,y3,e):
         p = [self.context['constants'][p] for p in self.data.parameters]
         y,e = self.__steady_state_vectors__
         return self._f_dynamic(y,y,y,e,p,diff=True)
+
+    def compute_derivatives(model):
+    
+        y = [model.steady_state[v] for v in model.symbols['endogenous']]
+        e = [model.steady_state[v] for v in model.symbols['exogenous']]
+        p = [model.context['constants'][v] for v in model.symbols['parameters']]
+
+        return model.data.derivatives(y,y,y,e,e,p)
 
     def deterministic_residuals(self, v):
 
