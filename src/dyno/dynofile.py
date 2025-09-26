@@ -37,10 +37,7 @@ class LDynoModel(DynoModel):
 
     def latex_equations(self):
 
-        from dyno.dynsym.latex import latex
-        eqs_str = [latex(eq) for eq in self.evaluator.equations]
-        latex_str = str.join("\n",["$${}$$".format(eq) for eq in eqs_str])
-        return latex_str
+        return self.data.latex_equations()
 
 
     def compute_residuals(self, y2, y1, y0, e):

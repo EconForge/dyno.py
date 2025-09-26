@@ -58,9 +58,9 @@ template = tempita.Template(r"""
 :::
 
 
-{[if len(errors)>0]}      
+{[if len(parser_errors)>0]}      
 
-{[for e in errors]}
+{[for e in parser_errors]}
                                      
 :::{error} {[str(e)]}
 {[if hasattr(e,'details') and e.details is not None]}
@@ -82,8 +82,11 @@ template = tempita.Template(r"""
 
 - *filename*:  {[model.filename]}
 - *name*:  {[model.name]}
-- *variables*:  {[str.join(", ", model.symbols['variables'])]}
-- *parameters*:  {[str.join(", ", model.symbols['parameters'])]}
+- *variables* ({[ len(model.symbols['variables']) ]}):      {[str.join(", ", map('`{}`'.format,model.symbols['variables']))]}
+    - *exogenous* ({[ len(model.symbols['exogenous']) ]}):  {[str.join(", ", map('`{}`'.format,model.symbols['exogenous']))]}
+    -  *endogenous* (**{[ len(model.symbols['endogenous']) ]}**):  {[str.join(", ", map('`{}`'.format,model.symbols['endogenous']))]}
+- *equations*({[ len(model.equations) ]})
+- *{[ len(model.symbols['parameters']) ]} parameters*:    {[str.join(", ", map('`{}`'.format,model.symbols['parameters']))]}
 
 :::{dropdown} Calibration
 Parameter values
@@ -95,7 +98,12 @@ Steady state values
 {[ steady_values ]}
 ```
 :::
-     
+
+:::{dropdown} Equations                    
+{[if hasattr(model,'latex_equations')]}
+{[ model.latex_equations() ]}
+{[endif]}
+:::     
 
 ---
 {[endif]}
@@ -191,12 +199,14 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 ---                   
 {[endif]}
                             
-                            
-{[for er in errors]}
-```
-{[str(er)]}
-```
-{[endfor]}
+
+# {[if len(unhandled_errors)>0]}                     
+# {[for er in unhandled_errors]}
+# ```
+# {[str(er)]}
+# ```
+# {[endfor]}
+# {[endif]}
 """, delimiters=('{[', ']}'))
 
 
@@ -260,14 +270,24 @@ class Report:
     def _repr_markdown_(self):
 
         self("Elapsed time: {:.3f} sec".format(time.time() - self.t_start))
-    
-        errors = [e for e in self.elements.values() if isinstance(e, Exception)]
         
-   
+        import traceback
+
+        errors = [e for e in self.elements.values() if isinstance(e, Exception)]
+
+        parser_errors = [e for e in errors if isinstance(e, ParserError)]
+        unhandled_errors = [e for e in errors if e not in parser_errors]
+        
         error_lines = [str(e.line) for e in errors if isinstance(e, ParserError)]
         from rich import inspect
-        context = {"errors": errors, "error_lines": error_lines, "alt": altair, "inspect": inspect}
-    
+        context = {
+            "traceback": traceback,
+            "errors": errors,
+            "parser_errors": parser_errors,
+            "unhandled_errors": unhandled_errors,
+            "error_lines": error_lines, 
+            "alt": altair, 
+            "inspect": inspect}
         if 'model' in self.elements:
             model = self.elements['model']
             from math import nan
@@ -287,10 +307,10 @@ class Report:
         d = {k: w for k,w in self.elements.items() if not isinstance(k,int)} | context
 
         txt = template.substitute(**d)
-        # for e in errors:
-        # #     display(e)
-        # for e in errors:
-        #     raise(e)
+
+        for e in unhandled_errors:
+            raise(e)
+            # print(e)
         return txt
 
     def __call__(self, *s, **options):
@@ -311,8 +331,6 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
 
     report = Report(output_type=output_type)
 
-    
-
     if check_output:
         try:
             exec(txt,d,d)
@@ -321,7 +339,7 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             return report
         try:
             return d["html"]
-        except Exception:
+        except Exception as e:
             report(str(e))
             return report
 
@@ -338,11 +356,7 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             txt = open(filename).read()
         else:
             raise ValueError("Either `txt` or `filename` must be provided.")
-    except Exception as e:
-        report(e)
-        return report
 
-    try:
         if filename.endswith(".mod"):
             preprocessor = options.get("modfile-preprocessor", "dynare")
             if preprocessor == "dynare":
@@ -358,55 +372,25 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             model = LDynoModel(filename=filename, txt=txt)
         else:
             raise ValueError("Unsupported Model type")
-
         report(model=model)
-    except Exception as e:
-        report(e)
-        return report
-
-    try:
-        from dyno.errors import SteadyStateError
+    
         r = model.residuals
-        err = abs(r).max()
-        report(residuals=r)
-        # if err > 1e-6:
-        #     raise  SteadyStateError(r)
-    except Exception as e:
-        report(e)
-        return report
 
-    if model.checks['deterministic']:
-        
-        try:
+        report(residuals=r)
+        if model.checks['deterministic']:
             from dyno.solver import deterministic_solve
             sim = deterministic_solve(model)
             report(sim={'Perfect Foresight': sim})
-        except Exception as e:
-            report(e)
-            return report
-        
-
-    else:
-
-        try:
+        else:
             dr = model.solve()
             report(dr=dr)
-        except Exception as e:
-            report(e)
-            return report
-        
-        try:
             sim = dr.irfs()
             report(sim=sim)
-        except Exception as e:
-            report(e)
-            return report
 
-    try:
-        # fig = dr.plot()
         from dyno.plots import plot_irfs
         fig = plot_irfs(sim)
         report(fig=fig)
+
     except Exception as e:
         report(e)
         return report
