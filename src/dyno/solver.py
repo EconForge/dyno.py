@@ -6,6 +6,7 @@ from .typedefs import TVector, TMatrix, Solver
 from typing_extensions import Self
 from .typedefs import TVector, TMatrix, IRFType, Solver
 
+
 class RecursiveSolution:
     """VAR(1) representing a linearized model
 
@@ -49,9 +50,10 @@ class RecursiveSolution:
     def moments(self):
 
         return moments(self.X, self.Y, self.Σ)
-    
+
     def coefficients_as_df(self):
         import pandas as pd
+
         ss = pd.DataFrame(
             [self.x0], columns=["{}".format(e) for e in self.symbols["endogenous"]]
         )
@@ -65,9 +67,8 @@ class RecursiveSolution:
         df.index = ["{}[t]".format(e) for e in self.symbols["endogenous"]]
         return ss, df
 
-
     def _repr_html_(self):
-        
+
         Σ0, Σ = moments(self.X, self.Y, self.Σ)
 
         # df_cmoments = pd.DataFrame(
@@ -95,11 +96,12 @@ class RecursiveSolution:
     def irfs(self, type: IRFType = "log-deviation"):
 
         from .simul import irfs
+
         sim = irfs(self._model, self, type=IRFType)
         return sim
-    
-    def plot(self,  type: IRFType = "log-deviation"):
-        
+
+    def plot(self, type: IRFType = "log-deviation"):
+
         sim = self.irfs(type=type)
         plots = sim_to_nsim(sim)
 
@@ -135,8 +137,6 @@ class RecursiveSolution:
         # {fig.to_html(full_html=False, include_plotlyjs=False)}
         # """
         # return html
-
-
 
 
 def solve(
@@ -390,7 +390,7 @@ def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
     return Γ0, Γ
 
 
-def deterministic_solve(model, x0=None, T=None, method='hybr'):
+def deterministic_solve(model, x0=None, T=None, method="hybr"):
 
     import scipy.optimize
     import pandas
@@ -400,21 +400,23 @@ def deterministic_solve(model, x0=None, T=None, method='hybr'):
     else:
         v0 = np.array(x0)
 
-    T = v0.shape[0]-1
-    u0 = np.array(v0).ravel(),
+    T = v0.shape[0] - 1
+    u0 = (np.array(v0).ravel(),)
 
     res = scipy.optimize.root(
         lambda u: model.deterministic_residuals(u, jac=True),
         u0,
         method=method,
-        jac=True
+        jac=True,
     )
-    
+
     w0 = res.x.reshape(v0.shape)
 
-    df = pandas.DataFrame({e: w0[:,i] for i,e in enumerate(model.symbols['variables'])})
-    df.index=range(T+1)
-    df.index.name='t'
+    df = pandas.DataFrame(
+        {e: w0[:, i] for i, e in enumerate(model.symbols["variables"])}
+    )
+    df.index = range(T + 1)
+    df.index.name = "t"
     df.reset_index(inplace=True)
-    
+
     return df

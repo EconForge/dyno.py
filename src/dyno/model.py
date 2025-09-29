@@ -18,6 +18,7 @@ from .errors import SteadyStateError
 
 from dyno.solver import RecursiveSolution
 
+
 class DynoModel(ABC):
     """Abstract class representing an economic model"""
 
@@ -33,30 +34,30 @@ class DynoModel(ABC):
     processes: ProductNormal | None
 
     paths: dict[str, dict[int, float]] | None
-    
+
     data: Any
     """Format-dependant internal representation of the data"""
 
     def __init__(
-        self: Self, filename: str = None, txt: str | None = None
-    , **kwargs) -> None:
+        self: Self, filename: str = None, txt: str | None = None, **kwargs
+    ) -> None:
         match filename, txt:
             case (None, None):
                 raise ValueError(
                     "Neither the file name nor content were passed to constructor. One of the two should be passed."
                 )
-            case (None, txt): # This can't happen because of the default value
+            case (None, txt):  # This can't happen because of the default value
                 assert txt is not None
                 filename = "<anonymous>.dyno"
                 self.filename = filename
-                self.import_model(txt,**kwargs)
+                self.import_model(txt, **kwargs)
             case (filename, None):
                 assert filename is not None  # to reassure Mypy
                 self.filename = filename
-                self.import_file(filename,**kwargs)
+                self.import_file(filename, **kwargs)
             case _:
                 self.filename = filename
-                self.import_model(txt,**kwargs)
+                self.import_model(txt, **kwargs)
                 # raise ValueError(
                 #     "File name and content were both passed to constructor. Only one of the two should be passed."
                 # )
@@ -70,9 +71,7 @@ class DynoModel(ABC):
 
     @property
     def checks(self):
-        return {
-            "deterministic": self.processes is None
-        }
+        return {"deterministic": self.processes is None}
 
     @abstractmethod
     def import_model(self: Self, txt: str) -> None:
@@ -85,25 +84,25 @@ class DynoModel(ABC):
         assert txt is not None
         return self.import_model(txt, **kwargs)
 
-
     def _set_name(self: Self) -> None:
         # should be overridden for file types with name information
         import os.path
+
         filename = self.filename
         self.name = os.path.basename(filename).split(".")[0]
 
     def _set_symbols(self: Self) -> None:
-        
+
         c = self.context
 
-        exo = set(sum(c['processes'].keys(), ()))
-        variables = [*c['variables'].keys()]
+        exo = set(sum(c["processes"].keys(), ()))
+        variables = [*c["variables"].keys()]
 
         # this is needed because in dyno files
         # some exogenous variables not appearing in equations
         # are not declared as variables
         variables = variables + [e for e in exo if e not in variables]
-                
+
         exogenous = [v for v in variables if v in exo]
         endogenous = [v for v in variables if v not in exogenous]
 
@@ -111,7 +110,7 @@ class DynoModel(ABC):
             # in mofdiles parameters and constants can differ
             parameters = [*self.data.parameters]
         except:
-            parameters = [*c['constants'].keys()]
+            parameters = [*c["constants"].keys()]
 
         self.symbols = {
             "variables": variables,
@@ -124,37 +123,32 @@ class DynoModel(ABC):
 
         from dyno.language import ProductNormal, Normal
 
-        pps = self.context['processes'].values()
-        if len(pps)==0:
+        pps = self.context["processes"].values()
+        if len(pps) == 0:
             self.processes = None
         else:
-            self.processes = ProductNormal(
-                *[e for e in pps]
-            )
-
+            self.processes = ProductNormal(*[e for e in pps])
 
     @property
     def steady_state(self):
         if self.__steady_state__ is None:
-            self.__steady_state__ = self.context['steady_states']
+            self.__steady_state__ = self.context["steady_states"]
         return self.__steady_state__
-        
-    
+
     @property
     def residuals(self):
-        y,e = self.__steady_state_vectors__
-        return self.compute_residuals(y,y,y,e)
+        y, e = self.__steady_state_vectors__
+        return self.compute_residuals(y, y, y, e)
 
     @property
     def jacobians(self):
-        
-        y,e = self.__steady_state_vectors__
-        return self.compute_jacobians(y,y,y,e)
 
+        y, e = self.__steady_state_vectors__
+        return self.compute_jacobians(y, y, y, e)
 
-#     # def derivatives(order=1):
-#     #     """Computes the derivatives of the model up to the specified order at the steady-state. Caches the result."""
-#     #     raise Exception("Not implemented yet.")
+    #     # def derivatives(order=1):
+    #     #     """Computes the derivatives of the model up to the specified order at the steady-state. Caches the result."""
+    #     #     raise Exception("Not implemented yet.")
 
     @property
     def __steady_state_vectors__(self):
@@ -163,13 +157,13 @@ class DynoModel(ABC):
         # or steady_state.groups("all") to get all variables
         c = self.steady_state
         from math import nan
-        y = [c.get(name,nan) for name in self.symbols["endogenous"]]
-        e = [c.get(name,nan) for name in self.symbols["exogenous"]]
-        return y,e
+
+        y = [c.get(name, nan) for name in self.symbols["endogenous"]]
+        e = [c.get(name, nan) for name in self.symbols["exogenous"]]
+        return y, e
         # try:
         # except KeyError as e:
         #     raise Exception("Steady state not fully specified: missing value for `{str(e)}`")
-
 
     def _repr_html_(self):
         # from IPython.display import display, Markdown, HTML
@@ -192,10 +186,7 @@ class DynoModel(ABC):
 </ul>
 """
 
-
-    def solve(
-        self: Self, method: Solver = "qz"
-    ) -> RecursiveSolution:
+    def solve(self: Self, method: Solver = "qz") -> RecursiveSolution:
         """linearizes the model
 
         Parameters
@@ -222,7 +213,7 @@ class DynoModel(ABC):
 
         Σ = self.processes.Σ
 
-        y,e = self.__steady_state_vectors__
+        y, e = self.__steady_state_vectors__
 
         # Reshapes necessary for static type checking
         y0 = np.reshape(y, len(y))
@@ -231,24 +222,21 @@ class DynoModel(ABC):
             X, Y, Σ, {"endogenous": v, "exogenous": e}, evs=evs, x0=y0, model=self
         )
 
-
-
     def deterministic_guess(model, T=None):
 
         if T is None:
-            T = model.calibration.get('T', 50)
+            T = model.calibration.get("T", 50)
 
-        y,e = model.steady_state
+        y, e = model.steady_state
 
         # initial guess
-        v0 = np.concatenate([y,e])[None,:].repeat(T+1,axis=0)
-
+        v0 = np.concatenate([y, e])[None, :].repeat(T + 1, axis=0)
 
         # works if the is one and exactly one exogenous variable?
         # does it?
-        for key,value in model.data.evaluator.values.items():
-            i = model.symbols['variables'].index(key)
-            for a,b in value.items():
-                v0[a,i] = b
+        for key, value in model.data.evaluator.values.items():
+            i = model.symbols["variables"].index(key)
+            for a, b in value.items():
+                v0[a, i] = b
 
         return v0

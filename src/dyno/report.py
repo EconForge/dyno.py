@@ -9,9 +9,9 @@ import tempita
 from dyno.errors import ParserError
 
 import altair as alt
+
 # load a simple dataset as a pandas DataFrame
 from vega_datasets import data
-
 
 
 # :::{dropdown} Code
@@ -22,10 +22,10 @@ from vega_datasets import data
 # ```
 # :::
 
-# {[if len(errors)>0]}      
+# {[if len(errors)>0]}
 
 # {[for e in errors]}
-                                     
+
 # :::{error} UnexpectedToken `{[e.token.value]}` at {[(e.token.line, e.token.column)]}
 # :class: dropdown
 # ```
@@ -33,12 +33,13 @@ from vega_datasets import data
 # {[str(e)]}
 # ```
 # :::
-                            
-# {[endfor]} 
+
+# {[endfor]}
 # {[endif]}
 
 
-template = tempita.Template(r"""
+template = tempita.Template(
+    r"""
 {[default model=None]}
 {[default dr=None]}
 {[default bk_check=None]}
@@ -207,7 +208,9 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 # ```
 # {[endfor]}
 # {[endif]}
-""", delimiters=('{[', ']}'))
+""",
+    delimiters=("{[", "]}"),
+)
 
 
 class Report:
@@ -225,37 +228,40 @@ class Report:
 
         self("Elapsed time: {:.3f} sec".format(time.time() - self.t_start))
 
-
     # def __repr__(self):
 
     #     self("Elapsed time: {:.3f} sec".format(time.time() - self.t_start))
 
     #     if self.output_type != "text":
     #         return None
-        
 
     def _repr_html_(self):
         import time
-
 
         if self.output_type == "text":
             import rich
             from rich.console import Console
             from rich import print, inspect
             import os
-            console = Console(record=True, file=open(os.devnull, "wt"), color_system="truecolor", width=100)
-            for k,w in self.elements.items():
-                if isinstance(k,int):
+
+            console = Console(
+                record=True,
+                file=open(os.devnull, "wt"),
+                color_system="truecolor",
+                width=100,
+            )
+            for k, w in self.elements.items():
+                if isinstance(k, int):
                     console.print("---")
                 else:
                     console.print("[bold magenta]=== {} ===[/]".format(k))
-                console.print(w) 
+                console.print(w)
 
             return console.export_html(inline_styles=True)
-        
+
         elif self.output_type != "html":
             return None
-        
+
         reprs = []
         for r in self.elements.values():
             if hasattr(r, "_repr_html_"):
@@ -266,59 +272,67 @@ class Report:
         html = "<br>".join([str(e) for e in reprs])
 
         return html
-    
+
     def _repr_markdown_(self):
 
         self("Elapsed time: {:.3f} sec".format(time.time() - self.t_start))
-        
+
         import traceback
 
         errors = [e for e in self.elements.values() if isinstance(e, Exception)]
 
         parser_errors = [e for e in errors if isinstance(e, ParserError)]
         unhandled_errors = [e for e in errors if e not in parser_errors]
-        
+
         error_lines = [str(e.line) for e in errors if isinstance(e, ParserError)]
         from rich import inspect
+
         context = {
             "traceback": traceback,
             "errors": errors,
             "parser_errors": parser_errors,
             "unhandled_errors": unhandled_errors,
-            "error_lines": error_lines, 
-            "alt": altair, 
-            "inspect": inspect}
-        if 'model' in self.elements:
-            model = self.elements['model']
+            "error_lines": error_lines,
+            "alt": altair,
+            "inspect": inspect,
+        }
+        if "model" in self.elements:
+            model = self.elements["model"]
             from math import nan
-            steady_values = str({v: model.context['steady_states'].get(v,nan) for v in model.symbols['variables']}) 
-            context.update({'steady_values':steady_values})
 
-        if 'dr' in self.elements:
-            dr = self.elements['dr']
+            steady_values = str(
+                {
+                    v: model.context["steady_states"].get(v, nan)
+                    for v in model.symbols["variables"]
+                }
+            )
+            context.update({"steady_values": steady_values})
+
+        if "dr" in self.elements:
+            dr = self.elements["dr"]
             evs = abs(dr.evs)
-            n = len(evs)//2
-            if evs[n-1] < 1 < evs[n]:
+            n = len(evs) // 2
+            if evs[n - 1] < 1 < evs[n]:
                 bk_check = True
             else:
                 bk_check = False
-            context.update({"bk_check": bk_check,"jacs": dr.coefficients_as_df()})
+            context.update({"bk_check": bk_check, "jacs": dr.coefficients_as_df()})
 
-        d = {k: w for k,w in self.elements.items() if not isinstance(k,int)} | context
+        d = {k: w for k, w in self.elements.items() if not isinstance(k, int)} | context
 
         txt = template.substitute(**d)
 
         for e in unhandled_errors:
-            raise(e)
+            raise (e)
             # print(e)
         return txt
 
     def __call__(self, *s, **options):
 
         for e in s:
-            self.elements[len(self.elements)+1] = e
+            self.elements[len(self.elements) + 1] = e
 
-        for k,w in options.items():
+        for k, w in options.items():
             self.elements[k] = w
 
 
@@ -333,7 +347,7 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
 
     if check_output:
         try:
-            exec(txt,d,d)
+            exec(txt, d, d)
         except Exception as e:
             report(str(e))
             return report
@@ -343,10 +357,9 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             report(str(e))
             return report
 
-
     import time
 
-    report(code = txt)
+    report(code=txt)
 
     try:
         if txt is not None:
@@ -363,24 +376,27 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
                 from dyno.modfile import DynareModel as DynoModel
             else:
                 from dyno.dynofile import LDynoModel as DynoModel
-            model = DynoModel(filename=filename, txt=txt) # =txt, filename=filename)
+            model = DynoModel(filename=filename, txt=txt)  # =txt, filename=filename)
         elif filename.endswith(".dyno.yaml"):
             from dyno.yamlfile import YAMLFile
+
             model = YAMLFile(txt=txt)
         elif filename.endswith(".dyno"):
             from dyno.dynofile import LDynoModel
+
             model = LDynoModel(filename=filename, txt=txt)
         else:
             raise ValueError("Unsupported Model type")
         report(model=model)
-    
+
         r = model.residuals
 
         report(residuals=r)
-        if model.checks['deterministic']:
+        if model.checks["deterministic"]:
             from dyno.solver import deterministic_solve
+
             sim = deterministic_solve(model)
-            report(sim={'Perfect Foresight': sim})
+            report(sim={"Perfect Foresight": sim})
         else:
             dr = model.solve()
             report(dr=dr)
@@ -388,6 +404,7 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             report(sim=sim)
 
         from dyno.plots import plot_irfs
+
         fig = plot_irfs(sim)
         report(fig=fig)
 
@@ -396,6 +413,7 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
         return report
 
     from IPython.display import display, HTML, Markdown
+
     display(Markdown(report._repr_markdown_()))
     display(fig)
     display(Markdown("---"))

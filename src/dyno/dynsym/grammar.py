@@ -20,16 +20,14 @@ from os import path
 from typing import Tuple, Dict, Set, Union, List
 
 
-GRAMMARS_PATH = path.join(
-    path.split(__file__)[0],
-    "grammars/"
-)
-GRAMMAR_FILE = path.join(GRAMMARS_PATH, 'grammar.lark')
+GRAMMARS_PATH = path.join(path.split(__file__)[0], "grammars/")
+GRAMMAR_FILE = path.join(GRAMMARS_PATH, "grammar.lark")
 
 grammar_0 = open(GRAMMAR_FILE, "rt", encoding="utf-8").read()
 
 
 ### replaces date with 0 when missing
+
 
 class TimeFixer(Transformer):
 
@@ -37,30 +35,23 @@ class TimeFixer(Transformer):
     def shift(self, tree):
 
         if tree.children[0] is None:
-            return Tree(
-                "shift",
-                ["0"]
-            )
+            return Tree("shift", ["0"])
         else:
             return tree
 
 
 parser = Lark(
     grammar_0,
-    start=[
-        "formula",
-        "equation_block",
-        "assignment_block",
-        "free_block"
-    ],
+    start=["formula", "equation_block", "assignment_block", "free_block"],
     parser="lalr",
     strict=True,
     propagate_positions=True,
-    transformer=TimeFixer()
+    transformer=TimeFixer(),
 )
 
 
 Expression = Union[Tree, Token]
+
 
 # Prints a tree as a string
 # WIP!!! (probably correct, but way too many parentheses)
@@ -104,9 +95,8 @@ class Printer(Interpreter):
             s = stringify_value((name, date))
         else:
             s = f"{name}[{date}]"
-        
-        return s
 
+        return s
 
     def variable(self, tree):
 
@@ -117,14 +107,13 @@ class Printer(Interpreter):
         if self.stringify_symbols:
             s = stringify_variable((name, (index, shift)))
             return s
-        
-        if shift<0:
+
+        if shift < 0:
             return f"{name}[{index}{shift}]"
-        elif shift>0:
+        elif shift > 0:
             return f"{name}[{index}+{shift}]"
         else:
             return f"{name}[{index}]"
-
 
     def equality(self, tree):
         a = self.visit(tree.children[0])
@@ -203,6 +192,7 @@ class Printer(Interpreter):
         else:
             return "∀t, " + self.visit(tree.children[1])
 
+
 # prints expression
 def str_expression(expr: Expression, stringify_symbols=False) -> str:
     return Printer(stringify_symbols=stringify_symbols).visit(expr)
@@ -247,7 +237,7 @@ def stringify_variable(arg: Tuple[str, Tuple[str, int]]) -> str:
 
 
 def stringify_symbol(arg) -> str:
-  
+
     if isinstance(arg, str):
         return stringify_constant(arg)
     elif isinstance(arg, tuple):
@@ -257,9 +247,6 @@ def stringify_symbol(arg) -> str:
             return stringify_variable(arg)
 
     raise Exception("Unknown canonical form: {}".format(arg))
-
-    
-
 
 
 # decorator to define functions which operate
@@ -278,9 +265,7 @@ def expression_or_string(f):
     return wrapper
 
 
-
 ## these functions apply the vistors/transformers either on expressions or on strings
 # @expression_or_string
-def stringify(expr: Expression)->str:
+def stringify(expr: Expression) -> str:
     return Stringifier().transform(expr)
-

@@ -6,6 +6,7 @@ from typing import Dict, Any, Callable, Union, List
 from .autodiff import DNumber as DN
 import math
 
+
 class DefinitionError(Exception):
 
     def __init__(self, msg, tree=None):
@@ -21,21 +22,28 @@ class DefinitionError(Exception):
 
 from dyno.language import Normal
 
+
 class FormulaEvaluator(Interpreter):
     """
     An interpreter that evaluates mathematical formulas as defined by the grammar.
-    
+
     This class can evaluate:
     - Basic arithmetic operations (add, sub, mul, div, pow, neg)
     - Numbers and symbols (constants, values, variables)
     - Function calls
     - Assignments and equations
     """
-    
-    def __init__(self, symbol_table: Dict[str, Any] = None, function_table: Dict[str, Callable] = None, steady_state=False, diff=False):
+
+    def __init__(
+        self,
+        symbol_table: Dict[str, Any] = None,
+        function_table: Dict[str, Callable] = None,
+        steady_state=False,
+        diff=False,
+    ):
         """
         Initialize the evaluator.
-        
+
         Args:
             symbol_table: Dictionary mapping symbol names to their values
             function_table: Dictionary mapping function names to callable functions
@@ -54,13 +62,14 @@ class FormulaEvaluator(Interpreter):
         self.steady_states = {}
 
         self.equations = []
-        self.time = None # None or integer
+        self.time = None  # None or integer
         self.errors = []
 
         # Add default mathematical functions
         from .autodiff import MATH_FUNCTIONS
+
         self.function_table.update(MATH_FUNCTIONS)
-        self.function_table.update({'N': (lambda u,v: Normal(Sigma=[[v]], Μ=[u])) })
+        self.function_table.update({"N": (lambda u, v: Normal(Sigma=[[v]], Μ=[u]))})
 
     # Arithmetic operations
     def add(self, tree):
@@ -68,38 +77,39 @@ class FormulaEvaluator(Interpreter):
         left = self.visit(tree.children[0])
         right = self.visit(tree.children[1])
         return left + right
-    
+
     def sub(self, tree):
         """Handle subtraction: a - b"""
         left = self.visit(tree.children[0])
         right = self.visit(tree.children[1])
         return left - right
-    
+
     def mul(self, tree):
         """Handle multiplication: a * b"""
         left = self.visit(tree.children[0])
         right = self.visit(tree.children[1])
         return left * right
-    
+
     def div(self, tree):
         """Handle division: a / b"""
         left = self.visit(tree.children[0])
         right = self.visit(tree.children[1])
-        if right == 0:
-            raise ZeroDivisionError("Division by zero")
+        # TODO: maybe add a safe division?
+        # if right == 0:
+        #     raise ZeroDivisionError("Division by zero")
         return left / right
-    
+
     def pow(self, tree):
         """Handle exponentiation: a ^ b or a ** b"""
         base = self.visit(tree.children[0])
         exponent = self.visit(tree.children[1])
-        return base ** exponent
-    
+        return base**exponent
+
     def neg(self, tree):
         """Handle negation: -a"""
         value = self.visit(tree.children[0])
         return -value
-    
+
     # Numbers and literals
     def number(self, tree):
         """Handle numeric literals"""
@@ -109,7 +119,7 @@ class FormulaEvaluator(Interpreter):
             return int(value)
         except ValueError:
             return float(value)
-    
+
     # Symbols
     def constant(self, tree):
         """Handle constants (symbols without time indexing)"""
@@ -117,10 +127,12 @@ class FormulaEvaluator(Interpreter):
         if name in self.constants:
             return self.constants[name]
         else:
-            raise ValueError(f"({tree.meta.line},{tree.meta.column}): Undefined value: {name}")
+            raise ValueError(
+                f"({tree.meta.line},{tree.meta.column}): Undefined value: {name}"
+            )
             # self.errors.append( DefinitionError(f"Undefined constant: {name}", tree=tree) )
             # return math.nan
-    
+
     def value(self, tree):
         """Handle values with specific time: name[time]"""
         name = str(tree.children[0].children[0])
@@ -144,56 +156,58 @@ class FormulaEvaluator(Interpreter):
                     return math.nan
                 else:
                     return vvs[time]
-    
+
     def variable(self, tree):
         """Handle variables with time indexing: name[t+shift]"""
         name = str(tree.children[0].children[0])
         index = str(tree.children[1].children[0])  # Usually 't'
         shift = int(tree.children[2].children[0])
-        
+
         # TODO deal with index ~ #### this should disappear
         if name not in self.variables:
             self.variables[name] = {}
-        
+
         if self.time is not None:
             time = self.time + shift
             key = f"{name}[{time}]"
             return self.values[name].get(time, math.nan)
-        elif self.steady_state or (index == '~'):
+        elif self.steady_state or (index == "~"):
             # from rich import print
             if name not in self.steady_states:
                 self.errors.append(
-                    DefinitionError(f"Undefined steady state for variable {name}[~]", tree=tree)
+                    DefinitionError(
+                        f"Undefined steady state for variable {name}[~]", tree=tree
+                    )
                 )
             return self.steady_states.get(name, math.nan)
         else:
             return self.variables[name].get(shift, math.nan)
-    
+
     # Function calls
     def call(self, tree):
         """Handle function calls: func_name(arg)"""
         func_name = tree.children[0].children[0].value
         args = [self.visit(c) for c in tree.children[1:]]
-        
+
         if func_name in self.function_table:
             return self.function_table[func_name](*args)
         else:
             raise ValueError(f"Undefined function: {func_name}")
-    
+
     # Equations and assignments
     def equality(self, tree):
         """Handle equations: left = right. Returns the difference (should be 0 for equality)"""
         left = self.visit(tree.children[0])
         right = self.visit(tree.children[1])
         return right - left  # Return difference for equation solving
-    
+
     def assignment(self, tree):
         """Handle assignments: symbol := value or symbol <- value"""
         symbol_tree = tree.children[0]
         value = self.visit(tree.children[1])
-        
+
         name = str(symbol_tree.children[0].children[0])
-        
+
         if symbol_tree.data == "constant":
             key = name
             if name in self.constants:
@@ -211,9 +225,8 @@ class FormulaEvaluator(Interpreter):
         elif symbol_tree.data == "variable":
             index = str(symbol_tree.children[1].children[0])
             shift = int(symbol_tree.children[2].children[0])
-            
 
-            if index=='~':
+            if index == "~":
                 key = f"{name}[~]"
                 # self.symbol_table[key] = value
                 if name not in self.steady_states:
@@ -227,19 +240,21 @@ class FormulaEvaluator(Interpreter):
                     self.steady_states[name] = float(value.Μ)
 
         return value
-    
+
     def quantified_assignment(self, tree):
 
         bounds = tree.children[0]
-        assert(bounds.data == 't_double_bound')
+        assert bounds.data == "t_double_bound"
         lower = self.visit(bounds.children[0])
         upper = self.visit(bounds.children[1])
         try:
-            assert( isinstance(lower,int) and isinstance(upper, int) and lower<upper)
+            assert isinstance(lower, int) and isinstance(upper, int) and lower < upper
         except:
-            raise ValueError(f"Invalid bounds in quantified assignment: {lower}, {upper}")
+            raise ValueError(
+                f"Invalid bounds in quantified assignment: {lower}, {upper}"
+            )
         dates = range(lower, upper)
-        
+
         symbol_tree = tree.children[1]
         name = str(symbol_tree.children[0].children[0])
 
@@ -247,52 +262,49 @@ class FormulaEvaluator(Interpreter):
             self.values[name] = {}
 
         for d in dates:
-            
+
             self.time = d
-            self.constants['t'] = d
+            self.constants["t"] = d
 
             value = self.visit(tree.children[2])
-            
+
             name = str(symbol_tree.children[0].children[0])
             index = str(symbol_tree.children[1].children[0])
             shift = int(symbol_tree.children[2].children[0])
-            assert index=='t' and shift==0
+            assert index == "t" and shift == 0
 
             # self.symbol_table[key] = value
             self.values[name][d] = value
-            
 
         # self.time = original_time
-        self.constants.pop('t', None)
-        self.time=None
-        
-
+        self.constants.pop("t", None)
+        self.time = None
 
     # Block handling
     def assignment_block(self, tree):
         """Handle a block of assignments"""
         results = []
         for child in tree.children:
-            if hasattr(child, 'data'):  # Skip newlines
+            if hasattr(child, "data"):  # Skip newlines
                 result = self.visit(child)
                 results.append(result)
         return results
-    
+
     def equation_block(self, tree):
         """Handle a block of equations"""
         results = []
         for child in tree.children:
-            if hasattr(child, 'data'):  # Skip newlines
+            if hasattr(child, "data"):  # Skip newlines
                 result = self.visit(child)
                 results.append(result)
         return results
-    
+
     def free_block(self, tree):
         """Handle a mixed block of equations and assignments"""
         results = []
-        for i,child in enumerate(tree.children):
-            if hasattr(child, 'data'):  # Skip newlines
-                if child.data in ('equality', 'formula'):
+        for i, child in enumerate(tree.children):
+            if hasattr(child, "data"):  # Skip newlines
+                if child.data in ("equality", "formula"):
                     # result = self.visit(child)
                     # results.append(result)
                     self.equations.append(child)
@@ -300,6 +312,7 @@ class FormulaEvaluator(Interpreter):
                     self.visit(child)
                 # results.append(result)
         return results
+
 
 # class EvalEquations(FormulaEvaluator):
 

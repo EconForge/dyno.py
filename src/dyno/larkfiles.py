@@ -7,6 +7,7 @@ from typing import List, Dict, Any
 from dyno.errors import LARKParserError, ParserError
 from lark.exceptions import UnexpectedInput
 
+
 class SymbolicFile:
 
     content: str
@@ -18,32 +19,32 @@ class SymbolicFile:
 
         self.filename = filename
         self.content = None
-    
+
     @property
     def context(self):
         return self.__context__
-    
-    def get_context(self: Self) -> Dict[str, Any]:
-        ev = self.evaluator        
-        context = {
-            'constants': ev.constants,
-            'variables': ev.variables,
-            'values': ev.values,
-            'processes': self.processes,
-            'steady_states': ev.steady_states,
 
+    def get_context(self: Self) -> Dict[str, Any]:
+        ev = self.evaluator
+        context = {
+            "constants": ev.constants,
+            "variables": ev.variables,
+            "values": ev.values,
+            "processes": self.processes,
+            "steady_states": ev.steady_states,
         }
         return context
 
     def latex_equations(self):
 
         from dyno.dynsym.latex import latex
+
         eqs_str = [latex(eq) for eq in self.equations]
-        latex_str = str.join("\n",["$${}$$".format(eq) for eq in eqs_str])
+        latex_str = str.join("\n", ["$${}$$".format(eq) for eq in eqs_str])
         return latex_str
 
-class DynoFile(SymbolicFile):
 
+class DynoFile(SymbolicFile):
     """Class for .dyno files"""
 
     def __init__(self, content: str, filename="<none>.dyno") -> None:
@@ -51,7 +52,6 @@ class DynoFile(SymbolicFile):
         self.content = content
         self.parse()
         self.__context__ = self.get_context()
-    
 
     @property
     def context(self):
@@ -59,12 +59,12 @@ class DynoFile(SymbolicFile):
 
     def parse(self: Self) -> None:
         txt = self.content
-        
+
         try:
-            tree = parser.parse(txt, start='free_block')
+            tree = parser.parse(txt, start="free_block")
         except UnexpectedInput as e:
             raise LARKParserError(e, txt) from e
-        
+
         self.tree = tree
 
         fe = FormulaEvaluator()
@@ -76,16 +76,14 @@ class DynoFile(SymbolicFile):
         # count variable in equations and compute residuals
         fe.steady_state = True
         self.residuals = [fe.visit(eq) for eq in fe.equations]
-        
+
         fe.steady_state = False
 
         self.equations = fe.equations
         self.processes = fe.processes
 
 
-
 class LModFile(SymbolicFile):
-
     """Class for LARK .mod files"""
 
     def __init__(self, content: str, filename="<none>.dyno") -> None:
@@ -94,13 +92,16 @@ class LModFile(SymbolicFile):
         self.parse()
         self._set_processes()
         self.__context__ = self.get_context()
-    
+
     def parse(self: Self) -> None:
 
         from lark import Lark
-        from dyno.modfile_lark import ModFileTransformer, modfile_grammar, InterpretModfile
+        from dyno.modfile_lark import (
+            ModFileTransformer,
+            modfile_grammar,
+            InterpretModfile,
+        )
 
-        
         content = self.content
 
         trans = ModFileTransformer()
@@ -128,7 +129,6 @@ class LModFile(SymbolicFile):
             "parameters": parameters,
         }
 
-
         fe = InterpretModfile(steady_state=True)
         fe.visit(tree)
 
@@ -139,26 +139,25 @@ class LModFile(SymbolicFile):
 
         self.evaluator = fe
         self.equations = fe.equations
-        
 
     def _set_processes(self):
 
         from dyno.language import Normal
+
         fe = self.evaluator
 
         covs = self.evaluator.covariances.copy()
 
-        exo = tuple(self.symbols['exogenous'])
+        exo = tuple(self.symbols["exogenous"])
         n_e = len(exo)
-        mat = np.zeros((n_e,n_e))
-        for ind,k in covs.items():
+        mat = np.zeros((n_e, n_e))
+        for ind, k in covs.items():
             i = exo.index(ind[0])
             j = exo.index(ind[1])
-            mat[i,j] = k
-            mat[j,i] = k
+            mat[i, j] = k
+            mat[j, i] = k
 
         self.evaluator.processes = {exo: Normal(mat)}
         self.processes = self.evaluator.processes
         for e in exo:
-            self.evaluator.steady_states[e] = 0.0        
-       
+            self.evaluator.steady_states[e] = 0.0

@@ -88,6 +88,7 @@ def irfs(
 
     return res
 
+
 def simulate(dr: RecursiveSolution, T: int = 40) -> pd.DataFrame:
     """Simulates the evolution of the endogenous variables
 
@@ -122,7 +123,6 @@ def simulate(dr: RecursiveSolution, T: int = 40) -> pd.DataFrame:
     res = np.concatenate([e[None, :] for e in ss], axis=0)
 
     return pd.DataFrame(res, columns=dr.symbols["endogenous"])
-
 
 
 def sim_to_nsim(irfs):

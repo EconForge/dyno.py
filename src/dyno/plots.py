@@ -6,48 +6,46 @@ def plot_irfs(sim):
         return plot_irfs_altair(sim)
     else:
         return plot_irf_altair(sim)
-    
+
+
 def plot_irf_altair(sim):
 
     import altair as alt
 
     sim = sim.melt(id_vars=["t"])
 
-    ch = alt.Chart(sim).mark_line().encode(
-        x='t',
-        y='value',
-        facet=alt.Facet('variable', columns=2)
-    ).properties(
-        width=200,
-        height=100
-    ).resolve_scale(
-        y='independent'
-    ).interactive()
+    ch = (
+        alt.Chart(sim)
+        .mark_line()
+        .encode(x="t", y="value", facet=alt.Facet("variable", columns=2))
+        .properties(width=200, height=100)
+        .resolve_scale(y="independent")
+        .interactive()
+    )
     return ch
+
 
 def plot_irfs_altair(sim):
 
     import altair as alt
+
     sim = sim_to_nsim(sim)
 
-    ch = alt.Chart(sim).mark_line().encode(
-        x='t',
-        y='value',
-        color='shock',
-        facet=alt.Facet('variable', columns=2)
-    ).properties(
-        width=200,
-        height=100
-    ).resolve_scale(
-        y='independent'
-    ).interactive()
+    ch = (
+        alt.Chart(sim)
+        .mark_line()
+        .encode(x="t", y="value", color="shock", facet=alt.Facet("variable", columns=2))
+        .properties(width=200, height=100)
+        .resolve_scale(y="independent")
+        .interactive()
+    )
     return ch
 
 
 def plot_irfs_plotly(sim):
-    
+
     import plotly.express as px
-    
+
     plots = sim_to_nsim(sim)
 
     fig = px.line(
@@ -64,10 +62,11 @@ def plot_irfs_plotly(sim):
     fig.update_xaxes(title_text="")
 
     return fig
-    
+
+
 def plot_irf_plotly(sim):
-        
-    sim['t'] = sim.index
+
+    sim["t"] = sim.index
     plots = sim.melt(id_vars=["t"])
 
     fig = px.line(
