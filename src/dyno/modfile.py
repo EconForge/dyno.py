@@ -7,7 +7,7 @@ from typing_extensions import Self
 from typing import Any
 from .typedefs import TVector, TMatrix
 
-from dynare_preprocessor import PreprocessorException
+from dynare_preprocessor import PreprocessorException, UnsupportedFeatureException
 from .errors import DynareParserError
 
 

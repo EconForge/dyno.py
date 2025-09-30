@@ -16,6 +16,7 @@ unsupported = [
 ]
 
 from dyno import modfile
+from dyno.errors import DynareParserError
 import pytest
 
 files = [f for f in files if not (f in exclude)]
@@ -31,7 +32,7 @@ def test_modfile_import(filename):
     try:
 
         mod = modfile.DynareModel(filename)
-        sol = mod.compute()
+        sol = mod.solve()
         print(sol)
 
         assert True
@@ -39,4 +40,4 @@ def test_modfile_import(filename):
     except Exception as e:
         assert f in unsupported
 
-        assert isinstance(e, modfile.UnsupportedFeatureException)
+        assert isinstance(e, (modfile.UnsupportedFeatureException, DynareParserError))

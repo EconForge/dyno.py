@@ -9,7 +9,7 @@ modfile: (var_statement | par_statement | varexo_statement | pred_statement | pa
 varexo_statement: "varexo" (lsymbol ","?)* lsymbol ";"
 var_statement: "var" (lsymbol ","?)* lsymbol ";"
 par_statement: "parameters" (lsymbol ","?)* lsymbol ";"
-pred_statement: "predetermined_variables " (symbol ","?)* symbol ";"
+pred_statement: "predetermined_variables" (lsymbol ","?)* lsymbol ";"
 
 ?parinit_statement: parassignment ";"
 

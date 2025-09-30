@@ -1,24 +1,10 @@
 import os
-import dolang
 from lark import Token, Lark
 import numpy as np
 from typing_extensions import Self
 from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
-
+import math
 from dyno.language import Normal
-
-# def ast_to_yaml(node, indent=""):
-#     indent += "  "
-#     if isinstance(node, Token):
-#         yield f"{indent}- type: {node.type}"
-#         yield f"{indent}  value: {repr(node.value)}"
-#     else:
-#         yield f"{indent}- type: {node.data}"
-#         yield f"{indent}  children:"
-#         for child in node.children:
-#             yield from ast_to_yaml(child, indent)
-
-
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 modfile_grammar = open(f"{dir_path}/dynsym/grammars/modfile_grammar.lark").read()
@@ -30,9 +16,8 @@ from lark.visitors import Transformer
 # from dyno.util_json import UnsupportedDynareFeature
 
 from dyno.model import DynoModel
-from lark import Visitor
 
-from lark import Tree, Token, Lark
+from lark import Tree, Lark
 from lark.visitors import Transformer, v_args
 
 from dyno.dynsym.analyze import FormulaEvaluator
@@ -108,6 +93,7 @@ class InterpretModfile(FormulaEvaluator):
         self.constants = {}
         self.covariances = {}
         self.current_block = None
+        self.unknown_as_nan = True
 
     def var_statement(self, tree):
         return tree
@@ -144,9 +130,6 @@ class InterpretModfile(FormulaEvaluator):
         elif self.current_block == "steady_block":
             self.steady_states[name] = value
 
-        # elif self.current_block == "shocks":
-        #     self.steady_states[name] = value
-
     def setvar_stmt(self, tree):
         name = str(tree.children[0].children[0].children[0])
         formula = tree.children[1]
@@ -165,10 +148,15 @@ class InterpretModfile(FormulaEvaluator):
     def call(self, tree):
         """Handle function calls: func_name(arg)"""
         func_name = str(tree.children[0])
-        args = [self.visit(c) for c in tree.children[1:]]
 
         if func_name in self.function_table:
+            args = [self.visit(c) for c in tree.children[1:]]
             return self.function_table[func_name](*args)
+        elif func_name == "steady_state":
+            assert tree.children[1].data == "variable"
+            name = str(tree.children[1].children[0].children[0])
+            print(name)
+            return self.steady_states.get(name, math.nan)
         else:
             raise ValueError(f"Undefined function: {func_name}")
 
@@ -222,11 +210,11 @@ class DynareModel(DynoModel):
         fe = InterpretModfile(steady_state=True)
         fe.visit(tree)
 
-        # count variable in equations and compute residuals
-        fe.steady_state = True
-        self.residuals = [fe.visit(eq) for eq in fe.equations]
-        fe.steady_state = False
-        self.evaluator = fe
+        # # count variable in equations and compute residuals
+        # fe.steady_state = True
+        # self.residuals = [fe.visit(eq) for eq in fe.equations]
+        # fe.steady_state = False
+        # self.evaluator = fe
 
     # def _check_supported(self):
     #     CheckFunCalls().visit(self.data)

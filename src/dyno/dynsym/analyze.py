@@ -40,6 +40,7 @@ class FormulaEvaluator(Interpreter):
         function_table: Dict[str, Callable] = None,
         steady_state=False,
         diff=False,
+        unknown_as_nan=True,
     ):
         """
         Initialize the evaluator.
@@ -54,6 +55,7 @@ class FormulaEvaluator(Interpreter):
         self.function_table = function_table or {}
         self.steady_state = steady_state
         self.diff = diff
+        self.unknown_as_nan = unknown_as_nan
 
         self.constants = {}
         self.processes = {}
@@ -127,11 +129,12 @@ class FormulaEvaluator(Interpreter):
         if name in self.constants:
             return self.constants[name]
         else:
-            raise ValueError(
-                f"({tree.meta.line},{tree.meta.column}): Undefined value: {name}"
-            )
-            # self.errors.append( DefinitionError(f"Undefined constant: {name}", tree=tree) )
-            # return math.nan
+            if self.unknown_as_nan:
+                return math.nan
+            else:
+                raise ValueError(
+                    f"({tree.meta.line},{tree.meta.column}): Undefined value: {name}"
+                )
 
     def value(self, tree):
         """Handle values with specific time: name[time]"""

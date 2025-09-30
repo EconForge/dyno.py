@@ -165,6 +165,28 @@ class DynoModel(ABC):
         # except KeyError as e:
         #     raise Exception("Steady state not fully specified: missing value for `{str(e)}`")
 
+    def describe(self: Self) -> str:
+
+        from rich.console import Console
+        from rich.markdown import Markdown
+
+        console = Console()
+        md = Markdown(self._markdown_())
+        console.print(md)
+
+    def _markdown_(self)->None:
+        from rich import print
+        txt = f"""# {self.name}
+- *filename*: {self.filename}
+- *symbols*:
+    - variables:
+        - endogenous: {str.join(", ",self.symbols["endogenous"])}
+        - exogenous: {str.join(", ",self.symbols["exogenous"])}
+    - constants: {str.join(", ",self.symbols["parameters"])}
+"""
+        return txt
+
+
     def _repr_html_(self):
         # from IPython.display import display, Markdown, HTML
         """Returns a string representation of the model's symbols"""
