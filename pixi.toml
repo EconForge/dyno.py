@@ -13,6 +13,8 @@ version = "0.1.5"
 dyno = { path = "." }
 rich = ">=14.1.0,<15"
 interegular = ">=0.3.3,<0.4"
+sympy = ">=1.14.0,<2"
+altair = ">=5.5.0,<6"
 
 [package.run-dependencies]
 dynare-preprocessor-pylib = "==0.0.0.dev1"
@@ -96,6 +98,11 @@ python = "3.12.*"
 
 [feature.py313.dependencies]
 python = "3.13.*"
+
+[feature.experimental.dependencies]
+sympy = "*"
+python-symengine = "*"
+jax = "*"
 
 [environments]
 test = ["test"]

@@ -62,7 +62,7 @@ variable: cname  "[" time_index time_shift  "]" -> variable
 
 SIGNED_INT2: ("+"|"-") INT
 
-_NEWLINE: NEWLINE
+_NEWLINE: NEWLINE+
 UNICODE_LETTER: /[^\W\d_\$]/
 NAME: UNICODE_LETTER ("_"|UNICODE_LETTER|DIGIT)*
 
@@ -71,9 +71,13 @@ NAME: UNICODE_LETTER ("_"|UNICODE_LETTER|DIGIT)*
 %import common.INT
 %import common.NUMBER
 %import common.WS_INLINE
+%import common.WS
 %import common.NEWLINE
 
-COMMENT.10 : /#[^\r\n]+\n/
-%ignore COMMENT
-
+// Start-of-line comments: consume newlines and empty lines that follow
+SOL_COMMENT.10 : /^[ \t]*#[^\r\n]*(\r?\n)*/m
+// End-of-line comments: don't consume the newline
+EOL_COMMENT.9 : /(?<!^)[ \t]*#[^\r\n]*/m
+%ignore SOL_COMMENT
+%ignore EOL_COMMENT
 %ignore WS_INLINE

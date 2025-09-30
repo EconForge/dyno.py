@@ -1,46 +1,100 @@
-from dynsym import read_model
-from rich import print, inspect
+from dyno.dynofile import LDynoModel
+from dyno.modfile import DynareModel
 
-filename = "tests/rbc.dyno"
+from rich import inspect, print
 
-# sol = read_model("tests/rbc.dyno")
-# # r, A, B, C, D = model.solve()
-# print(sol)
+model1 = LDynoModel("examples/RBC.dyno")
+model2 = LDynoModel("examples/modfiles/RBC.mod")
+model3 = DynareModel("examples/modfiles/RBC.mod")
 
-txt = open(filename).read()
-# print(txt)
 
-from dynsym.analyze import FormulaEvaluator
-from dynsym.grammar import parser
+models = [model1, model2, model3]
 
-tree = parser.parse(txt, start="free_block")
+print("Filenames of imported models:")
+print([model.filename for model in models])
 
-from rich import print
-print(tree.children[-1].pretty())
 
-# print(tree.pretty())
+print("Names of imported models:")
+print([model.name for model in models])
 
-fe = FormulaEvaluator(diff=False, steady_state=True)
+print("Symbols of imported models:")
+for m in models:
+    print(m.filename)
+    print(m.symbols)
 
-res = fe.visit(tree)
 
-print(fe.symbol_table)
+print("Context of imported models:")
+for m in models:
+    print(m.filename)
+    print(m.context)
 
-# print(res)
-# inspect(fe.symbols)
 
-# # inspect(res)
-def import_model(filename):
-    txt = open(filename).read()
-    tree = parser.parse(txt, start="free_block")
-    fe = FormulaEvaluator(diff=False, steady_state=True)
-    return fe.visit(tree), fe
+print("Equations of imported models:")
+for m in models:
+    print(m.equations)
 
-from time import time
 
-t1 = time()
-res, an = import_model(filename)
-t2 = time()
+print("Equations of imported models:")
+for m in models:
+    print(m.equations)
 
-inspect(an)
-print(f"Import time: {t2-t1:.4f} seconds")
+for m in models:
+    print(m.filename)
+    print(m.steady_state)
+
+for m in models:
+
+    print(m.__steady_state_vectors__)
+
+for m in models:
+    print(m.filename)
+    print(m.residuals)
+
+for m in models:
+    print(m.filename)
+    print(m.jacobians)
+
+for m in models:
+    dr = print(m._repr_html_())
+
+
+for m in models:
+    dr = m.solve()
+    print(dr)
+
+
+import time
+
+
+t1 = time.time()
+for i in range(100):
+    model = LDynoModel("examples/modfiles/RBC.mod")
+    dr = model.solve()
+t2 = time.time()
+print("Elsapsed time (dyno/mod)", t2 - t1)
+
+
+# Importing modfile with preprocessor
+from dyno.modfile import DynareModel
+import time
+
+t1 = time.time()
+for i in range(100):
+    model = DynareModel("examples/modfiles/RBC.mod")
+    model.solve()
+t2 = time.time()
+print("Elsapsed time (preprocessos)", t2 - t1)
+
+# Importing modfile with preprocessor
+from dyno.modfile import DynareModel
+import time
+
+t1 = time.time()
+for i in range(100):
+    model = LDynoModel("examples/RBC.dyno")
+    model.solve()
+t2 = time.time()
+print("Elsapsed time (dyno/dyno):", t2 - t1)
+
+
+# exit()

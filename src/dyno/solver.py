@@ -3,6 +3,141 @@ from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
 from .typedefs import TVector, TMatrix, Solver
 
+from typing_extensions import Self
+from .typedefs import TVector, TMatrix, IRFType, Solver
+
+
+class RecursiveSolution:
+    """VAR(1) representing a linearized model
+
+    Attributes
+    ----------
+    X, Y, Σ: (N,N) Matrix
+        parameters of the stationary VAR process $y_t = Xy_{t-1} + Yε_t$, where Σ is the covariance matrix of $ε_t$
+
+    symbols: dict[str, list[str]]
+        dictionary containing the symbols used in the model, the only allowed keys are "endogenous", "exogenous" and "parameters"
+
+    x0: N Vector | None
+        the state around which the linearization is done, generally the steady state, by default None
+
+    evs: 2N Vector | None
+        eigenvalues containing information about the stability of the model,
+        only available if the qz solver was used for linearization, by default None
+    """
+
+    def __init__(
+        self: Self,
+        X: TMatrix,
+        Y: TMatrix,
+        Σ: TMatrix,
+        symbols: dict[str, list[str]],
+        x0: TVector | None = None,
+        evs: TVector | None = None,
+        model=None,
+    ) -> None:
+
+        self.x0 = x0
+        self.X = X
+        self.Y = Y
+        self.Σ = Σ
+
+        self.evs = evs
+
+        self.symbols = symbols
+        self._model = model
+
+    def moments(self):
+
+        return moments(self.X, self.Y, self.Σ)
+
+    def coefficients_as_df(self):
+        import pandas as pd
+
+        ss = pd.DataFrame(
+            [self.x0], columns=["{}".format(e) for e in self.symbols["endogenous"]]
+        )
+        hh_y = self.X
+        hh_e = self.Y
+        df = pd.DataFrame(
+            np.concatenate([hh_y, hh_e], axis=1),
+            columns=["{}[t-1]".format(e) for e in self.symbols["endogenous"]]
+            + ["{}[t]".format(e) for e in (self.symbols["exogenous"])],
+        )
+        df.index = ["{}[t]".format(e) for e in self.symbols["endogenous"]]
+        return ss, df
+
+    def _repr_html_(self):
+
+        Σ0, Σ = moments(self.X, self.Y, self.Σ)
+
+        # df_cmoments = pd.DataFrame(
+        #     Σ0,
+        #     columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        #     index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        # )
+
+        # df_umoments = pd.DataFrame(
+        #     Σ,
+        #     columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        #     index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
+        # )
+        ss, df = self.coefficients_as_df()
+
+        html = f"""
+        <h3>Decision Rule</h3>
+        <h4>Steady-state</h4>
+        {ss.to_html(index=False)}
+        <h4>Jacobian</h4>
+        {df.to_html()}
+        """
+        return html
+
+    def irfs(self, type: IRFType = "log-deviation"):
+
+        from .simul import irfs
+
+        sim = irfs(self._model, self, type=IRFType)
+        return sim
+
+    def plot(self, type: IRFType = "log-deviation"):
+
+        sim = self.irfs(type=type)
+        plots = sim_to_nsim(sim)
+
+        fig = px.line(
+            plots,
+            x="t",
+            y="value",
+            color="shock",
+            facet_col="variable",
+            facet_col_wrap=2,
+        )
+
+        fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+        fig.update_yaxes(title_text="", matches=None)
+        fig.update_xaxes(title_text="")
+
+        return fig
+
+        # html = f"""
+        # <h3>Eigenvalues</h3>
+        # {evv.to_html()}
+        # <h3>Decision Rule</h3>
+        # <h4>Steady-state</h4>
+        # {ss.to_html(index=False)}
+        # <h4>Jacobian</h4>
+        # {df.to_html()}
+        # <h3>Moments</h3>
+        # <h4>Unconditional moments</h4>
+        # {df_umoments.to_html()}
+        # <h4>Conditional moments</h4>
+        # {df_cmoments.to_html()}
+        # <h3>IRFs</h3>
+        # {fig.to_html(full_html=False, include_plotlyjs=False)}
+        # """
+        # return html
+
 
 def solve(
     A: TMatrix, B: TMatrix, C: TMatrix, method: Solver = "qz", options={}
@@ -253,3 +388,35 @@ def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
     Γ = (np.linalg.inv(np.eye(n**2) - np.kron(X, X)) @ Γ0.flatten()).reshape(n, n)
 
     return Γ0, Γ
+
+
+def deterministic_solve(model, x0=None, T=None, method="hybr"):
+
+    import scipy.optimize
+    import pandas
+
+    if x0 is None:
+        v0 = model.deterministic_guess(T=T)
+    else:
+        v0 = np.array(x0)
+
+    T = v0.shape[0] - 1
+    u0 = (np.array(v0).ravel(),)
+
+    res = scipy.optimize.root(
+        lambda u: model.deterministic_residuals(u, jac=True),
+        u0,
+        method=method,
+        jac=True,
+    )
+
+    w0 = res.x.reshape(v0.shape)
+
+    df = pandas.DataFrame(
+        {e: w0[:, i] for i, e in enumerate(model.symbols["variables"])}
+    )
+    df.index = range(T + 1)
+    df.index.name = "t"
+    df.reset_index(inplace=True)
+
+    return df

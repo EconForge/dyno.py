@@ -6,18 +6,14 @@ modfile: (var_statement | par_statement | varexo_statement | pred_statement | pa
     (command_statement | steady_block | initval_block | steady_block | shocks_block )*
     
 
-varexo_statement: "varexo " (lsymbol ","?)* lsymbol ";"
-var_statement: "var " (lsymbol ","?)* lsymbol ";"
-par_statement: "parameters " (lsymbol ","?)* lsymbol ";"
-
-pred_statement: "predetermined_variables " (symbol ","?)* symbol ";"
+varexo_statement: "varexo" (lsymbol ","?)* lsymbol ";"
+var_statement: "var" (lsymbol ","?)* lsymbol ";"
+par_statement: "parameters" (lsymbol ","?)* lsymbol ";"
+pred_statement: "predetermined_variables" (lsymbol ","?)* lsymbol ";"
 
 ?parinit_statement: parassignment ";"
 
-lsymbol: symbol "$" latex_string "$" "(" properties ")"
-    | symbol "(" properties ")"
-    | symbol "$" latex_string "$"
-    | symbol 
+lsymbol: cname ["$" latex_string "$"] ["(" properties ")"]
 
 latex_string: LATEX_STRING
 
@@ -25,16 +21,18 @@ latex_string: LATEX_STRING
 # TODO
 
 command_statement:  COMMAND ";"
-    | COMMAND "(" symbol ")" ";"
-    | COMMAND (symbol *) ";" 
-    | COMMAND "(" (symbol "=" NUMBER ",")* symbol "=" NUMBER ")" ";"
-    | COMMAND "(" (symbol "=" NUMBER ",")* symbol "=" NUMBER ")" (symbol *) ";" 
+    | COMMAND "(" cname ")" ";"
+    | COMMAND (cname *) ";" 
+    | COMMAND "(" (cname "=" NUMBER ",")* cname "=" NUMBER ")" ";"
+    | COMMAND "(" (cname "=" NUMBER ",")* cname "=" NUMBER ")" (cname *) ";" 
 
 
 model_block.1: "model" ";" _list_of_equations _END_TOKEN ";"
     | "model" "(" "linear" ")" ";" _list_of_equations _END_TOKEN ";"
 
-steady_block.1: "steady_state_model" ";" _list_of_parassignments _END_TOKEN ";"
+steady_block.1: _STEADY_CMD ";" _list_of_parassignments _END_TOKEN ";"
+
+_STEADY_CMD.2: "steady_state_model"
 
 initval_block.1: "initval" ";" _list_of_parassignments _END_TOKEN ";"
 
@@ -48,8 +46,7 @@ setcovar_stmt: "var" symbol "," symbol "=" formula ";"
 _list_of_equations: (lequation) (";"  lequation )* ";"
 _list_of_parassignments: (parassignment) (";"  parassignment )* ";"
 
-lequation: equation
-    | "[" properties "]" equation
+lequation: ["[" properties "]"] equation
 
 properties: (pair ",")* pair
 pair:  NAME "=" "'" UNQUOTED_STRING "'"
@@ -58,55 +55,67 @@ pair:  NAME "=" "'" UNQUOTED_STRING "'"
 
 parassignment: symbol "=" formula
 
-assignment: variable "=" formula
+// vassignment: variable "=" formula
 
-equality: sum "=" sum 
-    | sum "==" sum
+// ?equation: equality | formula
+
+equality: formula "=" formula
+
+
+COMPARISON:  ("<="|"<"|">"|">=")
+// t_inequality: "t" COMPARISON formula -> t_bound
+t_double_bound: formula "<=" "t" "<" formula
+// t_inequalities: (t_inequality) ("," t_inequality)* -> t_bounds
+
+// predicate: [quantifier "," t_condition] (equality | inequality)
+
+quantified_assignment: _FORALL "t" ["," t_double_bound] ":" variable _ASSIGN formula
+
+_FORALL.1: ("∀" | "forall")
+_ASSIGN.1: (":=" | "<-")
+
 
 ?formula: sum
+
 ?sum: product
     | sum "+" product   -> add
     | sum "-" product   -> sub
-?product: atom
-    | product "*" atom  -> mul
-    | product "/" atom  -> div
+    | "-" product         -> neg
+?product: atom|pow
+    | product "*" (atom|pow)  -> mul
+    | product "/" (atom|pow)  -> div
 ?pow: atom _POW atom -> pow
 
-_POW: "^"|"**"
+_POW: "^" | "**"
 
 ?atom: NUMBER           -> number
-        | "-" atom         -> neg
-        | pow
-        | call
-        | symbol         
+        | symbol            
         | "(" sum ")"
-        | variable
+        | call
+
+?symbol: constant | value | variable
+
+constant: cname -> constant
+
+value: cname  "[" time "]" -> value
 
 
-variable.1: cname  "[" date_index "]" -> variable
-        | cname "[" "t" "]" -> variable
-        | cname "(" date_index ")" -> variable
-        | cname "[" "t$" subperiod "]"
+variable: cname  "(" time_shift  ")" -> variable
 
-subperiod: INT | NAME
+!time_shift: [SIGNED_INT2] -> shift
+    | INT -> shift
+
+!time: SIGNED_INT -> time
 
 !cname: NAME -> name
-
-?date_index: "t" SIGNED_INT2 -> date
-    | SIGNED_INT -> date
-
-call: FUNCTION "(" sum ")"
-    | NAME "(" (formula ",")* formula ")"
-
-
-!symbol: NAME -> symbol
-
+    
+?call: FUNCTION "(" formula ("," formula)* ")" -> call
 
 _END_TOKEN: "end"
 
-FUNCTION: "sin"|"cos"|"exp"|"log"|"steady_state"
+FUNCTION.1: "sin"|"cos"|"exp"|"log"|"steady_state"
 
-COMMAND: "steady"|"check"|"stoch_simul"
+COMMAND.1: "steady"|"check"|"stoch_simul"|"steady_state_model"
 
 SIGNED_INT2: ("+"|"-") INT
 
