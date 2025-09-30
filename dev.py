@@ -2,8 +2,8 @@ from dyno.dynofile import LDynoModel as DynoModel
 from dyno.modfile import DynareModel
 
 
-model = DynoModel('../jupyterlab-dyno/examples/ramst.dyno')
-dmodel = DynareModel('examples/modfiles/ramst.mod')
+model = DynoModel("../jupyterlab-dyno/examples/ramst.dyno")
+dmodel = DynareModel("examples/modfiles/ramst.mod")
 
 
 from dyno.solver import deterministic_solve
