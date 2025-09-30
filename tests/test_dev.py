@@ -4,7 +4,7 @@ def test_modfile_describe():
         "example2.mod",
         # "example3.mod", # has steady-state external file
         "Gali_2015.mod",
-        "NK_baseline.mod"
+        "NK_baseline.mod",
     ]
 
     # TODO: for excluded file, check the error is meaningful
@@ -14,6 +14,7 @@ def test_modfile_describe():
         print("Trying to import and describe", f)
         filename = "examples/modfiles/" + f
         from dyno.dynofile import LDynoModel
+
         model = LDynoModel(filename)
         print(model.describe())
 

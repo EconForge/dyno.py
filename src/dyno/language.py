@@ -146,7 +146,7 @@ class ProductNormal(Exogenous):
         """
         # assert len(self.processes) == 1
         from scipy.linalg import block_diag
-        
+
         return block_diag(*(e.Σ for e in self.processes))
 
 

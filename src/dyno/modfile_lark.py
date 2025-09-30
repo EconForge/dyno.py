@@ -5,6 +5,7 @@ from typing_extensions import Self
 from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
 import math
 from dyno.language import Normal
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 modfile_grammar = open(f"{dir_path}/dynsym/grammars/modfile_grammar.lark").read()

@@ -174,8 +174,9 @@ class DynoModel(ABC):
         md = Markdown(self._markdown_())
         console.print(md)
 
-    def _markdown_(self)->None:
+    def _markdown_(self) -> None:
         from rich import print
+
         txt = f"""# {self.name}
 - *filename*: {self.filename}
 - *symbols*:
@@ -185,7 +186,6 @@ class DynoModel(ABC):
     - constants: {str.join(", ",self.symbols["parameters"])}
 """
         return txt
-
 
     def _repr_html_(self):
         # from IPython.display import display, Markdown, HTML
