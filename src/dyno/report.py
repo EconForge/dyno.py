@@ -11,31 +11,6 @@ from dyno.errors import ParserError
 import altair as alt
 
 # load a simple dataset as a pandas DataFrame
-from vega_datasets import data
-
-
-# :::{dropdown} Code
-# ```{code}
-# :linenos:
-# :emphasize-lines: {[ str.join(",",[str(e.token.line) for e in errors]) ]}
-# {[code]}
-# ```
-# :::
-
-# {[if len(errors)>0]}
-
-# {[for e in errors]}
-
-# :::{error} UnexpectedToken `{[e.token.value]}` at {[(e.token.line, e.token.column)]}
-# :class: dropdown
-# ```
-# {[str(e.get_context(text=code))]}
-# {[str(e)]}
-# ```
-# :::
-
-# {[endfor]}
-# {[endif]}
 
 
 template = tempita.Template(
@@ -46,18 +21,6 @@ template = tempita.Template(
 {[default sim=None]}
 {[default fig=None]}                        
                             
-# Dyno Report
-                            
-
-                            
-:::{dropdown} Code
-```{code}
-:linenos:
-:emphasize-lines: {[ str.join(",",error_lines) ]}
-{[code]}
-```
-:::
-
 
 {[if len(parser_errors)>0]}      
 
@@ -73,13 +36,16 @@ template = tempita.Template(
 :::
                             
 {[endfor]} 
-{[endif]}
 
 ---
 
+{[endif]}
+
+
 {[if model is not None]}
-                            
-## Model Summary
+
+# Report: {[model.name]}
+         
 
 - *filename*:  {[model.filename]}
 - *name*:  {[model.name]}
@@ -323,8 +289,8 @@ class Report:
         txt = template.substitute(**d)
 
         for e in unhandled_errors:
-            raise (e)
-            # print(e)
+            # raise (e)
+            print(e)
         return txt
 
     def __call__(self, *s, **options):
@@ -335,10 +301,13 @@ class Report:
         for k, w in options.items():
             self.elements[k] = w
 
+    
 
 def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
 
     d = {}
+
+    from dyno.dynofile import LDynoModel
 
     output_type = options.get("output_type", "markown")
     check_output = options.get("check_output", False)
@@ -391,6 +360,18 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
 
         r = model.residuals
 
+        if abs(r).max()>=1e-6 and isinstance(model, LDynoModel):
+            import numpy as np
+            inds, = np.where(abs(r)>=1e-6)
+            highlighting_data = []
+            for i in inds:
+                tree = model.data.equations[i]
+                highlighting_data.append(
+                    {"line": tree.meta.line, "type": "warning", "message": f"{str(r[i])}"},
+                )
+                display({
+                    "application/vnd.jupyterlab-dyno.highlighting+json": highlighting_data
+                }, raw=True)
         report(residuals=r)
         if model.checks["deterministic"]:
             from dyno.solver import deterministic_solve
@@ -409,11 +390,33 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
         report(fig=fig)
 
     except Exception as e:
-        report(e)
-        return report
 
-    from IPython.display import display, HTML, Markdown
+        report(e)
+        
+        if hasattr(e,'line'):
+
+            highlighting_data = [
+                {"line": e.line, "type": "error", "message": f"{str(e)}"},
+            ]
+            display({
+                "application/vnd.jupyterlab-dyno.highlighting+json": highlighting_data
+            }, raw=True)
+
+        return report
+    
+
 
     display(Markdown(report._repr_markdown_()))
     display(fig)
     display(Markdown("---"))
+    
+    # highlighting_data = [
+    #     {"line": 5, "type": "error", "message": "Syntax error here"},
+    #     {"line": 10, "type": "warning", "message": "Warning: deprecated function"},
+    #     {"line": 15, "type": "success", "message": "Analysis complete"},
+    #     {"line": 20, "type": "error", "message": "Syntax error here"},
+
+    # ]
+    # display({
+    #     "application/vnd.jupyterlab-dyno.highlighting+json": highlighting_data
+    # }, raw=True)
