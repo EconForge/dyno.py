@@ -1,6 +1,7 @@
 [project]
 name = "dyno"
 version = "0.1.5"
+license = { file = "LICENSE" }
 requires-python = ">= 3.10,<3.14"
 
 [build-system]
