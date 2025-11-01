@@ -9,12 +9,16 @@ platforms = ["linux-64"]
 name = "dyno"
 version = "0.1.6"
 
+[pypi-dependencies]
+dyno = { path = "." , editable = true}
+
 [dependencies]
 dyno = { path = "." }
 rich = ">=14.1.0,<15"
 interegular = ">=0.3.3,<0.4"
 sympy = ">=1.14.0,<2"
 altair = ">=5.5.0,<6"
+tempita = ">=0.6.0,<0.7"
 
 [package.run-dependencies]
 dynare-preprocessor-pylib = "==0.0.0.dev1"
@@ -26,7 +30,7 @@ typing_extensions = ">=4.12.0"
 plotly = ">=5.18.0"
 
 [package.build]
-backend = { name = "pixi-build-python", version = "==0.3.2" }
+backend = { name = "pixi-build-python", version = "==0.4.0" }
 
 [package.host-dependencies] 
 hatchling = "==1.26.3"
