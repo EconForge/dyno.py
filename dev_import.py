@@ -1,10 +1,10 @@
-from dyno.dynofile import LDynoModel
+from dyno.symbolic_model import SymbolicModel
 from dyno.modfile import DynareModel
 
 from rich import inspect, print
 
-model1 = LDynoModel("examples/RBC.dyno")
-model2 = LDynoModel("examples/modfiles/RBC.mod")
+model1 = SymbolicModel("examples/RBC.dyno")
+model2 = SymbolicModel("examples/modfiles/RBC.mod")
 model3 = DynareModel("examples/modfiles/RBC.mod")
 
 
@@ -68,7 +68,7 @@ import time
 
 t1 = time.time()
 for i in range(100):
-    model = LDynoModel("examples/modfiles/RBC.mod")
+    model = SymbolicModel("examples/modfiles/RBC.mod")
     dr = model.solve()
 t2 = time.time()
 print("Elsapsed time (dyno/mod)", t2 - t1)
@@ -91,7 +91,7 @@ import time
 
 t1 = time.time()
 for i in range(100):
-    model = LDynoModel("examples/RBC.dyno")
+    model = SymbolicModel("examples/RBC.dyno")
     model.solve()
 t2 = time.time()
 print("Elsapsed time (dyno/dyno):", t2 - t1)

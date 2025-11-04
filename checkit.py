@@ -1,6 +1,6 @@
 filename = "examples/modfiles/example1.mod"
 
-from dyno.modfile_lark import DynareModel
+from dyno.dynsym.dynare import DynareModel
 
 model = DynareModel(filename=filename)
 

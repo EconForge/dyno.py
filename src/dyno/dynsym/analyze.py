@@ -36,10 +36,8 @@ class FormulaEvaluator(Interpreter):
 
     def __init__(
         self,
-        symbol_table: Dict[str, Any] = None,
-        function_table: Dict[str, Callable] = None,
-        steady_state=False,
-        diff=False,
+        context: Dict[str,Any] = {},
+        function_table: Dict[str, Callable] = {},
         unknown_as_nan=True,
     ):
         """
@@ -51,19 +49,17 @@ class FormulaEvaluator(Interpreter):
             steady_state: If True, evaluates variables at their steady state (only the name of the symbol is taken into account)
         """
         super().__init__()
-        # self.symbol_table = symbol_table or {}
+
         self.function_table = function_table or {}
-        self.steady_state = steady_state
-        self.diff = diff
         self.unknown_as_nan = unknown_as_nan
 
-        self.constants = {}
-        self.processes = {}
-        self.values = {}
-        self.variables = {}
-        self.steady_states = {}
+        self.constants = context.get("constants", {})
+        self.processes = context.get("processes", {})
+        self.values = context.get("values", {})
+        self.variables = context.get("variables", {})
+        self.steady_states = context.get("steady_states", {})
 
-        self.equations = []
+
         self.time = None  # None or integer
         self.errors = []
 
@@ -197,12 +193,49 @@ class FormulaEvaluator(Interpreter):
         else:
             raise ValueError(f"Undefined function: {func_name}")
 
-    # Equations and assignments
-    def equality(self, tree):
-        """Handle equations: left = right. Returns the difference (should be 0 for equality)"""
-        left = self.visit(tree.children[0])
-        right = self.visit(tree.children[1])
-        return right - left  # Return difference for equation solving
+
+
+
+class AssignmentEvaluator(FormulaEvaluator):
+
+
+    def __init__(
+        self,
+        context: Dict[str, Any] = {},
+        symbol_table: Dict[str, Any] = {},
+        function_table: Dict[str, Callable] = {},
+        unknown_as_nan=True,
+    ):
+        """
+        Initialize the evaluator.
+
+        Args:
+            symbol_table: Dictionary mapping symbol names to their values
+            function_table: Dictionary mapping function names to callable functions
+            steady_state: If True, evaluates variables at their steady state (only the name of the symbol is taken into account)
+        """
+        super().__init__()
+
+        self.function_table = function_table or {}
+        self.unknown_as_nan = unknown_as_nan
+
+        self.constants = context.get("constants", {})
+        self.processes = context.get("processes", {})
+        self.values = context.get("values", {})
+        self.variables = context.get("variables", {})
+        self.steady_states = context.get("steady_states", {})
+
+
+        self.equations = []
+        self.time = None  # None or integer
+        self.errors = []
+
+        # Add default mathematical functions
+        from .autodiff import MATH_FUNCTIONS
+
+        self.function_table.update(MATH_FUNCTIONS)
+        self.function_table.update({"N": (lambda u, v: Normal(Sigma=[[v]], Μ=[u]))})
+
 
     def assignment(self, tree):
         """Handle assignments: symbol := value or symbol <- value"""
@@ -293,6 +326,8 @@ class FormulaEvaluator(Interpreter):
                 results.append(result)
         return results
 
+
+    # equations are just stored separately (without evaluation)
     def equation_block(self, tree):
         """Handle a block of equations"""
         results = []
@@ -315,6 +350,62 @@ class FormulaEvaluator(Interpreter):
                     self.visit(child)
                 # results.append(result)
         return results
+
+
+
+class EquationsEvaluator(FormulaEvaluator):
+
+
+    def __init__(
+        self,
+        context: Dict[str, Any] = {},
+        function_table: Dict[str, Callable] = {},
+        steady_state=False,
+        diff=False,
+        unknown_as_nan=True,
+    ):
+        """
+        Initialize the evaluator.
+
+        Args:
+            symbol_table: Dictionary mapping symbol names to their values
+            function_table: Dictionary mapping function names to callable functions
+            steady_state: If True, evaluates variables at their steady state (only the name of the symbol is taken into account)
+        """
+        super().__init__()
+        # self.symbol_table = symbol_table or {}
+        
+        self.function_table = function_table or {}
+        self.steady_state = steady_state
+        self.diff = diff
+        self.unknown_as_nan = unknown_as_nan
+
+        self.constants = context.get("constants", {})
+        self.processes = context.get("processes", {})
+        self.values = context.get("values", {})
+        self.variables = context.get("variables", {})
+
+        self.steady_states = context.get("steady_states", {})
+
+        self.equations = []
+        self.time = None  # None or integer
+        self.errors = []
+
+        # Add default mathematical functions
+        from .autodiff import MATH_FUNCTIONS
+
+        self.function_table.update(MATH_FUNCTIONS)
+        # self.function_table.update({"N": (lambda u, v: Normal(Sigma=[[v]], Μ=[u]))})
+
+
+    # Equations and assignments
+    def equality(self, tree):
+        """Handle equations: left = right. Returns the difference (should be 0 for equality)"""
+        left = self.visit(tree.children[0])
+        right = self.visit(tree.children[1])
+        return right - left  # Return difference for equation solving
+
+
 
 
 # class EvalEquations(FormulaEvaluator):

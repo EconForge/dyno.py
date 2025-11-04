@@ -92,7 +92,7 @@ epsilon = 9;
 % First Order Conditions
 %----------------------------------------------------------------
 
-model(linear);
+DynoModel(linear);
 
 
 //Composite parameters

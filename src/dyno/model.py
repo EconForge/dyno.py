@@ -15,7 +15,7 @@ import pandas as pd
 from .language import Exogenous, Normal, Deterministic, ProductNormal
 
 from .errors import SteadyStateError
-
+from .larkfiles import SymbolicFile
 from dyno.solver import RecursiveSolution
 
 
@@ -35,7 +35,7 @@ class DynoModel(ABC):
 
     paths: dict[str, dict[int, float]] | None
 
-    data: Any
+    data: SymbolicFile
     """Format-dependant internal representation of the data"""
 
     def __init__(

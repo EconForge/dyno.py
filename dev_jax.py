@@ -1,6 +1,6 @@
-from dyno.dynofile import LDynoModel
+from dyno.symbolic_model import SymbolicModel
 
-model = LDynoModel("examples/modfiles/RBC.mod")
+model = SymbolicModel("examples/modfiles/RBC.mod")
 r0, A0, B0, C0, D0 = model.jacobians  # for comparison purpose
 
 import jax

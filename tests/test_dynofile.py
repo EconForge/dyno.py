@@ -2,7 +2,7 @@ def test_dynofile_modfile_equivalence():
 
     print("TEST dynofile/modfile equivalence")
 
-    from dyno.dynofile import LDynoModel as DynoModel
+    from dyno.symbolic_model import SymbolicModel as Model
     from dyno.modfile import DynareModel
 
     model1 = DynoModel("examples/RBC.dyno")
@@ -46,7 +46,7 @@ def test_modfile_lark_preprocessor_equivalence():
 
     print("TEST dynofile/modfile equivalence")
 
-    from dyno.dynofile import LDynoModel as DynoModel
+    from dyno.symbolic_model import SymbolicModel as Model
     from dyno.modfile import DynareModel
 
     model1 = DynoModel("examples/modfiles/RBC.mod")

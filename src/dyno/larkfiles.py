@@ -1,6 +1,6 @@
 from lark import Tree
 from dyno.dynsym.grammar import parser, str_expression
-from dyno.dynsym.analyze import FormulaEvaluator
+from dyno.dynsym.analyze import FormulaEvaluator, AssignmentEvaluator, EquationsEvaluator
 from typing_extensions import Self
 import numpy as np
 from typing import List, Dict, Any
@@ -9,16 +9,16 @@ from lark.exceptions import UnexpectedInput
 
 
 class SymbolicFile:
-
+    filename: str
     content: str
     tree: Tree
     equations: List[Tree]
     # declarations: List[Tree]
 
     def __init__(self, content: str, filename="<none>.dyno") -> None:
-
+        # store provided filename and content on the instance
         self.filename = filename
-        self.content = None
+        self.content = content
 
     @property
     def context(self):
@@ -58,36 +58,48 @@ class DynoFile(SymbolicFile):
         return self.__context__
 
     def parse(self: Self) -> None:
+
         txt = self.content
 
         try:
-            tree = parser.parse(txt, start="free_block")
+            tree = parser.parse(txt, 
+                start="free_block",
+            )
         except UnexpectedInput as e:
             raise LARKParserError(e, txt) from e
 
         self.tree = tree
 
-        fe = FormulaEvaluator()
-        self.evaluator = fe
-
-        # process assignments
+        fe = AssignmentEvaluator()
         fe.visit(tree)
-
-        # count variable in equations and compute residuals
-        fe.steady_state = True
-        self.residuals = [fe.visit(eq) for eq in fe.equations]
-
-        fe.steady_state = False
-
+        context = {
+            'constants': fe.constants,
+            'variables': fe.variables,
+            'values': fe.values,
+            'processes': fe.processes,
+            'steady_states': fe.steady_states,
+        }
         self.equations = fe.equations
         self.processes = fe.processes
+
+
+        # this part should probably move somewhere else
+        # count variable in equations and compute residuals
+        fe = EquationsEvaluator(context)
+        fe.steady_state = True
+        self.residuals = [fe.visit(eq) for eq in self.equations]
+        fe.steady_state = False
+
+
+        self.evaluator = fe ### This is not very clean
+
 
 
 class LModFile(SymbolicFile):
     """Class for LARK .mod files"""
 
     def __init__(self, content: str, filename="<none>.dyno") -> None:
-        super().__init__(content)
+        super().__init__(content, filename)
         self.content = content
         self.parse()
         self._set_processes()
@@ -96,7 +108,7 @@ class LModFile(SymbolicFile):
     def parse(self: Self) -> None:
 
         from lark import Lark
-        from dyno.modfile_lark import (
+        from dyno.dynsym.dynare import (
             ModFileTransformer,
             modfile_grammar,
             InterpretModfile,
@@ -115,6 +127,7 @@ class LModFile(SymbolicFile):
         )
         try:
             tree = parser.parse(content)
+            self.tree = tree
         except UnexpectedInput as e:
             raise LARKParserError(e, content) from e
 
@@ -129,15 +142,27 @@ class LModFile(SymbolicFile):
             "parameters": parameters,
         }
 
-        fe = InterpretModfile(steady_state=True)
+        fe = InterpretModfile()
         fe.visit(tree)
 
-        # count variable in equations and compute residuals
-        fe.steady_state = True
-        self.residuals = [fe.visit(eq) for eq in fe.equations]
-        fe.steady_state = False
+        context = {
+            'constants': fe.constants,
+            'variables': fe.variables,
+            'values': fe.values,
+            'processes': fe.processes,
+            'steady_states': fe.steady_states,
+        }
+        self.equations = fe.equations
+        self.processes = fe.processes
 
         self.evaluator = fe
+        
+
+        # I should ensure the trees are identical then factor out
+        # count variable in equations and compute residuals
+        fe.steady_state = True
+        self.residuals = [fe.visit(eq) for eq in self.equations]
+        fe.steady_state = False
         self.equations = fe.equations
 
     def _set_processes(self):

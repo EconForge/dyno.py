@@ -1,4 +1,4 @@
-from dyno.dynofile import LDynoModel as DynoModel
+from dyno.symbolic_model import SymbolicModel as Model
 from dyno.modfile import DynareModel
 
 
