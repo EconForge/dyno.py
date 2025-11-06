@@ -12,6 +12,7 @@ class SymbolicFile:
     filename: str
     content: str
     tree: Tree
+    context: Dict
     equations: List[Tree]
     # declarations: List[Tree]
 
@@ -20,20 +21,21 @@ class SymbolicFile:
         self.filename = filename
         self.content = content
 
-    @property
-    def context(self):
-        return self.__context__
+    # @property
+    # def context(self):
+    #     return self.__context__
 
-    def get_context(self: Self) -> Dict[str, Any]:
-        ev = self.evaluator
-        context = {
-            "constants": ev.constants,
-            "variables": ev.variables,
-            "values": ev.values,
-            "processes": self.processes,
-            "steady_states": ev.steady_states,
-        }
-        return context
+    # def get_context(self: Self) -> Dict[str, Any]:
+
+    #     ev = self.evaluator
+    #     context = {
+    #         "constants": ev.constants,
+    #         "variables": ev.variables,
+    #         "values": ev.values,
+    #         "processes": self.processes,
+    #         "steady_states": ev.steady_states,
+    #     }
+    #     return context
 
     def latex_equations(self):
 
@@ -51,11 +53,7 @@ class DynoFile(SymbolicFile):
         super().__init__(content, filename)
         self.content = content
         self.parse()
-        self.__context__ = self.get_context()
 
-    @property
-    def context(self):
-        return self.__context__
 
     def parse(self: Self) -> None:
 
@@ -79,6 +77,8 @@ class DynoFile(SymbolicFile):
             'processes': fe.processes,
             'steady_states': fe.steady_states,
         }
+
+        self.context = context
         self.equations = fe.equations
         self.processes = fe.processes
 
@@ -102,8 +102,8 @@ class LModFile(SymbolicFile):
         super().__init__(content, filename)
         self.content = content
         self.parse()
-        self._set_processes()
-        self.__context__ = self.get_context()
+        # self._set_processes()
+        # self.__context__ = self.get_context()
 
     def parse(self: Self) -> None:
 
@@ -152,18 +152,22 @@ class LModFile(SymbolicFile):
             'processes': fe.processes,
             'steady_states': fe.steady_states,
         }
+
         self.equations = fe.equations
         self.processes = fe.processes
-
         self.evaluator = fe
-        
 
-        # I should ensure the trees are identical then factor out
-        # count variable in equations and compute residuals
-        fe.steady_state = True
-        self.residuals = [fe.visit(eq) for eq in self.equations]
-        fe.steady_state = False
-        self.equations = fe.equations
+        self._set_processes()
+
+        self.context = context
+        
+        # # I should ensure the trees are identical then factor out
+        # # count variable in equations and compute residuals
+        # fe.steady_state = True
+        # self.residuals = [fe.visit(eq) for eq in self.equations]
+        # fe.steady_state = False
+        # self.equations = fe.equations
+
 
     def _set_processes(self):
 

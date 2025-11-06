@@ -1,0 +1,77 @@
+χ <- 0.05
+y_bar <- 0.1
+inc_share <- 0.25
+ζ_bar <- (inc_share-y_bar)/(1-y_bar)
+r_w <- 0.04
+r <- r_w
+β <- 1-r
+δ_β <- 0.005
+δ_b <- 0.005
+ρ_a <- 0.99
+ρ_y <- 0.99
+ρ_ζ <- 0.99
+β_τ <- β - δ_β
+β_b <- β - δ_b
+
+σ <- 2.0
+η <- 2.5
+η_b <- 2.5
+ω <- 0.5
+hand_to_mouth <- 0.0
+
+y[~] <- y_bar
+ζ[~] <- ζ_bar
+
+# Steady-states
+a[~] <- 1
+d[~] <- 0
+d_b[~] <- 0
+b_b[~] <- 0
+b_τ[~] <- 0
+p[~] <- β/(1-β)*r
+q[~] <- p[~]*a[~]*y[~]/r
+n[~] <- 1 # total number of shares
+x[~] <- 1/χ # number of shares per top earner
+
+W_τ[~] <- p[~]*(b_τ[~]) + q[~]*x[~]
+W_b[~] <- 1.0 + p[~]*(b_b[~])*0  # adding/removing the last term affects the result !
+c_b[~] <- a[~]*(1-y[~])*(1-ζ[~])/(1-χ) 
+c_τ[~] <- a[~]*(1-y[~])*ζ[~]*x[~] + b_τ[~]*r + (a[~]*y[~])*x[~]
+y_b[~] <- a[~]*(1-y[~])*(1-ζ[~])/(1-χ)    # labor income for bottom-earners
+y_τ[~] <- a[~]*(1-y[~])*ζ[~]*x[~] + (a[~]*y[~])*x[~]     # top earners income (labor plus dividends)
+c_b[~] <- b_b[~]*r + y_b[~]
+c_τ[~] <- b_τ[~]*r + y_τ[~]
+
+
+φ_τ <- (1-β_τ/p[~])*c_τ[~]^(-σ)/(W_τ[~])^(-η)
+φ_b <- (1-β_b/p[~])*c_b[~]^(-σ)/(W_b[~])^(-η_b)
+
+
+
+# exogenous processes
+y[t] = y[~] + ρ_y*(y[t-1]-y[~])
+ζ[t] = ζ[~] + ρ_ζ*(ζ[t-1]-ζ[~])
+x[t] = x[~]
+a[t] = 1 + ρ_a*(a[t-1]-1)
+
+d[t]   = d[t-1]   + e_d[t]    # income shock for top earners
+d_b[t] = d_b[t-1] + e_d_b[t]  # income shock for bottom earners
+
+y_b[t] = a[t]*(1-y[t])*(1-ζ[t])/(1-χ)    # labor income for bottom-earners
+y_τ[t] = a[t]*(1-y[t])*ζ[t]*x[t] + (a[t]*y[t])*x[t]     # top earners income (labor plus dividends)
+
+c_b[t] = d_b[t]/(1-χ) +  b_b[t-1]*r - (b_b[t]-b_b[t-1])*p[t] + y_b[t]
+c_τ[t] = d[t]         +  b_τ[t-1]*r - (b_τ[t]-b_τ[t-1])*p[t] + y_τ[t]
+
+W_τ[t] = q[t]*x[t] + p[t]*(b_τ[t])
+W_b[t] = 1         + p[t]*(b_b[t])
+
+p[t] = β_b*(c_b[t+1]/c_b[t])^(-σ)*(r+p[t+1]) + φ_b*(W_b[t])^(-η_b)/(c_b[t])^(-σ)*p[t]
+p[t] = β_τ*(c_τ[t+1]/c_τ[t])^(-σ)*(r+p[t+1]) + φ_τ*(W_τ[t])^(-η  )/(c_τ[t])^(-σ)*p[t]
+
+r_w + p[t] = 1
+
+q[t] = p[~]*a[~]*y[~]/r
+
+# e_d[t]   <- N(0, 0.1)
+e_d_b[t] <- N(0, 0.1)

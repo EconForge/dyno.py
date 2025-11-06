@@ -1,6 +1,4 @@
 import os
-
-
 import time
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -13,9 +11,6 @@ from dyno.symbolic_model import SymbolicModel
 
 t1 = time.time()
 model = SymbolicModel(f_o)
-
-
-
 t2 = time.time()
 dr1 = model.solve()
 print("Model parsing time: ", t2 - t1)
