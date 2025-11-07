@@ -185,7 +185,7 @@ class FormulaEvaluator(Interpreter):
     # Function calls
     def call(self, tree):
         """Handle function calls: func_name(arg)"""
-        func_name = tree.children[0].children[0].value
+        func_name = str(tree.children[0].children[0])
         args = [self.visit(c) for c in tree.children[1:]]
 
         if func_name in self.function_table:
@@ -205,6 +205,7 @@ class AssignmentEvaluator(FormulaEvaluator):
         symbol_table: Dict[str, Any] = {},
         function_table: Dict[str, Callable] = {},
         unknown_as_nan=True,
+        calibration:Dict[str,Any]={},
     ):
         """
         Initialize the evaluator.
@@ -213,13 +214,16 @@ class AssignmentEvaluator(FormulaEvaluator):
             symbol_table: Dictionary mapping symbol names to their values
             function_table: Dictionary mapping function names to callable functions
             steady_state: If True, evaluates variables at their steady state (only the name of the symbol is taken into account)
+            calibration: Values that override constants defined in the model
         """
         super().__init__()
 
         self.function_table = function_table or {}
         self.unknown_as_nan = unknown_as_nan
 
-        self.constants = context.get("constants", {})
+        self.__calibration__ = calibration.copy()
+
+        self.constants = context.get("constants", self.__calibration__.copy())
         self.processes = context.get("processes", {})
         self.values = context.get("values", {})
         self.variables = context.get("variables", {})
@@ -245,7 +249,10 @@ class AssignmentEvaluator(FormulaEvaluator):
         name = str(symbol_tree.children[0].children[0])
 
         if symbol_tree.data == "constant":
-            key = name
+
+            if name in self.__calibration__:
+                print(f"Warning: constant {name} calibrated to {self.__calibration__[name]}; assignment ignored.")
+                return
             if name in self.constants:
                 print(f"Warning: constant {name} redefined")
             else:
@@ -272,6 +279,8 @@ class AssignmentEvaluator(FormulaEvaluator):
                 if name in self.processes:
                     raise Exception(f"Warning: invalid redefinition of process {name}.")
                 else:
+
+                    # TODO: check that value is a process
                     self.processes[(name,)] = value
                     self.steady_states[name] = float(value.Μ)
 

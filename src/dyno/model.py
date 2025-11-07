@@ -69,6 +69,10 @@ class DynoModel(ABC):
         self._set_exogenous()
         # self._set_dynamic()
 
+    def copy(self):
+        import copy
+        return copy.deepcopy(self)
+
     @property
     def checks(self):
         return {"deterministic": self.processes is None}

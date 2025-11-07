@@ -30,6 +30,14 @@ class SymbolicModel(DynoModel):
         context = self.data.context.copy()
         self.context = context
 
+    def recalibrate(self: Self, **calib):
+        m = self.copy()
+        m.data.context = {}
+        m.data.process_assignments(**calib)
+        m._set_context()
+        m._set_exogenous()
+        return m
+
     @property
     def equations(self):
 
@@ -60,22 +68,29 @@ class SymbolicModel(DynoModel):
 
         import numpy as np
         from dyno.dynsym.autodiff import DNumber as DN
-
-        fe = self.data.evaluator
+        
         endogenous = self.symbols["endogenous"]
         exogenous = self.symbols["exogenous"]
 
+
+
+        import copy
+        cc = copy.deepcopy(self.data.context)
+
         for i, name in enumerate(endogenous):
-            fe.variables[name] = {
+            cc['variables'][name] = {
                 -1: DN(y0[i], {(name, -1): 1}),
                 0: DN(y1[i], {(name, 0): 1}),
                 1: DN(y2[i], {(name, 1): 1}),
             }
 
         for i, name in enumerate(exogenous):
-            fe.variables[name] = {0: DN(e[i], {(name, 0): 1})}
+            cc['variables'][name] = {0: DN(e[i], {(name, 0): 1})}
 
-        results = [fe.visit(eq) for eq in self.data.equations]
+
+        from dyno.dynsym.analyze import EquationsEvaluator        
+        E = EquationsEvaluator(cc)
+        results = [E.visit(eq) for eq in self.data.equations]
 
         neq = len(results)
         nv = len(endogenous)
@@ -111,8 +126,9 @@ class SymbolicModel(DynoModel):
 
         # works if the is one and exactly one exogenous variable?
         # does it?
-        for key, value in model.data.evaluator.values.items():
+        for key, value in model.data.context['values'].items():
             i = model.symbols["variables"].index(key)
+            v0[:, i] = 0.0 # TODO: use steady-state of exogenous process
             for a, b in value.items():
                 v0[a, i] = b
 
@@ -133,20 +149,22 @@ class SymbolicModel(DynoModel):
         v_f = np.concatenate([v[1:, :], v[-1, :][None, :]], axis=0)
         v_b = np.concatenate([v[0, :][None, :], v[:-1, :]], axis=0)
 
-        context = {}
-        for i, name in enumerate(model.symbols["variables"]):
-            context[name] = {-1: v_b[:, i], 0: v[:, i], 1: v_f[:, i]}
 
-        E = model.data.evaluator
-        E.variables.update(context)
+        import copy
+        cc = copy.deepcopy(model.data.context)
+        for i, name in enumerate(model.symbols["variables"]):
+            cc['variables'][name] = {-1: v_b[:, i], 0: v[:, i], 1: v_f[:, i]}
+
+        from dyno.dynsym.analyze import EquationsEvaluator        
+        E = EquationsEvaluator(cc)
 
         results = [E.visit(eq) for eq in E.equations]
 
         # number of variables not pinned down by dynamic equations
-        n_exo = len(model.symbols["variables"]) - len(results)
+        # n_exo = len(model.symbols["variables"]) - len(results)
 
         # the following works if there is one and exactly one exogenous variable
-        assert n_exo == 1
+        # assert n_exo == 1
 
         y, e = model.steady_state
 

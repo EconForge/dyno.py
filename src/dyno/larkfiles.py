@@ -46,6 +46,18 @@ class SymbolicFile:
         return latex_str
 
 
+    def eval_residuals(self, context = {}) -> None:
+
+        if len(context)==0:
+            context = self.context
+
+        fe = EquationsEvaluator(context)
+        fe.steady_state = True
+        residuals = [fe.visit(eq) for eq in self.equations]
+        return residuals
+
+
+
 class DynoFile(SymbolicFile):
     """Class for .dyno files"""
 
@@ -53,7 +65,6 @@ class DynoFile(SymbolicFile):
         super().__init__(content, filename)
         self.content = content
         self.parse()
-
 
     def parse(self: Self) -> None:
 
@@ -67,9 +78,16 @@ class DynoFile(SymbolicFile):
             raise LARKParserError(e, txt) from e
 
         self.tree = tree
+        
+        self.process_assignments()
 
-        fe = AssignmentEvaluator()
-        fe.visit(tree)
+
+        # Separate assignments processing from parsing.
+
+    def process_assignments(self, **calib) -> Tree:
+
+        fe = AssignmentEvaluator(calibration=calib)
+        fe.visit(self.tree)
         context = {
             'constants': fe.constants,
             'variables': fe.variables,
@@ -77,21 +95,10 @@ class DynoFile(SymbolicFile):
             'processes': fe.processes,
             'steady_states': fe.steady_states,
         }
-
         self.context = context
         self.equations = fe.equations
         self.processes = fe.processes
-
-
-        # this part should probably move somewhere else
-        # count variable in equations and compute residuals
-        fe = EquationsEvaluator(context)
-        fe.steady_state = True
-        self.residuals = [fe.visit(eq) for eq in self.equations]
-        fe.steady_state = False
-
-
-        self.evaluator = fe ### This is not very clean
+        self.residuals = self.eval_residuals()
 
 
 
@@ -102,8 +109,7 @@ class LModFile(SymbolicFile):
         super().__init__(content, filename)
         self.content = content
         self.parse()
-        # self._set_processes()
-        # self.__context__ = self.get_context()
+        self.residuals = self.eval_residuals()
 
     def parse(self: Self) -> None:
 
@@ -145,38 +151,13 @@ class LModFile(SymbolicFile):
         fe = InterpretModfile()
         fe.visit(tree)
 
-        context = {
-            'constants': fe.constants,
-            'variables': fe.variables,
-            'values': fe.values,
-            'processes': fe.processes,
-            'steady_states': fe.steady_states,
-        }
-
         self.equations = fe.equations
-        self.processes = fe.processes
-        self.evaluator = fe
 
-        self._set_processes()
-
-        self.context = context
         
-        # # I should ensure the trees are identical then factor out
-        # # count variable in equations and compute residuals
-        # fe.steady_state = True
-        # self.residuals = [fe.visit(eq) for eq in self.equations]
-        # fe.steady_state = False
-        # self.equations = fe.equations
 
-
-    def _set_processes(self):
-
+        # Set processes
         from dyno.language import Normal
-
-        fe = self.evaluator
-
-        covs = self.evaluator.covariances.copy()
-
+        covs = fe.covariances
         exo = tuple(self.symbols["exogenous"])
         n_e = len(exo)
         mat = np.zeros((n_e, n_e))
@@ -186,7 +167,16 @@ class LModFile(SymbolicFile):
             mat[i, j] = k
             mat[j, i] = k
 
-        self.evaluator.processes = {exo: Normal(mat)}
-        self.processes = self.evaluator.processes
-        for e in exo:
-            self.evaluator.steady_states[e] = 0.0
+        processes = {exo: Normal(mat)}
+
+        context = {
+            'constants': fe.constants,
+            'variables': fe.variables,
+            'values': fe.values,
+            'processes': processes,
+            'steady_states': fe.steady_states | {e: 0.0 for e in exo},        # set exogenous steady states to zero
+
+        }
+
+
+        self.context = context

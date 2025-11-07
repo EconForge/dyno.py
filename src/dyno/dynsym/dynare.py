@@ -82,6 +82,10 @@ class ModFileTransformer(Transformer):
         return Tree(
             "variable", [tree.children[0], Tree("index", ["t"]), tree.children[1]]
         )
+    
+    def call(self, tree):
+
+        return Tree("call", [Tree("name", [str(tree.children[0])]), *tree.children[1:]])
 
 
 class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
