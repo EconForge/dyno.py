@@ -158,27 +158,28 @@ class SymbolicModel(DynoModel):
         from dyno.dynsym.analyze import EquationsEvaluator        
         E = EquationsEvaluator(cc)
 
-        results = [E.visit(eq) for eq in E.equations]
+        results = [E.visit(eq) for eq in model.data.equations]
 
         # number of variables not pinned down by dynamic equations
-        # n_exo = len(model.symbols["variables"]) - len(results)
+        n_exo = len(model.symbols["variables"]) - len(results)
 
         # the following works if there is one and exactly one exogenous variable
         # assert n_exo == 1
 
-        y, e = model.steady_state
-
-        v1 = np.concatenate([y, e])[None, :].repeat(T + 1, axis=0)
-        for key, value in model.data.evaluator.values.items():
+        y, e = model.__steady_state_vectors__
+        a =  np.concatenate([y, e])
+        v1 = a[None, :].repeat(T + 1, axis=0)
+        for key, value in model.context['values'].items():
             i = model.symbols["variables"].index(key)
             for a, b in value.items():
                 v1[a, i] = b
+    
+        v1_exo = v1[:, -n_exo:].copy()
+        diff_exo = v[:, -n_exo:] - v1_exo
 
-        exo = v1[:, -1].copy()
+        res = np.column_stack(results + [diff_exo])
 
-        res = np.column_stack(results + [v[:, -1] - exo])
-
-        res[0, :] = v[0, :] - y  # slightly inconsistent
+        res[0, :] = v[0, :] - v1[0,:]  # slightly inconsistent
 
         if flat:
             return res.ravel()
@@ -198,19 +199,22 @@ class SymbolicModel(DynoModel):
 
         v_f = np.concatenate([v[1:, :], v[-1, :][None, :]], axis=0)
         v_b = np.concatenate([v[0, :][None, :], v[:-1, :]], axis=0)
-
-        context = {}
+        
+        import copy
+        context = copy.deepcopy(model.data.context)
         for i, name in enumerate(model.symbols["variables"]):
-            context[name] = {
+            context['variables'][name] = {
                 -1: DNumber(v_b[:, i], {(name, -1): 1.0}),
                 0: DNumber(v[:, i], {(name, 0): 1.0}),
                 1: DNumber(v_f[:, i], {(name, 1): 1.0}),
             }
 
-        E = model.data.evaluator
-        E.variables.update(context)
+        from dyno.dynsym.analyze import EquationsEvaluator        
+        E = EquationsEvaluator(context)
 
-        results = [E.visit(eq) for eq in E.equations]
+        results = [E.visit(eq) for eq in model.data.equations]
+
+        n_exo = len(model.symbols["variables"]) - len(results)
 
         y, e = model.__steady_state_vectors__
 
@@ -218,16 +222,16 @@ class SymbolicModel(DynoModel):
         # works if the is one and exactly one exogenous variable?
         # does it?
         v1 = np.concatenate([y, e])[None, :].repeat(T + 1, axis=0)
-        for key, value in model.data.evaluator.values.items():
+        for key, value in model.data.context['values'].items():
             i = model.symbols["variables"].index(key)
             for a, b in value.items():
                 v1[a, i] = b
 
-        exo = v1[:, -1].copy()
+        exo = v1[:, -n_exo:].copy()
 
-        res = np.column_stack([e.value for e in results] + [v[:, -1] - exo])
+        res = np.column_stack([e.value for e in results] + [v[:, -n_exo:] - exo])
 
-        res[0, :] = v[0, :] - y  # slightly inconsistent
+        res[0, :] = v[0, :] - v1[0,:]  # slightly inconsistent
 
         N = v.shape[0]
 
@@ -246,30 +250,112 @@ class SymbolicModel(DynoModel):
         # add exogenous equations
         DD = np.zeros((N, p, p, 3))
         DD[:, :q, :, :] = D
-        DD[:, 2, 2, 1] = 1.0
+        for i in range(q,p):
+            DD[:, i, i, 1] = 1.0
 
         if not flat:
             return res, DD
         else:
-            J = np.zeros((N * p, N * p))
-            for n in range(N):
-                if n == 0:
-                    # J[p*n:p*(n+1),p*n:p*(n+1)] = DD[n,:,:,0] + DD[n,:,:,1]
-                    # J[p*n:p*(n+1),p*(n+1):p*(n+2)] = DD[n,:,:,2]
-                    J[p * n : p * (n + 1), p * n : p * (n + 1)] = np.eye(p, p)
-                elif n == N - 1:
-                    J[p * n : p * (n + 1), p * (n - 1) : p * (n)] = DD[n, :, :, 0]
-                    J[p * n : p * (n + 1), p * n : p * (n + 1)] = (
-                        DD[n, :, :, 1] + DD[n, :, :, 2]
-                    )
-                else:
-                    J[p * n : p * (n + 1), p * (n - 1) : p * (n)] = DD[n, :, :, 0]
-                    J[p * n : p * (n + 1), p * n : p * (n + 1)] = DD[n, :, :, 1]
-                    J[p * n : p * (n + 1), p * (n + 1) : p * (n + 2)] = DD[n, :, :, 2]
-
             if sparsify:
-                import scipy
-
-                J = scipy.sparse.csr_matrix(J)
+                import scipy.sparse
+                
+                # Build sparse matrix directly using COO format with vectorized operations
+                # Pre-allocate lists with estimated size
+                max_nnz = p + (N - 2) * 3 * p * p + 2 * p * p  # upper bound on non-zeros
+                row_indices = np.empty(max_nnz, dtype=np.int32)
+                col_indices = np.empty(max_nnz, dtype=np.int32)
+                data_vals = np.empty(max_nnz, dtype=DD.dtype)
+                
+                idx = 0
+                
+                # First block: identity matrix (n=0)
+                n = 0
+                row_indices[idx:idx+p] = np.arange(p)
+                col_indices[idx:idx+p] = np.arange(p)
+                data_vals[idx:idx+p] = 1.0
+                idx += p
+                
+                # Middle blocks (n=1 to N-2)
+                for n in range(1, N - 1):
+                    base_row = p * n
+                    
+                    # Previous time block (DD[n,:,:,0])
+                    mask0 = DD[n, :, :, 0] != 0
+                    nnz0 = np.sum(mask0)
+                    if nnz0 > 0:
+                        ii, jj = np.nonzero(mask0)
+                        row_indices[idx:idx+nnz0] = base_row + ii
+                        col_indices[idx:idx+nnz0] = p * (n - 1) + jj
+                        data_vals[idx:idx+nnz0] = DD[n, :, :, 0][mask0]
+                        idx += nnz0
+                    
+                    # Current time block (DD[n,:,:,1])
+                    mask1 = DD[n, :, :, 1] != 0
+                    nnz1 = np.sum(mask1)
+                    if nnz1 > 0:
+                        ii, jj = np.nonzero(mask1)
+                        row_indices[idx:idx+nnz1] = base_row + ii
+                        col_indices[idx:idx+nnz1] = p * n + jj
+                        data_vals[idx:idx+nnz1] = DD[n, :, :, 1][mask1]
+                        idx += nnz1
+                    
+                    # Next time block (DD[n,:,:,2])
+                    mask2 = DD[n, :, :, 2] != 0
+                    nnz2 = np.sum(mask2)
+                    if nnz2 > 0:
+                        ii, jj = np.nonzero(mask2)
+                        row_indices[idx:idx+nnz2] = base_row + ii
+                        col_indices[idx:idx+nnz2] = p * (n + 1) + jj
+                        data_vals[idx:idx+nnz2] = DD[n, :, :, 2][mask2]
+                        idx += nnz2
+                
+                # Last block (n=N-1)
+                n = N - 1
+                base_row = p * n
+                
+                # Previous time block (DD[n,:,:,0])
+                mask0 = DD[n, :, :, 0] != 0
+                nnz0 = np.sum(mask0)
+                if nnz0 > 0:
+                    ii, jj = np.nonzero(mask0)
+                    row_indices[idx:idx+nnz0] = base_row + ii
+                    col_indices[idx:idx+nnz0] = p * (n - 1) + jj
+                    data_vals[idx:idx+nnz0] = DD[n, :, :, 0][mask0]
+                    idx += nnz0
+                
+                # Current time block (DD[n,:,:,1] + DD[n,:,:,2])
+                combined = DD[n, :, :, 1] + DD[n, :, :, 2]
+                mask_c = combined != 0
+                nnz_c = np.sum(mask_c)
+                if nnz_c > 0:
+                    ii, jj = np.nonzero(mask_c)
+                    row_indices[idx:idx+nnz_c] = base_row + ii
+                    col_indices[idx:idx+nnz_c] = p * n + jj
+                    data_vals[idx:idx+nnz_c] = combined[mask_c]
+                    idx += nnz_c
+                
+                # Trim to actual size
+                row_indices = row_indices[:idx]
+                col_indices = col_indices[:idx]
+                data_vals = data_vals[:idx]
+                
+                J = scipy.sparse.coo_matrix(
+                    (data_vals, (row_indices, col_indices)), 
+                    shape=(N * p, N * p)
+                ).tocsr()
+            else:
+                J = np.zeros((N * p, N * p))
+                for n in range(N):
+                    if n == 0:
+                        J[p * n : p * (n + 1), p * n : p * (n + 1)] = np.eye(p, p)
+                    elif n == N - 1:
+                        J[p * n : p * (n + 1), p * (n - 1) : p * (n)] = DD[n, :, :, 0]
+                        J[p * n : p * (n + 1), p * n : p * (n + 1)] = (
+                            DD[n, :, :, 1] + DD[n, :, :, 2]
+                        )
+                    else:
+                        J[p * n : p * (n + 1), p * (n - 1) : p * (n)] = DD[n, :, :, 0]
+                        J[p * n : p * (n + 1), p * n : p * (n + 1)] = DD[n, :, :, 1]
+                        J[p * n : p * (n + 1), p * (n + 1) : p * (n + 2)] = DD[n, :, :, 2]
 
             return res.ravel(), J

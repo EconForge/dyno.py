@@ -83,12 +83,12 @@ r_w + p[t] = 1
 
 
 ### Exogenous shocks
-# e_d[t]   <- N(0, 0.01)
-# e_d_b[t] <- N(0, 0.01)
+e_d[t]   <- N(0, 0.01^2)
+e_d_b[t] <- N(0, 0.01^2)
 
 # exogenous shocks
-e_d[1] <- 0.01
-e_d_b[1] <- 0.0 # dummy assignment
+# e_d[1] <- 0.01
+# e_d_b[1] <- 0.0 # dummy assignment
 
 # forall t, 1<=t<T+1: e_d[t] <- 0.01
 # forall t, 1<=t<T+1: e_d_b[t] <- 0.01

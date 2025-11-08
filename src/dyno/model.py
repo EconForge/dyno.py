@@ -99,13 +99,15 @@ class DynoModel(ABC):
 
         c = self.context
 
-        exo = set(sum(c["processes"].keys(), ()))
-        variables = [*c["variables"].keys()]
+        # TODO: rewrite
+        # exogenous are either defined as processes or by specifiying values
+        exo = list(set(sum(c["processes"].keys(), ())).union(set(c['values'].keys())))
+
+        variables = [v for v in c["variables"].keys() if v not in exo]  + exo
 
         # this is needed because in dyno files
         # some exogenous variables not appearing in equations
         # are not declared as variables
-        variables = variables + [e for e in exo if e not in variables]
 
         exogenous = [v for v in variables if v in exo]
         endogenous = [v for v in variables if v not in exogenous]
@@ -159,15 +161,20 @@ class DynoModel(ABC):
 
         # it would be nice to do steady_state("groups") to get groups of variables
         # or steady_state.groups("all") to get all variables
-        c = self.steady_state
+        c = self.context
         from math import nan
 
-        y = [c.get(name, nan) for name in self.symbols["endogenous"]]
-        e = [c.get(name, nan) for name in self.symbols["exogenous"]]
+        y = [c['steady_states'].get(name, nan) for name in self.symbols["endogenous"]]
+        e = []
+        for name in self.symbols["exogenous"]:
+            if name in c['steady_states']:
+                e.append(c['steady_states'][name])
+            elif name in c['values'].keys():
+                e.append(c['values'][name].get(0,0.0))
+            else:
+                e.append(nan)
         return y, e
-        # try:
-        # except KeyError as e:
-        #     raise Exception("Steady state not fully specified: missing value for `{str(e)}`")
+
 
     def describe(self: Self) -> str:
 

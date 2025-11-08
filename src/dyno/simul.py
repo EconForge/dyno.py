@@ -80,6 +80,7 @@ def irfs(
     pd.DataFrame
         impulse response function of all endogenous variables to shocks on each exogenous variable
     """
+
     from .simul import irf
 
     res = {}

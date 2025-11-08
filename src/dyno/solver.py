@@ -95,9 +95,10 @@ class RecursiveSolution:
 
     def irfs(self, type: IRFType = "log-deviation"):
 
+
         from .simul import irfs
 
-        sim = irfs(self._model, self, type=IRFType)
+        sim = irfs(self._model, self, type=type)
         return sim
 
     def plot(self, type: IRFType = "log-deviation"):
@@ -390,6 +391,85 @@ def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
     return Γ0, Γ
 
 
+
+import time
+
+
+def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
+    """Solve nonlinear system using safeguarded Newton iterations
+
+
+    Parameters
+    ----------
+
+    Return
+    ------
+    """
+    if verbose:
+        print = lambda txt: old_print(txt)
+    else:
+        print = lambda txt: None
+
+    it = 0
+    error = 10
+    converged = False
+    maxbacksteps = 30
+
+    x0 = x
+
+    if jactype == "sparse":
+        from scipy.sparse.linalg import spsolve as solve
+    elif jactype == "full":
+        from numpy.linalg import solve
+    else:
+        solve = serial_solve
+
+    while it < maxit and not converged:
+
+        [v, dv] = f(x)
+
+        # TODO: rewrite starting here
+
+        #        print("Time to evaluate {}".format(ss-tt)0)
+
+        error_0 = abs(v).max()
+
+        if error_0 < tol:
+
+            if verbose:
+                print(
+                    "> System was solved after iteration {}. Residual={}".format(
+                        it, error_0
+                    )
+                )
+            converged = True
+
+        else:
+
+            it += 1
+
+            dx = solve(dv, v)
+
+            # norm_dx = abs(dx).max()
+
+            for bck in range(maxbacksteps):
+                xx = x - dx * (2 ** (-bck))
+                vm = f(xx)[0]
+                err = abs(vm).max()
+                if err < error_0:
+                    break
+
+            x = xx
+
+            if verbose:
+                print("\t> {} | {} | {}".format(it, err, bck))
+
+    if not converged:
+        import warnings
+
+        warnings.warn("Did not converge")
+    return [x, it]
+
 def deterministic_solve(model, x0=None, T=None, method="hybr"):
 
     import scipy.optimize
@@ -403,14 +483,22 @@ def deterministic_solve(model, x0=None, T=None, method="hybr"):
     T = v0.shape[0] - 1
     u0 = (np.array(v0).ravel(),)
 
-    res = scipy.optimize.root(
-        lambda u: model.deterministic_residuals(u, jac=True),
+    # res = scipy.optimize.root(
+    #     lambda u: model.deterministic_residuals(u, jac=True),
+    #     u0,
+    #     method=method,
+    #     jac=True,
+    # )
+    # w0 = res.x.reshape(v0.shape)
+
+    u0 = np.array(v0).ravel()
+    res, nit = newton(
+        lambda u: model.deterministic_residuals_with_jacobian(u, sparsify=True),
         u0,
-        method=method,
-        jac=True,
+        jactype="sparse",
     )
 
-    w0 = res.x.reshape(v0.shape)
+    w0 = res.reshape(v0.shape)
 
     df = pandas.DataFrame(
         {e: w0[:, i] for i, e in enumerate(model.symbols["variables"])}

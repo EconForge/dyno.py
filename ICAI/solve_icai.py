@@ -1,14 +1,56 @@
 import dyno
+
 from matplotlib import pyplot as plt
 from dyno.symbolic_model import SymbolicModel
 import pandas as pd
 
-model = SymbolicModel("partial.dyno")
+model = SymbolicModel("ICAI/partial.dyno")
+model2  = SymbolicModel("ICAI/partial_shock.dyno")
+dr2 = model2.solve()
+sim2 = dr2.irfs(type='level')['e_d'] # level seems to be ignored
+
+
+y,e = model.__steady_state_vectors__
 
 v0 = model.deterministic_guess()
 
 pd.DataFrame(v0, columns=model.symbols['variables'])
 
+from dyno.solver import deterministic_solve
+import time
+
+
+deterministic_solve(model)
+
+sims = [sim2]
+for t in [100,150,200]:
+
+    m = model.recalibrate(T=t)
+
+    t1 = time.time()
+    sim = deterministic_solve(m)
+    t2 = time.time()
+    print("Elapsed time: ", t2 - t1)
+    sims.append(sim)
+
+
+plt.figure()
+
+for i,sim in enumerate(sims):
+    plt.subplot(131)
+    plt.plot(sim.index, sim['W_τ'], label=i)
+    plt.legend()
+    plt.xlim(0,50)
+    plt.subplot(132)
+    plt.plot(sim.index, sim['c_τ'])
+    plt.xlim(0,50)
+    plt.subplot(133)
+    plt.plot(sim.index, sim['d'])
+    plt.xlim(0,50)
+
+plt.tight_layout()
+
+plt.legend()
 
 
 
