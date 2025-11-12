@@ -49,16 +49,28 @@ class SymbolicModel(DynoModel):
 
     def compute_residuals(self, y2, y1, y0, e):
 
-        fe = self.data.evaluator
+        import math
         endogenous = self.symbols["endogenous"]
         exogenous = self.symbols["exogenous"]
 
-        for i, name in enumerate(endogenous):
-            fe.variables[name] = {-1: y0[i], 0: y1[i], 1: y2[i]}
-        for i, name in enumerate(exogenous):
-            fe.variables[name] = {0: e[i]}
+        import copy
+        cc = copy.deepcopy(self.data.context)
 
-        results = [fe.visit(eq) for eq in fe.equations]
+        for i, name in enumerate(endogenous):
+            cc['variables'][name] = {
+                -1: cc['steady_states'].get(name, math.nan),
+                 0: cc['steady_states'].get(name, math.nan),
+                 1: cc['steady_states'].get(name, math.nan),
+            }
+
+        for i, name in enumerate(exogenous):
+            cc['variables'][name] = {0: 0.0}
+
+
+        from dyno.dynsym.analyze import EquationsEvaluator        
+        E = EquationsEvaluator(cc)
+
+        results = [E.visit(eq) for eq in self.data.equations]
 
         r = np.array([float(el) for el in results])
 

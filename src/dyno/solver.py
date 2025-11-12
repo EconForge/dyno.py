@@ -393,7 +393,7 @@ def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
 
 
 import time
-
+old_print = print
 
 def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
     """Solve nonlinear system using safeguarded Newton iterations
@@ -470,7 +470,7 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
         warnings.warn("Did not converge")
     return [x, it]
 
-def deterministic_solve(model, x0=None, T=None, method="hybr"):
+def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=True):
 
     import scipy.optimize
     import pandas
@@ -492,10 +492,13 @@ def deterministic_solve(model, x0=None, T=None, method="hybr"):
     # w0 = res.x.reshape(v0.shape)
 
     u0 = np.array(v0).ravel()
+
+
     res, nit = newton(
         lambda u: model.deterministic_residuals_with_jacobian(u, sparsify=True),
         u0,
         jactype="sparse",
+        verbose=verbose,
     )
 
     w0 = res.reshape(v0.shape)

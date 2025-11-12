@@ -1,4 +1,13 @@
 import math
+import numpy as np
+
+
+def _get_math_module(x):
+    """Return the appropriate math module (math or numpy) based on input type."""
+    if isinstance(x, np.ndarray):
+        return np
+    else:
+        return math
 
 
 class DNumber:
@@ -93,11 +102,12 @@ class DNumber:
         if isinstance(power, DNumber):
             new_value = self.value**power.value
             new_derivatives = {}
+            m = _get_math_module(self.value)
             for var in set(self.derivatives.keys()).union(power.derivatives.keys()):
                 deriv1 = self.derivatives.get(var, 0)
                 deriv2 = power.derivatives.get(var, 0)
                 new_derivatives[var] = new_value * (
-                    deriv1 * power.value / self.value + deriv2 * math.log(self.value)
+                    deriv1 * power.value / self.value + deriv2 * m.log(self.value)
                 )
             return DNumber(new_value, new_derivatives)
         else:
@@ -113,8 +123,9 @@ class DNumber:
             return base.__pow__(self)
         else:
             new_value = base**self.value
+            m = _get_math_module(self.value)
             new_derivatives = {
-                var: deriv * new_value * math.log(base)
+                var: deriv * new_value * m.log(base)
                 for var, deriv in self.derivatives.items()
             }
             return DNumber(new_value, new_derivatives)
@@ -133,72 +144,79 @@ class DNumber:
 def sin(x):
     """Sine function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.sin(x.value)
+        new_value = sin(x.value)
         new_derivatives = {
-            var: deriv * math.cos(x.value) for var, deriv in x.derivatives.items()
+            var: deriv * cos(x.value) for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.sin(x)
+        m = _get_math_module(x)
+        return m.sin(x)
 
 
 def cos(x):
     """Cosine function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.cos(x.value)
+        new_value = cos(x.value)
         new_derivatives = {
-            var: -deriv * math.sin(x.value) for var, deriv in x.derivatives.items()
+            var: -deriv * sin(x.value) for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.cos(x)
+        m = _get_math_module(x)
+        return m.cos(x)
 
 
 def tan(x):
     """Tangent function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.tan(x.value)
-        sec_squared = 1 / (math.cos(x.value) ** 2)
+        new_value = tan(x.value)
+        sec_squared = 1 / (cos(x.value) ** 2)
         new_derivatives = {
             var: deriv * sec_squared for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.tan(x)
+        m = _get_math_module(x)
+        return m.tan(x)
 
 
 def exp(x):
     """Exponential function that works with both floats and DNumber objects."""
+    from rich import print
     if isinstance(x, DNumber):
-        new_value = math.exp(x.value)
+        new_value = exp(x.value)
         new_derivatives = {
             var: deriv * new_value for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.exp(x)
+        m = _get_math_module(x)
+        return m.exp(x)
 
 
 def log(x):
     """Natural logarithm function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.log(x.value)
+        new_value = log(x.value)
         new_derivatives = {var: deriv / x.value for var, deriv in x.derivatives.items()}
         return DNumber(new_value, new_derivatives)
     else:
-        return math.log(x)
+        m = _get_math_module(x)
+        return m.log(x)
 
 
 def sqrt(x):
     """Square root function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.sqrt(x.value)
+        new_value = sqrt(x.value)
         new_derivatives = {
             var: deriv / (2 * new_value) for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.sqrt(x)
+        m = _get_math_module(x)
+        return m.sqrt(x)
 
 
 def dabs(x):
@@ -215,77 +233,83 @@ def dabs(x):
 def sinh(x):
     """Hyperbolic sine function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.sinh(x.value)
+        new_value = sinh(x.value)
         new_derivatives = {
-            var: deriv * math.cosh(x.value) for var, deriv in x.derivatives.items()
+            var: deriv * cosh(x.value) for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.sinh(x)
+        m = _get_math_module(x)
+        return m.sinh(x)
 
 
 def cosh(x):
     """Hyperbolic cosine function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.cosh(x.value)
+        new_value = cosh(x.value)
         new_derivatives = {
-            var: deriv * math.sinh(x.value) for var, deriv in x.derivatives.items()
+            var: deriv * sinh(x.value) for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.cosh(x)
+        m = _get_math_module(x)
+        return m.cosh(x)
 
 
 def tanh(x):
     """Hyperbolic tangent function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.tanh(x.value)
+        new_value = tanh(x.value)
         sech_squared = 1 - new_value**2
         new_derivatives = {
             var: deriv * sech_squared for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.tanh(x)
+        m = _get_math_module(x)
+        return m.tanh(x)
 
 
 def asin(x):
     """Arcsine function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.asin(x.value)
-        derivative_factor = 1 / math.sqrt(1 - x.value**2)
+        new_value = asin(x.value)
+        derivative_factor = 1 / sqrt(1 - x.value**2)
         new_derivatives = {
             var: deriv * derivative_factor for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.asin(x)
+        m = _get_math_module(x)
+        return np.arcsin(x) if m is np else math.asin(x)
 
 
 def acos(x):
     """Arccosine function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.acos(x.value)
-        derivative_factor = -1 / math.sqrt(1 - x.value**2)
+        new_value = acos(x.value)
+        derivative_factor = -1 / sqrt(1 - x.value**2)
         new_derivatives = {
             var: deriv * derivative_factor for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.acos(x)
+        m = _get_math_module(x)
+        return np.arccos(x) if m is np else math.acos(x)
 
 
 def atan(x):
     """Arctangent function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.atan(x.value)
+        new_value = atan(x.value)
         derivative_factor = 1 / (1 + x.value**2)
         new_derivatives = {
             var: deriv * derivative_factor for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.atan(x)
+        m = _get_math_module(x)
+        return np.arctan(x) if m is np else math.atan(x)
 
 
 def dmax(x, y):
@@ -325,48 +349,52 @@ def dmin(x, y):
 def log10(x):
     """Base-10 logarithm function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.log10(x.value)
+        new_value = log10(x.value)
         new_derivatives = {
-            var: deriv / (x.value * math.log(10))
+            var: deriv / (x.value * log(10))
             for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.log10(x)
+        m = _get_math_module(x)
+        return m.log10(x)
 
 
 def log2(x):
     """Base-2 logarithm function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.log2(x.value)
+        new_value = log2(x.value)
         new_derivatives = {
-            var: deriv / (x.value * math.log(2)) for var, deriv in x.derivatives.items()
+            var: deriv / (x.value * log(2)) for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:
-        return math.log2(x)
+        m = _get_math_module(x)
+        return m.log2(x)
 
 
 def floor(x):
     """Floor function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.floor(x.value)
+        new_value = floor(x.value)
         # Derivative of floor is 0 everywhere except at integer points (where it's undefined)
         new_derivatives = {var: 0.0 for var in x.derivatives.keys()}
         return DNumber(new_value, new_derivatives)
     else:
-        return math.floor(x)
+        m = _get_math_module(x)
+        return m.floor(x)
 
 
 def ceil(x):
     """Ceiling function that works with both floats and DNumber objects."""
     if isinstance(x, DNumber):
-        new_value = math.ceil(x.value)
+        new_value = ceil(x.value)
         # Derivative of ceil is 0 everywhere except at integer points (where it's undefined)
         new_derivatives = {var: 0.0 for var in x.derivatives.keys()}
         return DNumber(new_value, new_derivatives)
     else:
-        return math.ceil(x)
+        m = _get_math_module(x)
+        return m.ceil(x)
 
 
 def pow(x, y):
