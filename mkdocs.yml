@@ -39,3 +39,4 @@ extra_javascript:
 nav:
   - index.md
   - classes.md
+  - solution_methods.md

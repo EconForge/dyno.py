@@ -470,7 +470,7 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
         warnings.warn("Did not converge")
     return [x, it]
 
-def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=True):
+def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=True, **args):
 
     import scipy.optimize
     import pandas
@@ -499,6 +499,7 @@ def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=True):
         u0,
         jactype="sparse",
         verbose=verbose,
+        maxit = args.get("maxit",10)
     )
 
     w0 = res.reshape(v0.shape)

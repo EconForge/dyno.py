@@ -1,0 +1,134 @@
+valid:
+
+  example1: |
+
+    # only parameters
+    a <- 0.1
+
+  example2: |
+
+    e <- N(0,0.001)
+
+  example3: |
+
+    x[0] <- 0.01
+
+  example4: |
+
+    x[t] = alpha * x[t-1] + e[t]
+
+solvable:
+
+  rbc_deterministic: |
+
+    # Parameters
+    alpha <- 0.36
+    rho   <- 0.95
+    tau   <- 0.025
+    r     <- 1.01
+    beta  <- 1/r
+    delta <- 0.025
+    psi   <- 0
+    theta <- 2.95
+    phi   <- 0.1
+
+    T <- 20
+
+    # Initial steady state
+    y[~] <- 1.08068253095672
+    c[~] <- 0.80359242014163
+    h[~] <- 0.29175631001732
+    k[~] <- 11.08360443260358
+    a[~] <- 0
+    b[~] <- 0.0
+
+    # Dynamic equations
+    c[t]*theta*h[t]^(1+psi) = (1-alpha)*y[t]
+    k[t] = beta*(((exp(b[t])*c[t])/(exp(b[t+1])*c[t+1]))*(exp(b[t+1])*alpha*y[t+1]+(1-delta)*k[t]))
+    y[t] = exp(a[t])*(k[t-1]^alpha)*(h[t]^(1-alpha))
+    k[t] = exp(b[t])*(y[t]-c[t])+(1-delta)*k[t-1]
+    a[t] = rho*a[t-1]+tau*b[t-1] + e[t]
+    b[t] = tau*a[t-1]+rho*b[t-1] + u[t]
+
+
+    # # Initial Values
+    # k[0] <- k[~]*1.01
+
+    # Exogenous Shocks
+    ∀ t, 0 <= t < 10 : e[t] <- 0.01/(t+1)
+    ∀ t, 1 <= t < 10 : u[t] <- e[t-1]
+
+  rbc: |
+
+    # Parameters
+    alpha <- 0.36
+    rho   <- 0.95
+    tau   <- 0.025
+    r <- 1.01
+    beta  <- 1/r
+    delta <- 0.025
+    psi   <- 0
+    theta <- 2.95
+    phi   <- 0.1
+
+    T <- 20
+
+    # Initial steady state
+    y[~] <- 1.08068253095672
+    c[~] <- 0.80359242014163
+    h[~] <- 0.29175631001732
+    k[~] <- 11.08360443260358
+    a[~] <- 0
+    b[~] <- 0
+
+    # Define Exogenous Variables
+    e[t] <- N(0, 0.002)
+    u[t] <- N(0, 0.002)
+
+    # Dynamic equations
+    c[t]*theta*h[t]^(1+psi) = (1-alpha)*y[t]
+    k[t] = beta*(((exp(b[t])*c[t])/(exp(b[t+1])*c[t+1]))*(exp(b[t+1])*alpha*y[t+1]+(1-delta)*k[t]))
+    y[t] = exp(a[t])*(k[t-1]^alpha)*(h[t]^(1-alpha))
+    k[t] = exp(b[t])*(y[t]-c[t])+(1-delta)*k[t-1]
+    a[t] = rho*a[t-1]+tau*b[t-1] + e[t]
+    b[t] = tau*a[t-1]+rho*b[t-1] + u[t]
+    
+  dummy: |
+    T <- 10
+    x[~] <- 0.0
+    # e[~] <- 0.0
+    0.001*x[t+1] + x[t] - 0.4*x[t-1] = e[t]
+    e[1] <- 0.1
+
+  dummy2: |
+    T <- 10
+    x[~] <- 0.0
+    y[~] <- 0.0
+    # e[~] <- 0.0
+    0.001*x[t+1] + x[t] - 0.4*x[t-1] = e[t]
+                   y[t] - 0.4*y[t-1] = f[t]
+    e[1] <- 0.1
+    f[1] <- 0.1
+
+  ramst: |
+    alph <- 0.5
+    gam <- 0.5
+    delt <- 0.02
+    bet <- 0.05
+    aa <- 0.5
+
+    T <- 50
+
+    # formulas are not copied to the model, only variables and parameters
+    0 = c[t] + k[t] - aa*x[t]*k[t-1]^alph - (1-delt)*k[t-1]
+    0 = c[t]^(-gam) - (1+bet)^(-1)*(aa*alph*x[t+1]*k[t]^(alph-1) + 1 - delt)*c[t+1]^(-gam)
+
+    x[~] <- 1
+    k[~] <- ((delt+bet)/(1.0*aa*alph))^(1/(alph-1))
+    c[~] <- aa*k[~]^alph-delt*k[~]
+
+    # Exogenous shock
+    x[1] <- 1.01
+
+
+    #Hunch: the problem is with the nxt to last perid

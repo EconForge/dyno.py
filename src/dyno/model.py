@@ -219,14 +219,14 @@ class DynoModel(ABC):
 </ul>
 """
 
-    def solve(self: Self):
+    def solve(self: Self, **args):
 
         if self.checks['deterministic']:
             from .solver import deterministic_solve
-            sol = deterministic_solve(self)
+            sol = deterministic_solve(self, **args)
             return sol
         else:
-            dr = self.perturb()
+            dr = self.perturb(**args)
 
     def perturb(self: Self, method: Solver = "qz") -> RecursiveSolution:
         """linearizes the model
