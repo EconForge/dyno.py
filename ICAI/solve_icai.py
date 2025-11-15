@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from dyno.symbolic_model import SymbolicModel
 import pandas as pd
 
-model = SymbolicModel("ICAI/partial.dyno")
+model = SymbolicModel("ICAI/partial_deterministic.dyno")
 model2  = SymbolicModel("ICAI/partial_shock.dyno")
 dr2 = model2.solve()
 sim2 = dr2.irfs(type='level')['e_d'] # level seems to be ignored
@@ -17,13 +17,28 @@ v0 = model.deterministic_guess()
 pd.DataFrame(v0, columns=model.symbols['variables'])
 
 from dyno.solver import deterministic_solve
+from dyno.solver import solve as linsolve
 import time
 
 
-deterministic_solve(model)
+r0,A,B,C,D = model.jacobians
+X, evs = linsolve(A,B,C)
+r, J = model.deterministic_residuals_with_jacobian(v0.ravel(), sparsify=True)
+rr = r.reshape(v0.shape)
+
+
+
+
+
+import numpy as np
+
+np.isnan(r).sum()
+np.isnan(J.todense()).sum()
+
+from scipy.sparse.linalg import spsolve
 
 sims = [sim2]
-for t in [100,150,200]:
+for t in [150,200,250]:
 
     m = model.recalibrate(T=t)
 
@@ -33,24 +48,41 @@ for t in [100,150,200]:
     print("Elapsed time: ", t2 - t1)
     sims.append(sim)
 
+sims.reverse()
+
+
+
+
 
 plt.figure()
 
 for i,sim in enumerate(sims):
-    plt.subplot(131)
+    plt.subplot(221)
     plt.plot(sim.index, sim['W_τ'], label=i)
+    plt.ylim(2.4, 2.5)
     plt.legend()
     plt.xlim(0,50)
-    plt.subplot(132)
+    plt.subplot(222)
     plt.plot(sim.index, sim['c_τ'])
     plt.xlim(0,50)
-    plt.subplot(133)
+    plt.subplot(223)
     plt.plot(sim.index, sim['d'])
-    plt.xlim(0,50)
+    try:
+        plt.subplot(224)
+        plt.plot(sim.index, sim['e_d'])
+        plt.ylim(-0.001, 0.01)
+    except:
+        pass
 
+
+plt.xlim(0,20)
 plt.tight_layout()
 
 plt.legend()
+
+
+
+
 
 
 

@@ -499,7 +499,8 @@ def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=True, **a
         u0,
         jactype="sparse",
         verbose=verbose,
-        maxit = args.get("maxit",10)
+        maxit = args.get("maxit",10),
+        tol=args.get("tol",1e-8)
     )
 
     w0 = res.reshape(v0.shape)

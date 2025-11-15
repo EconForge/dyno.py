@@ -227,6 +227,7 @@ class DynoModel(ABC):
             return sol
         else:
             dr = self.perturb(**args)
+            return dr
 
     def perturb(self: Self, method: Solver = "qz") -> RecursiveSolution:
         """linearizes the model

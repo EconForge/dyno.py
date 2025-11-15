@@ -4,11 +4,8 @@ import yaml
 
 from dyno.symbolic_model import SymbolicModel
 
-
 data = yaml.safe_load(open("import_tests.yaml"))
-
 model = SymbolicModel(txt=data['solvable']['rbc_deterministic'])
-
 model
 
 

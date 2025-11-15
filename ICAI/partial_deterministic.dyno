@@ -51,13 +51,14 @@ c_τ[~] <- b_τ[~]*r + y_τ[~]
 
 
 # exogenous processes
+
 y[t] = y[~] + ρ_y*(y[t-1]-y[~])
 ζ[t] = ζ[~] + ρ_ζ*(ζ[t-1]-ζ[~])
 
 a[t] = 1 + ρ_a*(a[t-1]-1)
 
-d[t]   = d[t-1]   + e_d[t]    # income shock for top earners (aggregate)
-d_b[t] = d_b[t-1] + e_d_b[t]  # income shock for bottom earners (aggregate)
+d[t]   = 0.99999*d[t-1]   + e_d[t]    # income shock for top earners (aggregate)
+d_b[t] = 0.99999*d_b[t-1] + e_d_b[t]  # income shock for bottom earners (aggregate)
 
 y_b[t] = a[t]*(1-y[t])*(1-ζ[t])                      # labor income for bottom-earners (aggregate)
 y_τ[t] = a[t]*(1-y[t])*ζ[t] + (a[t]*y[t])            # top earners income (per capita)
@@ -66,7 +67,7 @@ c_b[t] = d_b[t] +  b_b[t-1]*r - (b_b[t]-b_b[t-1])*p[t] + y_b[t]  # consumption b
 c_τ[t] =   d[t] +  b_τ[t-1]*r - (b_τ[t]-b_τ[t-1])*p[t] + y_τ[t]  # consumption top earners    (aggregate)
 
 W_τ[t] = q[t] + p[t]*(b_τ[t])     # wealth top earners (aggregate)
-W_b[t] = 1         + p[t]*(b_b[t])     # wealth bottom earners (aggregate)
+W_b[t] = 1    + p[t]*(b_b[t])     # wealth bottom earners (aggregate)
 
 p[t] = β_b*(c_b[t+1]/c_b[t])^(-σ)*(r+p[t+1]) + φ_b*(W_b[t])^(-η_b)/(c_b[t])^(-σ)*p[t]
 p[t] = β_τ*(c_τ[t+1]/c_τ[t])^(-σ)*(r+p[t+1]) + φ_τ*(W_τ[t])^(-η  )/(c_τ[t])^(-σ)*p[t]
@@ -83,11 +84,12 @@ r_w + p[t] = 1
 
 
 ### Exogenous shocks
-# e_d[t]   <- N(0, 0.01)
-# e_d_b[t] <- N(0, 0.01)
+# e_d[t]   <- N(0, 0.01^2)
+# e_d_b[t] <- N(0, 0.01^2)
 
 # exogenous shocks
 e_d[1] <- 0.01
+e_d[2] <- 0.0
 e_d_b[1] <- 0.0 # dummy assignment
 
 # forall t, 1<=t<T+1: e_d[t] <- 0.01
