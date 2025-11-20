@@ -90,7 +90,7 @@ class ModFileTransformer(Transformer):
 
 class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 
-    def __init__(self):
+    def __init__(self, **calibration):
 
         super().__init__()
 
@@ -100,6 +100,8 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
         self.covariances = {}
         self.current_block = None
         self.unknown_as_nan = True
+
+        self.calibration = calibration
 
     def var_statement(self, tree):
         return tree
@@ -130,6 +132,10 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
         formula = tree.children[1]
         value = self.visit(formula)
         if self.current_block is None:
+            if name in self.calibration:
+                # override value in the model with calibraiton value
+                print("overriding parameter value:", name, "=", self.calibration[name])
+                value = self.calibration[name]
             self.constants[name] = value
         elif self.current_block == "initval":
             self.steady_states[name] = value

@@ -100,7 +100,11 @@ class DynoFile(SymbolicFile):
         self.processes = fe.processes
         self.residuals = self.eval_residuals()
 
-
+from dyno.dynsym.dynare import (
+    ModFileTransformer,
+    modfile_grammar,
+    InterpretModfile,
+)
 
 class LModFile(SymbolicFile):
     """Class for LARK .mod files"""
@@ -114,11 +118,7 @@ class LModFile(SymbolicFile):
     def parse(self: Self) -> None:
 
         from lark import Lark
-        from dyno.dynsym.dynare import (
-            ModFileTransformer,
-            modfile_grammar,
-            InterpretModfile,
-        )
+
 
         content = self.content
 
@@ -148,8 +148,13 @@ class LModFile(SymbolicFile):
             "parameters": parameters,
         }
 
-        fe = InterpretModfile()
-        fe.visit(tree)
+        self.process_assignments()
+
+    def process_assignments(self, **calib) -> None:
+        
+        ## calib ignored so far
+        fe = InterpretModfile(**calib)
+        fe.visit(self.tree)
 
         self.equations = fe.equations
 
