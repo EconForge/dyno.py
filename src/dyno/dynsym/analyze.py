@@ -251,7 +251,7 @@ class AssignmentEvaluator(FormulaEvaluator):
         if symbol_tree.data == "constant":
 
             if name in self.__calibration__:
-                print(f"Warning: constant {name} calibrated to {self.__calibration__[name]}; assignment ignored.")
+                # print(f"Warning: constant {name} calibrated to {self.__calibration__[name]}; assignment ignored.")
                 return
             if name in self.constants:
                 print(f"Warning: constant {name} redefined")

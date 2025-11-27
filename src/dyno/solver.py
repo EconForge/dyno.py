@@ -93,12 +93,12 @@ class RecursiveSolution:
         """
         return html
 
-    def irfs(self, type: IRFType = "log-deviation"):
+    def irfs(self, type: IRFType = "log-deviation", T=40):
 
 
         from .simul import irfs
 
-        sim = irfs(self._model, self, type=type)
+        sim = irfs(self._model, self, type=type, T=T)
         return sim
 
     def plot(self, type: IRFType = "log-deviation"):
@@ -266,7 +266,8 @@ def solve_qz(
     # Generalised eigenvalue problem
     F = np.block([[Z, I], [-C, -B]])
     G = np.block([[I, Z], [Z, A]])
-    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1)  # type: ignore
+    tol = 1e-6
+    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1+tol)  # type: ignore
     λ_all = vgenev(α, β, tol=tol)
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
     # TODO: verify whether Blanchard-Kahn conditions are valid

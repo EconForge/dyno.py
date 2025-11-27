@@ -62,7 +62,7 @@ def irf(
 
 
 def irfs(
-    model: DynoModel, dr: RecursiveSolution, type: IRFType = "log-deviation"
+    model: DynoModel, dr: RecursiveSolution, type: IRFType = "log-deviation", T=40
 ) -> dict[str, pd.DataFrame]:
     """Impulse response function simulation in response to shocks on each exogenous variable
 
@@ -85,7 +85,7 @@ def irfs(
 
     res = {}
     for i, e in enumerate(model.symbols["exogenous"]):
-        res[e] = irf(dr, i, type=type)
+        res[e] = irf(dr, i, type=type, T=T)
 
     return res
 
