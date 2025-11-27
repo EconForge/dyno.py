@@ -290,6 +290,7 @@ class Report:
 
         for e in unhandled_errors:
             # raise (e)
+            print("Unhandled error:")
             print(e)
         return txt
 
@@ -376,12 +377,19 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
         if model.checks["deterministic"]:
             from dyno.solver import deterministic_solve
 
-            sim = deterministic_solve(model)
+            sim = deterministic_solve(
+                model,
+                T=options.get("irf-horizon", 40)
+            )
             report(sim={"Perfect Foresight": sim})
         else:
             dr = model.solve()
             report(dr=dr)
-            sim = dr.irfs()
+            sim = dr.irfs(
+                type = options.get("irf-type", 'deviation'),
+                T=options.get("irf-horizon", 40)
+            )
+
             report(sim=sim)
 
         from dyno.plots import plot_irfs
@@ -394,6 +402,8 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
         report(e)
         
         if hasattr(e,'line'):
+
+            # print("Displaying error highlighting for line:", e.line)
 
             highlighting_data = [
                 {"line": e.line, "type": "error", "message": f"{str(e)}"},

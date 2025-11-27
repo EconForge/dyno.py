@@ -471,9 +471,8 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
         warnings.warn("Did not converge")
     return [x, it]
 
-def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=True, **args):
+def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=False, **args):
 
-    import scipy.optimize
     import pandas
 
     if x0 is None:
