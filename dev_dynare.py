@@ -86,6 +86,5 @@ from IPython.display import Math, display
 
 from dyno.dynsym.latex import latex
 
-
 for eq in model.data.equations:
     display(Math(latex(eq)))

@@ -68,7 +68,6 @@ from matplotlib import pyplot as plt
 
 from dyno.symbolic_model import DynoModel
 
-
 model = DynoModel("partial.dyno")
 
 dr = model.solve()

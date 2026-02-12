@@ -8,7 +8,6 @@ import jax
 jax.config.update("jax_enable_x64", True)
 from jax import numpy as jnp
 
-
 evaluator = model.data.evaluator
 evaluator.function_table["log"] = jnp.log
 evaluator.function_table["exp"] = jnp.exp

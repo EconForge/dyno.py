@@ -65,7 +65,6 @@ for m in models:
 
 import time
 
-
 t1 = time.time()
 for i in range(100):
     model = DynoModel("examples/modfiles/RBC.mod")
