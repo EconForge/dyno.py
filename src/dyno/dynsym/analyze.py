@@ -29,6 +29,7 @@ function_table_0 = {
     "abs": math.fabs,
 }
 
+
 class FormulaEvaluator(Interpreter):
     """
     An interpreter that evaluates mathematical formulas as defined by the grammar.
@@ -42,7 +43,7 @@ class FormulaEvaluator(Interpreter):
 
     def __init__(
         self,
-        context: Dict[str,Any] = {},
+        context: Dict[str, Any] = {},
         function_table: Dict[str, Callable] = function_table_0,
         unknown_as_nan=True,
     ):
@@ -64,7 +65,6 @@ class FormulaEvaluator(Interpreter):
         self.values = context.get("values", {})
         self.variables = context.get("variables", {})
         self.steady_states = context.get("steady_states", {})
-
 
         self.time = None  # None or integer
         self.errors = []
@@ -200,10 +200,7 @@ class FormulaEvaluator(Interpreter):
             raise ValueError(f"Undefined function: {func_name}")
 
 
-
-
 class AssignmentEvaluator(FormulaEvaluator):
-
 
     def __init__(
         self,
@@ -211,7 +208,7 @@ class AssignmentEvaluator(FormulaEvaluator):
         symbol_table: Dict[str, Any] = {},
         function_table: Dict[str, Callable] = {},
         unknown_as_nan=True,
-        calibration:Dict[str,Any]={},
+        calibration: Dict[str, Any] = {},
     ):
         """
         Initialize the evaluator.
@@ -235,7 +232,6 @@ class AssignmentEvaluator(FormulaEvaluator):
         self.variables = context.get("variables", {})
         self.steady_states = context.get("steady_states", {})
 
-
         self.equations = []
         self.time = None  # None or integer
         self.errors = []
@@ -245,7 +241,6 @@ class AssignmentEvaluator(FormulaEvaluator):
 
         self.function_table.update(MATH_FUNCTIONS)
         self.function_table.update({"N": (lambda u, v: Normal(Sigma=[[v]], Μ=[u]))})
-
 
     def assignment(self, tree):
         """Handle assignments: symbol := value or symbol <- value"""
@@ -341,7 +336,6 @@ class AssignmentEvaluator(FormulaEvaluator):
                 results.append(result)
         return results
 
-
     # equations are just stored separately (without evaluation)
     def equation_block(self, tree):
         """Handle a block of equations"""
@@ -368,6 +362,7 @@ class AssignmentEvaluator(FormulaEvaluator):
 
 
 import math
+
 function_table_0 = {
     "exp": math.exp,
     "log": math.log,
@@ -375,8 +370,8 @@ function_table_0 = {
     "abs": math.fabs,
 }
 
-class EquationsEvaluator(FormulaEvaluator):
 
+class EquationsEvaluator(FormulaEvaluator):
 
     def __init__(
         self,
@@ -396,7 +391,7 @@ class EquationsEvaluator(FormulaEvaluator):
         """
         super().__init__()
         # self.symbol_table = symbol_table or {}
-        
+
         self.function_table = function_table or {}
         self.steady_state = steady_state
         self.diff = diff
@@ -419,15 +414,12 @@ class EquationsEvaluator(FormulaEvaluator):
         self.function_table.update(MATH_FUNCTIONS)
         # self.function_table.update({"N": (lambda u, v: Normal(Sigma=[[v]], Μ=[u]))})
 
-
     # Equations and assignments
     def equality(self, tree):
         """Handle equations: left = right. Returns the difference (should be 0 for equality)"""
         left = self.visit(tree.children[0])
         right = self.visit(tree.children[1])
         return right - left  # Return difference for equation solving
-
-
 
 
 # class EvalEquations(FormulaEvaluator):

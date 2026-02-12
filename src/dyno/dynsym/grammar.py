@@ -159,7 +159,7 @@ class Printer(Interpreter):
         except:
             print(tree.pretty())
             funname = str(tree.children[0].children[0])
-            
+
         args = self.visit(tree.children[1])
         return f"{funname}({args})"
 

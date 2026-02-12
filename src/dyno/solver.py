@@ -104,7 +104,6 @@ class RecursiveSolution:
 
     def irfs(self, type: IRFType = "log-deviation", T=40):
 
-
         from .simul import irfs
 
         assert self._model is not None
@@ -282,7 +281,7 @@ def solve_qz(
     F = np.block([[Z, I], [-C, -B]])
     G = np.block([[I, Z], [Z, A]])
     tol = 1e-6
-    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1+tol)  # type: ignore
+    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1 + tol)  # type: ignore
     λ_all = vgenev(α, β, tol=tol)
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
     # TODO: verify whether Blanchard-Kahn conditions are valid
@@ -407,13 +406,14 @@ def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
     return Γ0, Γ
 
 
-
 import time
+
 old_print = print
 
 
 def serial_solve(a, b):
     return np.linalg.solve(a, b)
+
 
 def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
     """Solve nonlinear system using safeguarded Newton iterations
@@ -493,6 +493,7 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
         warnings.warn("Did not converge")
     return [x, it]
 
+
 def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=False, **args):
 
     import pandas
@@ -515,14 +516,13 @@ def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=False, **
 
     u0 = np.array(v0).ravel()
 
-
     res, nit = newton(
         lambda u: model.deterministic_residuals_with_jacobian(u, sparsify=True),
         u0,
         jactype="sparse",
         verbose=verbose,
-        maxit = args.get("maxit",10),
-        tol=args.get("tol",1e-8)
+        maxit=args.get("maxit", 10),
+        tol=args.get("tol", 1e-8),
     )
 
     w0 = res.reshape(v0.shape)

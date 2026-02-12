@@ -12,6 +12,7 @@ from typing_extensions import Self
 from .errors import SteadyStateError
 from .larkfiles import SymbolicFile
 from .language import ProductNormal
+
 if TYPE_CHECKING:
     from .solver import RecursiveSolution
 from .typedefs import IRFType, Solver, TVector, TMatrix
@@ -78,16 +79,15 @@ class AbstractModel(ABC):
         """Set `data` attribute from model text description."""
 
     @abstractmethod
-    def _set_context(self: Self) -> None:
-        ...
+    def _set_context(self: Self) -> None: ...
 
     @abstractmethod
-    def compute_residuals(self: Self, y2, y1, y0, e)->TVector:
-        ...
+    def compute_residuals(self: Self, y2, y1, y0, e) -> TVector: ...
 
     @abstractmethod
-    def compute_jacobians(self: Self, y2, y1, y0, e)->tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix, TMatrix]:
-        ...
+    def compute_jacobians(
+        self: Self, y2, y1, y0, e
+    ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix, TMatrix]: ...
 
     def import_file(self: Self, filename: str, **kwargs: Any) -> None:
         txt = open(filename, "rt", encoding="utf-8").read()

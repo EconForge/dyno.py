@@ -1,7 +1,11 @@
 import math
 from lark import Tree
 from dyno.dynsym.grammar import parser, str_expression
-from dyno.dynsym.analyze import FormulaEvaluator, AssignmentEvaluator, EquationsEvaluator
+from dyno.dynsym.analyze import (
+    FormulaEvaluator,
+    AssignmentEvaluator,
+    EquationsEvaluator,
+)
 from typing_extensions import Self
 import numpy as np
 from typing import List, Dict, Any
@@ -50,17 +54,15 @@ class SymbolicFile:
         latex_str = str.join("\n", ["$${}$$".format(eq) for eq in eqs_str])
         return latex_str
 
+    def eval_residuals(self, context={}) -> None:
 
-    def eval_residuals(self, context = {}) -> None:
-
-        if len(context)==0:
+        if len(context) == 0:
             context = self.context
 
         fe = EquationsEvaluator(context)
         fe.steady_state = True
         residuals = [fe.visit(eq) for eq in self.equations]
         return residuals
-
 
 
 class DynoFile(SymbolicFile):
@@ -76,16 +78,16 @@ class DynoFile(SymbolicFile):
         txt = self.content
 
         try:
-            tree = parser.parse(txt, 
+            tree = parser.parse(
+                txt,
                 start="free_block",
             )
         except UnexpectedInput as e:
             raise LARKParserError(e, txt) from e
 
         self.tree = tree
-        
-        self.process_assignments()
 
+        self.process_assignments()
 
         # Separate assignments processing from parsing.
 
@@ -94,22 +96,24 @@ class DynoFile(SymbolicFile):
         fe = AssignmentEvaluator(calibration=calib)
         fe.visit(self.tree)
         context = {
-            'constants': fe.constants,
-            'variables': fe.variables,
-            'values': fe.values,
-            'processes': fe.processes,
-            'steady_states': fe.steady_states,
+            "constants": fe.constants,
+            "variables": fe.variables,
+            "values": fe.values,
+            "processes": fe.processes,
+            "steady_states": fe.steady_states,
         }
         self.context = context
         self.equations = fe.equations
         self.processes = fe.processes
         self.residuals = self.eval_residuals()
 
+
 from dyno.dynsym.dynare import (
     ModFileTransformer,
     modfile_grammar,
     InterpretModfile,
 )
+
 
 class LModFile(SymbolicFile):
     """Class for LARK .mod files"""
@@ -123,7 +127,6 @@ class LModFile(SymbolicFile):
     def parse(self: Self) -> None:
 
         from lark import Lark
-
 
         content = self.content
 
@@ -156,20 +159,25 @@ class LModFile(SymbolicFile):
         self.process_assignments()
 
     def process_assignments(self, **calib) -> None:
-        
+
         ## calib ignored so far
         import math
-        function_table={'exp':math.exp, 'log':math.log, 'sqrt':math.sqrt, 'abs':math.fabs}
-        
+
+        function_table = {
+            "exp": math.exp,
+            "log": math.log,
+            "sqrt": math.sqrt,
+            "abs": math.fabs,
+        }
+
         fe = InterpretModfile(**calib, function_table=function_table)
         fe.visit(self.tree)
 
         self.equations = fe.equations
 
-        
-
         # Set processes
         from dyno.language import Normal
+
         covs = fe.covariances
         exo = tuple(self.symbols["exogenous"])
         n_e = len(exo)
@@ -183,13 +191,12 @@ class LModFile(SymbolicFile):
         processes = {exo: Normal(mat)}
 
         context = {
-            'constants': fe.constants,
-            'variables': fe.variables,
-            'values': fe.values,
-            'processes': processes,
-            'steady_states': fe.steady_states | {e: 0.0 for e in exo},        # set exogenous steady states to zero
-
+            "constants": fe.constants,
+            "variables": fe.variables,
+            "values": fe.values,
+            "processes": processes,
+            "steady_states": fe.steady_states
+            | {e: 0.0 for e in exo},  # set exogenous steady states to zero
         }
-
 
         self.context = context

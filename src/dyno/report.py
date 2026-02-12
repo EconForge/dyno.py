@@ -302,7 +302,6 @@ class Report:
         for k, w in options.items():
             self.elements[k] = w
 
-    
 
 def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
 
@@ -346,7 +345,9 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
                 from dyno.modfile import DynareModel as Model
             else:
                 from dyno.symbolic_model import DynoModel as Model
-            model = AbstractModel(filename=filename, txt=txt)  # =txt, filename=filename)
+            model = AbstractModel(
+                filename=filename, txt=txt
+            )  # =txt, filename=filename)
         elif filename.endswith(".dyno.yaml"):
             from dyno.yamlfile import YAMLFile
 
@@ -361,33 +362,38 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
 
         r = model.residuals
 
-        if abs(r).max()>=1e-6 and isinstance(model, DynoModel):
+        if abs(r).max() >= 1e-6 and isinstance(model, DynoModel):
             import numpy as np
-            inds, = np.where(abs(r)>=1e-6)
+
+            (inds,) = np.where(abs(r) >= 1e-6)
             highlighting_data = []
             for i in inds:
                 tree = model.data.equations[i]
                 highlighting_data.append(
-                    {"line": tree.meta.line, "type": "warning", "message": f"{str(r[i])}"},
+                    {
+                        "line": tree.meta.line,
+                        "type": "warning",
+                        "message": f"{str(r[i])}",
+                    },
                 )
-                display({
-                    "application/vnd.jupyterlab-dyno.highlighting+json": highlighting_data
-                }, raw=True)
+                display(
+                    {
+                        "application/vnd.jupyterlab-dyno.highlighting+json": highlighting_data
+                    },
+                    raw=True,
+                )
         report(residuals=r)
         if model.checks["deterministic"]:
             from dyno.solver import deterministic_solve
 
-            sim = deterministic_solve(
-                model,
-                T=options.get("irf-horizon", 40)
-            )
+            sim = deterministic_solve(model, T=options.get("irf-horizon", 40))
             report(sim={"Perfect Foresight": sim})
         else:
             dr = model.solve()
             report(dr=dr)
             sim = dr.irfs(
-                type = options.get("irf-type", 'deviation'),
-                T=options.get("irf-horizon", 40)
+                type=options.get("irf-type", "deviation"),
+                T=options.get("irf-horizon", 40),
             )
 
             report(sim=sim)
@@ -400,26 +406,27 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
     except Exception as e:
 
         report(e)
-        
-        if hasattr(e,'line'):
+
+        if hasattr(e, "line"):
 
             # print("Displaying error highlighting for line:", e.line)
 
             highlighting_data = [
                 {"line": e.line, "type": "error", "message": f"{str(e)}"},
             ]
-            display({
-                "application/vnd.jupyterlab-dyno.highlighting+json": highlighting_data
-            }, raw=True)
+            display(
+                {
+                    "application/vnd.jupyterlab-dyno.highlighting+json": highlighting_data
+                },
+                raw=True,
+            )
 
         return report
-    
-
 
     display(Markdown(report._repr_markdown_()))
     display(fig)
     display(Markdown("---"))
-    
+
     # highlighting_data = [
     #     {"line": 5, "type": "error", "message": "Syntax error here"},
     #     {"line": 10, "type": "warning", "message": "Warning: deprecated function"},

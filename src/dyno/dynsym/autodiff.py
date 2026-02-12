@@ -184,6 +184,7 @@ def tan(x):
 def exp(x):
     """Exponential function that works with both floats and DNumber objects."""
     from rich import print
+
     if isinstance(x, DNumber):
         new_value = exp(x.value)
         new_derivatives = {
@@ -351,8 +352,7 @@ def log10(x):
     if isinstance(x, DNumber):
         new_value = log10(x.value)
         new_derivatives = {
-            var: deriv / (x.value * log(10))
-            for var, deriv in x.derivatives.items()
+            var: deriv / (x.value * log(10)) for var, deriv in x.derivatives.items()
         }
         return DNumber(new_value, new_derivatives)
     else:

@@ -21,7 +21,11 @@ from lark.visitors import Transformer
 from lark import Tree, Lark
 from lark.visitors import Transformer, v_args
 
-from dyno.dynsym.analyze import FormulaEvaluator, AssignmentEvaluator, EquationsEvaluator
+from dyno.dynsym.analyze import (
+    FormulaEvaluator,
+    AssignmentEvaluator,
+    EquationsEvaluator,
+)
 
 
 @v_args(tree=True)
@@ -82,7 +86,7 @@ class ModFileTransformer(Transformer):
         return Tree(
             "variable", [tree.children[0], Tree("index", ["t"]), tree.children[1]]
         )
-    
+
     def call(self, tree):
 
         return Tree("call", [Tree("name", [str(tree.children[0])]), *tree.children[1:]])
@@ -94,7 +98,7 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 
         super().__init__()
 
-        self.steady_state = True # variables are evaluatated at their steady state
+        self.steady_state = True  # variables are evaluatated at their steady state
         self.steady_states = {}
         self.constants = {}
         self.covariances = {}
@@ -162,7 +166,9 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
         func_node = tree.children[0]
         # Depending on the transformer, the function name can arrive as a Tree('name', [...])
         try:
-            if getattr(func_node, "data", None) == "name" and getattr(func_node, "children", None):
+            if getattr(func_node, "data", None) == "name" and getattr(
+                func_node, "children", None
+            ):
                 func_name = str(func_node.children[0])
             else:
                 func_name = str(func_node)

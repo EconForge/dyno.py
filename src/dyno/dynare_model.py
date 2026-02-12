@@ -21,6 +21,7 @@ class DynareModel(AbstractModel):
             the model being imported in `.mod` form
         """
         from dynare_preprocessor import DynareModel as Modfile
+
         try:
             self.data = Modfile(txt, deriv_order, params_deriv_order)
         except PreprocessorException as e:
