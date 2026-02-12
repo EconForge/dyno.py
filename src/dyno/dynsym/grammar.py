@@ -19,7 +19,6 @@ from os import path
 
 from typing import Tuple, Dict, Set, Union, List
 
-
 GRAMMARS_PATH = path.join(path.split(__file__)[0], "grammars/")
 GRAMMAR_FILE = path.join(GRAMMARS_PATH, "grammar.lark")
 

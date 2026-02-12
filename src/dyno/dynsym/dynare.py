@@ -13,7 +13,6 @@ modfile_grammar = open(f"{dir_path}/grammars/modfile_grammar.lark").read()
 from lark import Tree, Token
 from lark.visitors import Transformer
 
-
 # from dyno.util_json import UnsupportedDynareFeature
 
 # from dyno.model import Model
