@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from .model import RecursiveSolution
+from .solver import RecursiveSolution
 from .model import AbstractModel
 from .typedefs import IRFType
 

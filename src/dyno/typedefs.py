@@ -1,9 +1,11 @@
-import numpy as np
-from typing import Literal, TypeVar, Callable
+from __future__ import annotations
 
-DType = TypeVar("DType", bound=np.generic)
-TVector = np.ndarray[tuple[int], DType]
-TMatrix = np.ndarray[tuple[int, int], DType]
+import numpy as np
+from numpy.typing import NDArray
+from typing import Literal, Callable, Any
+
+TVector = NDArray[Any]
+TMatrix = NDArray[Any]
 
 Solver = Literal["ti", "qz"]
 IRFType = Literal["level", "log-deviation", "deviation"]

@@ -15,12 +15,16 @@ class SymbolicFile:
     tree: Tree
     context: Dict
     equations: List[Tree]
+    parameters: List[str]
+    evaluator: Any | None
     # declarations: List[Tree]
 
     def __init__(self, content: str, filename="<none>.dyno") -> None:
         # store provided filename and content on the instance
         self.filename = filename
         self.content = content
+        self.parameters = []
+        self.evaluator = None
 
     # @property
     # def context(self):

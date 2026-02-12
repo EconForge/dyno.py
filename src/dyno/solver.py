@@ -1,10 +1,17 @@
+from __future__ import annotations
+
 import numpy as np
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
 from .typedefs import TVector, TMatrix, Solver
 
+from typing import Any, TYPE_CHECKING
+
 from typing_extensions import Self
-from .typedefs import TVector, TMatrix, IRFType, Solver
+from .typedefs import IRFType
+
+if TYPE_CHECKING:
+    from .model import AbstractModel
 
 
 class RecursiveSolution:
@@ -34,7 +41,7 @@ class RecursiveSolution:
         symbols: dict[str, list[str]],
         x0: TVector | None = None,
         evs: TVector | None = None,
-        model=None,
+        model: "AbstractModel | None" = None,
     ) -> None:
 
         self.x0 = x0
@@ -54,6 +61,8 @@ class RecursiveSolution:
     def coefficients_as_df(self):
         import pandas as pd
 
+        assert self.x0 is not None
+
         ss = pd.DataFrame(
             [self.x0], columns=["{}".format(e) for e in self.symbols["endogenous"]]
         )
@@ -64,7 +73,7 @@ class RecursiveSolution:
             columns=["{}[t-1]".format(e) for e in self.symbols["endogenous"]]
             + ["{}[t]".format(e) for e in (self.symbols["exogenous"])],
         )
-        df.index = ["{}[t]".format(e) for e in self.symbols["endogenous"]]
+        df.index = pd.Index(["{}[t]".format(e) for e in self.symbols["endogenous"]])
         return ss, df
 
     def _repr_html_(self):
@@ -98,10 +107,16 @@ class RecursiveSolution:
 
         from .simul import irfs
 
+        assert self._model is not None
+
         sim = irfs(self._model, self, type=type, T=T)
         return sim
 
     def plot(self, type: IRFType = "log-deviation"):
+
+        from .simul import sim_to_nsim
+
+        import plotly.express as px
 
         sim = self.irfs(type=type)
         plots = sim_to_nsim(sim)
@@ -396,6 +411,10 @@ def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
 import time
 old_print = print
 
+
+def serial_solve(a, b):
+    return np.linalg.solve(a, b)
+
 def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
     """Solve nonlinear system using safeguarded Newton iterations
 
@@ -453,6 +472,9 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
 
             # norm_dx = abs(dx).max()
 
+            xx = x
+            err = error_0
+            bck = 0
             for bck in range(maxbacksteps):
                 xx = x - dx * (2 ** (-bck))
                 vm = f(xx)[0]
@@ -508,8 +530,7 @@ def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=False, **
     df = pandas.DataFrame(
         {e: w0[:, i] for i, e in enumerate(model.symbols["variables"])}
     )
-    df.index = range(T + 1)
-    df.index.name = "t"
+    df.index = pandas.RangeIndex(T + 1, name="t")
     df.reset_index(inplace=True)
 
     return df

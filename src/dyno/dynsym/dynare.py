@@ -159,7 +159,15 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
     # Function calls
     def call(self, tree):
         """Handle function calls: func_name(arg)"""
-        func_name = str(tree.children[0])
+        func_node = tree.children[0]
+        # Depending on the transformer, the function name can arrive as a Tree('name', [...])
+        try:
+            if getattr(func_node, "data", None) == "name" and getattr(func_node, "children", None):
+                func_name = str(func_node.children[0])
+            else:
+                func_name = str(func_node)
+        except Exception:
+            func_name = str(func_node)
 
         if func_name in self.function_table:
             args = [self.visit(c) for c in tree.children[1:]]

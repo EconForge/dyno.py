@@ -76,7 +76,7 @@ class DynoModel(AbstractModel):
 
         return r
 
-    def compute_jacobians(self, y2, y1, y0, e):
+    def compute_jacobians(self, y2, y1, y0, e)->tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix, TMatrix]:
 
         import numpy as np
         from dyno.dynsym.autodiff import DNumber as DN

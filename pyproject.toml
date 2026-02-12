@@ -6,3 +6,12 @@ requires-python = ">= 3.10,<3.14"
 [build-system]
 build-backend = "hatchling.build"
 requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dyno"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/dyno/py.typed" = "dyno/py.typed"
+
+[tool.hatch.build.targets.sdist.force-include]
+"src/dyno/py.typed" = "dyno/py.typed"

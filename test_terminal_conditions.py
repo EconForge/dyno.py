@@ -7,11 +7,11 @@ import numpy as np
 def test_jacobian_consistency():
     """Test that different methods of computing the Jacobian give the same result"""
     
-    from dyno.symbolic_model import SymbolicModel
+    from dyno.symbolic_model import DynoModel
     import scipy.sparse
     
     # Load a simple model
-    model = SymbolicModel("examples/neo.dyno")
+    model = DynoModel("examples/neo.dyno")
     
     # Create a test path (not at steady state to have non-zero Jacobian)
     T = 10
@@ -172,10 +172,10 @@ def test_jacobian_consistency():
 def test_terminal_conditions():
     """Test that the last three rows have the correct terminal conditions"""
     
-    from dyno.symbolic_model import SymbolicModel
+    from dyno.symbolic_model import DynoModel
     
     # Load a simple model
-    model = SymbolicModel("examples/neo.dyno")
+    model = DynoModel("examples/neo.dyno")
     
     # Create a simple test path
     T = 10
