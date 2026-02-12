@@ -15,6 +15,7 @@ model1 = DynoModel(f_o)
 model2 = DynoModel(f_r)
 
 from dyno import DynareModel
+
 model3 = DynareModel(f_r)
 
 
@@ -28,8 +29,8 @@ t2 = time.time()
 print("Elapsed: ", t2 - t1)
 
 
-
 import copy
+
 t1 = time.time()
 mm1 = copy.deepcopy(model1)
 mm1.solve()
@@ -38,6 +39,7 @@ print("Elapsed: ", t2 - t1)
 
 
 import copy
+
 t1 = time.time()
 mm2 = copy.deepcopy(model2)
 dr = mm2.solve()
@@ -69,7 +71,6 @@ print("Model parsing time: ", t2 - t1)
 print("Model solving time: ", t3 - t2)
 
 
-
 from dyno.modfile import DynareModel as DynareModelPP
 
 t1 = time.time()
@@ -86,6 +87,5 @@ from IPython.display import Math, display
 from dyno.dynsym.latex import latex
 
 
-
 for eq in model.data.equations:
-     display(Math(latex(eq)))
+    display(Math(latex(eq)))
