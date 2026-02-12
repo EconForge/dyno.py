@@ -2,6 +2,7 @@
 authors = ["Pablo Winant <pablo.winant@gmail.com>","Ousema Bouaneni <ousema.bouaneni@polytechnique.edu>"]
 description = "Macroeconomic model solver"
 channels = ["conda-forge"]
+
 preview = ["pixi-build"]
 platforms = ["linux-64"]
 
@@ -13,7 +14,7 @@ version = "0.1.7"
 dyno = { path = "." , editable = true}
 
 [dependencies]
-dyno = { path = "." }
+python = ">=3.11,<3.14"
 rich = ">=14.1.0,<15"
 interegular = ">=0.3.3,<0.4"
 sympy = ">=1.14.0,<2"
@@ -21,7 +22,6 @@ altair = ">=5.5.0,<6"
 tempita = ">=0.6.0,<0.7"
 pytest = ">=9.0.2,<10"
 
-[package.run-dependencies]
 dynare-preprocessor-pylib = "==0.0.0.dev1"
 dolang = ">=0.0.20"
 numpy = ">=2.0.0, <2.3.0" # Compatibility with notebook.link scipy
@@ -35,7 +35,7 @@ backend = { name = "pixi-build-python", version = "==0.4.0" }
 
 [package.host-dependencies] 
 hatchling = "==1.26.3"
-python = "<3.14,>=3.10"
+python = "<3.14,>=3.11"
 
 [feature.test.dependencies]
 pytest = ">=8.3.3"
