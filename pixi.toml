@@ -19,6 +19,7 @@ interegular = ">=0.3.3,<0.4"
 sympy = ">=1.14.0,<2"
 altair = ">=5.5.0,<6"
 tempita = ">=0.6.0,<0.7"
+pytest = ">=9.0.2,<10"
 
 [package.run-dependencies]
 dynare-preprocessor-pylib = "==0.0.0.dev1"

@@ -1,3 +1,4 @@
+import math
 from lark import Tree
 from dyno.dynsym.grammar import parser, str_expression
 from dyno.dynsym.analyze import FormulaEvaluator, AssignmentEvaluator, EquationsEvaluator
@@ -153,7 +154,10 @@ class LModFile(SymbolicFile):
     def process_assignments(self, **calib) -> None:
         
         ## calib ignored so far
-        fe = InterpretModfile(**calib)
+        import math
+        function_table={'exp':math.exp, 'log':math.log, 'sqrt':math.sqrt, 'abs':math.fabs}
+        
+        fe = InterpretModfile(**calib, function_table=function_table)
         fe.visit(self.tree)
 
         self.equations = fe.equations

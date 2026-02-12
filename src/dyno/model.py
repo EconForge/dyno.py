@@ -19,7 +19,7 @@ from .larkfiles import SymbolicFile
 from dyno.solver import RecursiveSolution
 
 
-class DynoModel(ABC):
+class AbstractModel(ABC):
     """Abstract class representing an economic model"""
 
     name: str | None
@@ -256,7 +256,7 @@ class DynoModel(ABC):
 
         Σ = self.processes.Σ
 
-        y, e = self.__steady_state_vectors__
+        y, e0 = self.__steady_state_vectors__
 
         # Reshapes necessary for static type checking
         y0 = np.reshape(y, len(y))

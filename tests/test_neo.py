@@ -7,9 +7,9 @@ def test_solution_ti():
     # from dyno import YAMLFile
     # model = YAMLFile("examples/neo.yaml")
 
-    from dyno.symbolic_model import SymbolicModel
+    from dyno.symbolic_model import DynoModel
 
-    model = SymbolicModel("examples/neo.dyno")
+    model = DynoModel("examples/neo.dyno")
 
     model.describe()
 
@@ -23,9 +23,9 @@ def test_solution_qz():
     # from dyno import YAMLFile
     # model = YAMLFile("examples/neo.yaml")
 
-    from dyno.symbolic_model import SymbolicModel
+    from dyno.symbolic_model import DynoModel
 
-    model = SymbolicModel("examples/neo.dyno")
+    model = DynoModel("examples/neo.dyno")
 
     sol = model.solve(method="qz")
 

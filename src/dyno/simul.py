@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from .model import RecursiveSolution
-from .model import DynoModel
+from .model import AbstractModel
 from .typedefs import IRFType
 
 
@@ -62,7 +62,7 @@ def irf(
 
 
 def irfs(
-    model: DynoModel, dr: RecursiveSolution, type: IRFType = "log-deviation", T=40
+    model: AbstractModel, dr: RecursiveSolution, type: IRFType = "log-deviation", T=40
 ) -> dict[str, pd.DataFrame]:
     """Impulse response function simulation in response to shocks on each exogenous variable
 

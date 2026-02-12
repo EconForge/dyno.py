@@ -1,6 +1,6 @@
 import dolang
 
-from dyno.model import DynoModel
+from dyno.model import AbstractModel
 import yaml
 from dolang.symbolic import parse_string, str_expression, stringify_symbol
 from dolang.language import eval_data
@@ -8,7 +8,7 @@ from dolang.language import eval_data
 from typing_extensions import Self
 
 
-class YAMLFile(DynoModel):
+class YAMLFile(AbstractModel):
 
     def import_model(self: Self, txt: str) -> None:
         self.data = yaml.compose(txt)

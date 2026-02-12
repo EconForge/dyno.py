@@ -3,10 +3,10 @@
 ```mermaid
 classDiagram
   %% Abstract/base
-  class DynoModel
+  class AbstractModel
 
   %% Concrete model types
-  class SymbolicModel
+  class DynoModel
   class DynareModel
   class YAMLFile
 
@@ -16,7 +16,7 @@ classDiagram
   class LModFile
 
   %% Inheritance
-  Model <|-- SymbolicModel
+  Model <|-- DynoModel
   Model <|-- DynareModel
   Model <|-- YAMLFile
 
@@ -24,8 +24,8 @@ classDiagram
   SymbolicFile <|-- LModFile
 
   %% Associations
-  SymbolicModel --> DynoFile : data
-  SymbolicModel --> LModFile : data
+  DynoModel --> DynoFile : data
+  DynoModel --> LModFile : data
   DynareModel --> DynareModel : "uses Dynare preprocessor"
   Model o-- ProductNormal : processes
   Model --> RecursiveSolution : "solve() returns"
@@ -43,6 +43,6 @@ classDiagram
 Notes:
 
 - `DynareModel` is implemented in `src/dyno/modfile.py` and `modfile_lark.py` and wraps Dynare's preprocessor.
-- `SymbolicModel` loads `.dyno` / `.mod` files via `DynoFile` / `LModFile` (subclasses of `SymbolicFile`).
+- `DynoModel` loads `.dyno` / `.mod` files via `DynoFile` / `LModFile` (subclasses of `SymbolicFile`).
 - `YAMLFile` is an alternate `Model` implementation for YAML-described models.
 - `Model.processes` may hold a `ProductNormal` (exogenous process).

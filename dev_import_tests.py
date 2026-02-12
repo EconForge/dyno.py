@@ -2,10 +2,10 @@ import dyno
 from rich import print, inspect
 import yaml
 
-from dyno.symbolic_model import SymbolicModel
+from dyno.symbolic_model import DynoModel
 
 data = yaml.safe_load(open("import_tests.yaml"))
-model = SymbolicModel(txt=data['solvable']['rbc_deterministic'])
+model = DynoModel(txt=data['solvable']['rbc_deterministic'])
 model
 
 
@@ -361,7 +361,7 @@ w0 = res.reshape(v0.shape)
 # for key in data['valid']:
     
 #     txt = data['valid'][key]
-#     model = SymbolicModel(txt=txt)
+#     model = DynoModel(txt=txt)
 #     print(f"--- Model: {key} ---")
 #     print(model.context)
 #     print(model.equations)
@@ -371,7 +371,7 @@ w0 = res.reshape(v0.shape)
 # for key in data['solvable']:
 
 #     txt = data['solvable'][key]
-#     model = SymbolicModel(txt=txt)
+#     model = DynoModel(txt=txt)
 #     print(f"--- Model: {key} ---")
 #     # print(model.context)
 #     # print(model.equations)

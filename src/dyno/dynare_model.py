@@ -1,17 +1,16 @@
-from dynare_preprocessor import DynareModel as Modfile
-from dyno.models.model import DynoModel
+from dyno.model import AbstractModel
 from dyno.language import pad_list, Normal, Deterministic
 import numpy as np
 
 from typing_extensions import Self
 from typing import Any
-from ..typedefs import TVector, TMatrix
+from .typedefs import TVector, TMatrix
 
 from dynare_preprocessor import PreprocessorException, UnsupportedFeatureException
-from ..errors import DynareParserError
+from .errors import DynareParserError
 
 
-class DynareModel(DynoModel):
+class DynareModel(AbstractModel):
 
     def import_model(self: Self, txt: str, deriv_order=1, params_deriv_order=0) -> None:
         """imports model written in `.mod` format into data attribute using Dynare's preprocessor
@@ -21,6 +20,7 @@ class DynareModel(DynoModel):
         txt : str
             the model being imported in `.mod` form
         """
+        from dynare_preprocessor import DynareModel as Modfile
         try:
             self.data = Modfile(txt, deriv_order, params_deriv_order)
         except PreprocessorException as e:

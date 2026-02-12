@@ -1,4 +1,4 @@
-from dyno.model import DynoModel
+from dyno.model import AbstractModel
 import yaml
 from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
 
@@ -14,7 +14,7 @@ from dyno.larkfiles import DynoFile, LModFile
 from dyno.language import ProductNormal, Normal
 
 
-class SymbolicModel(DynoModel):
+class DynoModel(AbstractModel):
 
     def import_model(self: Self, txt: str) -> None:
 

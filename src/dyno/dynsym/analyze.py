@@ -22,6 +22,12 @@ class DefinitionError(Exception):
 
 from dyno.language import Normal
 
+function_table_0 = {
+    "exp": math.exp,
+    "log": math.log,
+    "sqrt": math.sqrt,
+    "abs": math.fabs,
+}
 
 class FormulaEvaluator(Interpreter):
     """
@@ -37,7 +43,7 @@ class FormulaEvaluator(Interpreter):
     def __init__(
         self,
         context: Dict[str,Any] = {},
-        function_table: Dict[str, Callable] = {},
+        function_table: Dict[str, Callable] = function_table_0,
         unknown_as_nan=True,
     ):
         """
@@ -361,6 +367,13 @@ class AssignmentEvaluator(FormulaEvaluator):
         return results
 
 
+import math
+function_table_0 = {
+    "exp": math.exp,
+    "log": math.log,
+    "sqrt": math.sqrt,
+    "abs": math.fabs,
+}
 
 class EquationsEvaluator(FormulaEvaluator):
 
@@ -368,7 +381,7 @@ class EquationsEvaluator(FormulaEvaluator):
     def __init__(
         self,
         context: Dict[str, Any] = {},
-        function_table: Dict[str, Callable] = {},
+        function_table: Dict[str, Callable] = function_table_0,
         steady_state=False,
         diff=False,
         unknown_as_nan=True,

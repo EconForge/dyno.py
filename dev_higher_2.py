@@ -1,6 +1,6 @@
-from dyno.symbolic_model import SymbolicModel
+from dyno.symbolic_model import DynoModel
 
-model = SymbolicModel("examples/modfiles/RBC.mod")
+model = DynoModel("examples/modfiles/RBC.mod")
 
 import sympy as sp
 

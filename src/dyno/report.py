@@ -308,7 +308,7 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
 
     d = {}
 
-    from dyno.symbolic_model import SymbolicModel
+    from dyno.symbolic_model import DynoModel
 
     output_type = options.get("output_type", "markown")
     check_output = options.get("check_output", False)
@@ -345,23 +345,23 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             if preprocessor == "dynare":
                 from dyno.modfile import DynareModel as Model
             else:
-                from dyno.symbolic_model import SymbolicModel as Model
-            model = DynoModel(filename=filename, txt=txt)  # =txt, filename=filename)
+                from dyno.symbolic_model import DynoModel as Model
+            model = AbstractModel(filename=filename, txt=txt)  # =txt, filename=filename)
         elif filename.endswith(".dyno.yaml"):
             from dyno.yamlfile import YAMLFile
 
             model = YAMLFile(txt=txt)
         elif filename.endswith(".dyno"):
-            from dyno.symbolic_model import SymbolicModel
+            from dyno.symbolic_model import DynoModel
 
-            model = SymbolicModel(filename=filename, txt=txt)
+            model = DynoModel(filename=filename, txt=txt)
         else:
             raise ValueError("Unsupported Model type")
         report(model=model)
 
         r = model.residuals
 
-        if abs(r).max()>=1e-6 and isinstance(model, SymbolicModel):
+        if abs(r).max()>=1e-6 and isinstance(model, DynoModel):
             import numpy as np
             inds, = np.where(abs(r)>=1e-6)
             highlighting_data = []

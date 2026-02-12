@@ -1,8 +1,8 @@
-from dyno.symbolic_model import SymbolicModel as Model
+from dyno.symbolic_model import DynoModel as Model
 from dyno.modfile import DynareModel
 
 
-model = DynoModel("../jupyterlab-dyno/examples/ramst.dyno")
+model = AbstractModel("../jupyterlab-dyno/examples/ramst.dyno")
 dmodel = DynareModel("examples/modfiles/ramst.mod")
 
 
