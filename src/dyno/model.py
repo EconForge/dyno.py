@@ -131,10 +131,10 @@ class AbstractModel(ABC):
         exogenous = [v for v in variables if v in exo_set]
         endogenous = [v for v in variables if v not in exogenous]
 
-        try:
-            parameters = [*self.data.parameters]
-        except Exception:
-            parameters = [*c["constants"].keys()]
+        # try:
+        #     parameters = [*self.data.parameters]
+        # except Exception:
+        parameters = [*c["constants"].keys()]
 
         self.symbols = {
             "variables": variables,
