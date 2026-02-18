@@ -283,7 +283,7 @@ class AssignmentEvaluator(FormulaEvaluator):
 
                     # TODO: check that value is a process
                     self.processes[(name,)] = value
-                    self.steady_states[name] = float(value.Μ)
+                    self.steady_states[name] = float(value.Μ[0])
 
         return value
 
