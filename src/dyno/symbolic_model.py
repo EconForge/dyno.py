@@ -32,10 +32,13 @@ class DynoModel(AbstractModel):
 
     def recalibrate(self: Self, **calib):
         m = self.copy()
+        previous = getattr(self, "_calibration_overrides", {})
+        merged = previous | calib
         m.data.context = {}
-        m.data.process_assignments(**calib)
+        m.data.process_assignments(**merged)
         m._set_context()
         m._set_exogenous()
+        m._calibration_overrides = merged
         return m
 
     @property

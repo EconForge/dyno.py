@@ -1,0 +1,145 @@
+cases:
+  - name: base_parameter_override_propagates
+    model: |
+      a <- 2
+      b <- a + 3
+
+      x[~] <- 0
+      e[t] <- N(0, 1)
+
+      x[t] = b*x[t-1] + e[t]
+    recalibrate:
+      a: 10
+    expected_before:
+      a: 2
+      b: 5
+    expected_after:
+      a: 10
+      b: 13
+
+  - name: chain_dependency_recomputed
+    model: |
+      alpha <- 0.4
+      beta <- 1 - alpha
+      gamma <- 2*beta
+
+      x[~] <- 0
+      e[t] <- N(0, 1)
+
+      x[t] = gamma*x[t-1] + e[t]
+    recalibrate:
+      alpha: 0.25
+    expected_before:
+      alpha: 0.4
+      beta: 0.6
+      gamma: 1.2
+    expected_after:
+      alpha: 0.25
+      beta: 0.75
+      gamma: 1.5
+
+  - name: override_derived_parameter
+    model: |
+      a <- 2
+      b <- a + 1
+      c <- 2*b
+
+      x[~] <- 0
+      e[t] <- N(0, 1)
+
+      x[t] = c*x[t-1] + e[t]
+    recalibrate:
+      b: 5
+    expected_before:
+      a: 2
+      b: 3
+      c: 6
+    expected_after:
+      a: 2
+      b: 5
+      c: 10
+
+  - name: multiple_overrides_with_precedence
+    model: |
+      a <- 2
+      b <- a + 1
+      c <- 2*b
+
+      x[~] <- 0
+      e[t] <- N(0, 1)
+
+      x[t] = c*x[t-1] + e[t]
+    recalibrate:
+      a: 4
+      c: 123
+    expected_before:
+      a: 2
+      b: 3
+      c: 6
+    expected_after:
+      a: 4
+      b: 5
+      c: 123
+
+  - name: power_operator_dependency
+    model: |
+      a <- 3
+      b <- a^2 + 1
+      c <- b^2
+
+      x[~] <- 0
+      e[t] <- N(0, 1)
+
+      x[t] = c*x[t-1] + e[t]
+    recalibrate:
+      a: 4
+    expected_before:
+      a: 3
+      b: 10
+      c: 100
+    expected_after:
+      a: 4
+      b: 17
+      c: 289
+
+  - name: mixed_arithmetic_parentheses_division
+    model: |
+      a <- 4
+      b <- ((a + 2)*3)/2 - 1
+      c <- b/a
+
+      x[~] <- 0
+      e[t] <- N(0, 1)
+
+      x[t] = c*x[t-1] + e[t]
+    recalibrate:
+      a: 10
+    expected_before:
+      a: 4
+      b: 8
+      c: 2
+    expected_after:
+      a: 10
+      b: 17
+      c: 1.7
+
+  - name: unary_minus_and_subtraction
+    model: |
+      a <- 2
+      b <- -a + 5
+      c <- b - a
+
+      x[~] <- 0
+      e[t] <- N(0, 1)
+
+      x[t] = c*x[t-1] + e[t]
+    recalibrate:
+      a: 3
+    expected_before:
+      a: 2
+      b: 3
+      c: 1
+    expected_after:
+      a: 3
+      b: 2
+      c: -1
