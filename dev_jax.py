@@ -8,7 +8,7 @@ import jax
 jax.config.update("jax_enable_x64", True)
 from jax import numpy as jnp
 
-evaluator = model.data.evaluator
+evaluator = model.symbolic.evaluator
 evaluator.function_table["log"] = jnp.log
 evaluator.function_table["exp"] = jnp.exp
 evaluator.function_table["sqrt"] = jnp.sqrt
@@ -22,7 +22,7 @@ from dyno.dynsym.grammar import (
     stringify_constant,
 )
 
-model.data.equations
+model.symbolic.equations
 
 
 y_, e_ = model.__steady_state_vectors__
@@ -35,7 +35,7 @@ e_ = jnp.array(e_)
 
 def eval_equations(y_0, y_1, y_2, e_):
 
-    v_context = model.data.context["variables"]
+    v_context = model.symbolic.context["variables"]
     for i, v in enumerate(model.symbols["endogenous"]):
         v_context[v] = {
             -1: y_2[i],
@@ -47,7 +47,7 @@ def eval_equations(y_0, y_1, y_2, e_):
             0: e_[i],
         }
 
-    res = [model.data.evaluator.visit(eq) for eq in model.data.equations]
+    res = [model.symbolic.evaluator.visit(eq) for eq in model.symbolic.equations]
     # return res
     residuals = jnp.array(res)
     return residuals

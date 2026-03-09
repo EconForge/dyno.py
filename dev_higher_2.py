@@ -12,9 +12,9 @@ from dyno.dynsym.grammar import (
     stringify_constant,
 )
 
-model.data.equations
+model.symbolic.equations
 
-v_context = model.data.context["variables"]
+v_context = model.symbolic.context["variables"]
 for v in model.symbols["variables"]:
     v_context[v] = {
         -1: sp.Symbol(stringify_variable((v, "t", -1))),
@@ -23,7 +23,7 @@ for v in model.symbols["variables"]:
     }
 import copy
 
-evaluator = model.data.evaluator
+evaluator = model.symbolic.evaluator
 evaluator.function_table["log"] = sp.log
 evaluator.function_table["exp"] = sp.exp
 evaluator.function_table["sqrt"] = sp.sqrt
@@ -32,7 +32,7 @@ evaluator.function_table["max"] = sp.Max
 evaluator.function_table["abs"] = sp.Abs
 evaluator.function_table["pow"] = sp.Pow
 
-residuals = [model.data.evaluator.visit(eq) for eq in model.data.equations]
+residuals = [model.symbolic.evaluator.visit(eq) for eq in model.symbolic.equations]
 
 symbols = (
     [v_context[v][+1] for v in model.symbols["endogenous"]]
@@ -41,8 +41,8 @@ symbols = (
     + [v_context[v][0] for v in model.symbols["exogenous"]]
 )
 values = [
-    model.data.context["steady_states"][e] for e in model.symbols["endogenous"]
-] * 3 + [model.data.context["steady_states"][e] for e in model.symbols["exogenous"]]
+    model.symbolic.context["steady_states"][e] for e in model.symbols["endogenous"]
+] * 3 + [model.symbolic.context["steady_states"][e] for e in model.symbols["exogenous"]]
 values_dict = dict(zip(symbols, values))
 
 

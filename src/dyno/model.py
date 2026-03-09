@@ -10,7 +10,6 @@ from numpy.linalg import solve as linsolve
 from typing_extensions import Self
 
 from .errors import SteadyStateError
-from .larkfiles import SymbolicFile
 from .language import ProductNormal
 
 if TYPE_CHECKING:
@@ -27,7 +26,7 @@ class AbstractModel(ABC):
     symbols: dict[str, list[str]]
     processes: ProductNormal | None
     paths: dict[str, dict[int, float]] | None
-    data: SymbolicFile
+    symbolic: Any
     __steady_state__: dict[str, float] | None
 
     def __init__(
@@ -67,8 +66,22 @@ class AbstractModel(ABC):
         return copy.deepcopy(self)
 
     @property
+    def data(self):
+        """Backward-compatible alias for `symbolic`."""
+        return self.symbolic
+
+    @data.setter
+    def data(self, value):
+        self.symbolic = value
+
+    @property
     def checks(self) -> dict[str, bool]:
         return {"deterministic": self.processes is None}
+
+    @property
+    def metadata(self) -> dict[str, Any]:
+        """Convenience accessor for model metadata parsed from source files."""
+        return self.context.get("metadata", {})
 
     @property
     def is_deterministic(self) -> bool:
@@ -76,7 +89,7 @@ class AbstractModel(ABC):
 
     @abstractmethod
     def import_model(self: Self, txt: str, **kwargs: Any) -> None:
-        """Set `data` attribute from model text description."""
+        """Set `symbolic` attribute from model text description."""
 
     @abstractmethod
     def _set_context(self: Self) -> None: ...
@@ -132,7 +145,7 @@ class AbstractModel(ABC):
         endogenous = [v for v in variables if v not in exogenous]
 
         # try:
-        #     parameters = [*self.data.parameters]
+        #     parameters = [*self.symbolic.parameters]
         # except Exception:
         parameters = [*c["constants"].keys()]
 

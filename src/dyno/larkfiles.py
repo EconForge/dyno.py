@@ -13,7 +13,7 @@ from dyno.errors import LARKParserError, ParserError
 from lark.exceptions import UnexpectedInput
 
 
-class SymbolicFile:
+class SymbolicModel:
     filename: str
     content: str
     tree: Tree
@@ -21,6 +21,7 @@ class SymbolicFile:
     equations: List[Tree]
     parameters: List[str]
     evaluator: Any | None
+    metadata: Dict[str, Any]
     # declarations: List[Tree]
 
     def __init__(self, content: str, filename="<none>.dyno") -> None:
@@ -29,6 +30,7 @@ class SymbolicFile:
         self.content = content
         self.parameters = []
         self.evaluator = None
+        self.metadata = {}
 
     # @property
     # def context(self):
@@ -65,7 +67,7 @@ class SymbolicFile:
         return residuals
 
 
-class DynoFile(SymbolicFile):
+class DynoFile(SymbolicModel):
     """Class for .dyno files"""
 
     def __init__(self, content: str, filename="<none>.dyno") -> None:
@@ -101,8 +103,10 @@ class DynoFile(SymbolicFile):
             "values": fe.values,
             "processes": fe.processes,
             "steady_states": fe.steady_states,
+            "metadata": fe.metadata,
         }
         self.context = context
+        self.metadata = fe.metadata
         self.equations = fe.equations
         self.processes = fe.processes
         self.residuals = self.eval_residuals()
@@ -115,7 +119,7 @@ from dyno.dynsym.dynare import (
 )
 
 
-class LModFile(SymbolicFile):
+class LModFile(SymbolicModel):
     """Class for LARK .mod files"""
 
     def __init__(self, content: str, filename="<none>.dyno") -> None:
@@ -197,6 +201,7 @@ class LModFile(SymbolicFile):
             "processes": processes,
             "steady_states": fe.steady_states
             | {e: 0.0 for e in exo},  # set exogenous steady states to zero
+            "metadata": {},
         }
 
         self.context = context

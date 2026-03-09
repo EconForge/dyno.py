@@ -368,7 +368,7 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             (inds,) = np.where(abs(r) >= 1e-6)
             highlighting_data = []
             for i in inds:
-                tree = model.data.equations[i]
+                tree = model.symbolic.equations[i]
                 highlighting_data.append(
                     {
                         "line": tree.meta.line,

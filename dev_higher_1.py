@@ -28,7 +28,7 @@ model = DynareModel("examples/modfiles/RBC.mod", deriv_order=3)
 n = len(model.symbols["endogenous"])
 m = len(model.symbols["exogenous"])
 indices = {}
-for i, el in enumerate(model.data.symbol_info):
+for i, el in enumerate(model.symbolic.symbol_info):
     symtype = el[0].name
     if symtype == "endogenous":
         k, p = el[1], el[2]

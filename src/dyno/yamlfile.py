@@ -11,10 +11,10 @@ from typing_extensions import Self
 class YAMLFile(AbstractModel):
 
     def import_model(self: Self, txt: str) -> None:
-        self.data = yaml.compose(txt)
+        self.symbolic = yaml.compose(txt)
 
     def _set_name(self: Self):
-        node = self.data.value[0]
+        node = self.symbolic.value[0]
         nodetype = node[0].value
         if nodetype == "name":
             self.name = node[1].value
@@ -25,7 +25,7 @@ class YAMLFile(AbstractModel):
 
         symbols = self.symbols
         calibration = dict()
-        for k, v in self.data.get("calibration", {}).items():
+        for k, v in self.symbolic.get("calibration", {}).items():
             if v.tag == "tag:yaml.org,2002:str":
 
                 expr = parse_string(v)
@@ -71,10 +71,10 @@ class YAMLFile(AbstractModel):
 
         from .language import ProductNormal
 
-        if "exogenous" not in self.data:
+        if "exogenous" not in self.symbolic:
             self.exogenous = None
 
-        exo = self.data["exogenous"]
+        exo = self.symbolic["exogenous"]
         calibration = self.get_calibration()
         from dolang.language import eval_data
 
@@ -92,7 +92,7 @@ class YAMLFile(AbstractModel):
         self.exogenous = ProductNormal(*exogenous.values())
 
     def _set_symbols(self: Self) -> None:
-        data = self.data
+        data = self.symbolic
 
         self._tree = dolang.parse_string(data["equations"], start="equation_block")
 
@@ -108,11 +108,11 @@ class YAMLFile(AbstractModel):
         # check exogenous variables
         try:
             l = [
-                [h.strip() for h in k.split(",")] for k in self.data["exogenous"].keys()
+                [h.strip() for h in k.split(",")] for k in self.symbolic["exogenous"].keys()
             ]
             exovars = sum(l, [])
             #
-            #  exovars = self.data['exogenous'].keys()
+            #  exovars = self.symbolic['exogenous'].keys()
         except:
             exovars = []
 

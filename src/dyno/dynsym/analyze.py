@@ -2,6 +2,7 @@ from lark.visitors import Transformer, Interpreter
 from lark.tree import Tree
 from lark.lexer import Token
 import math
+import yaml
 from typing import Dict, Any, Callable, Union, List
 from .autodiff import DNumber as DN
 import math
@@ -65,6 +66,7 @@ class FormulaEvaluator(Interpreter):
         self.values = context.get("values", {})
         self.variables = context.get("variables", {})
         self.steady_states = context.get("steady_states", {})
+        self.metadata = context.get("metadata", {})
 
         self.time = None  # None or integer
         self.errors = []
@@ -231,6 +233,7 @@ class AssignmentEvaluator(FormulaEvaluator):
         self.values = context.get("values", {})
         self.variables = context.get("variables", {})
         self.steady_states = context.get("steady_states", {})
+        self.metadata = context.get("metadata", {}).copy()
 
         self.equations = []
         self.time = None  # None or integer
@@ -325,6 +328,20 @@ class AssignmentEvaluator(FormulaEvaluator):
         # self.time = original_time
         self.constants.pop("t", None)
         self.time = None
+
+    def metadata_scalar(self, tree):
+        # Parse scalar values with YAML semantics (numbers, booleans, quoted strings).
+        raw_value = str(tree.children[0]).strip()
+        try:
+            return yaml.safe_load(raw_value)
+        except yaml.YAMLError:
+            return raw_value
+
+    def metadata_assignment(self, tree):
+        key = str(tree.children[0].children[0])
+        value = self.visit(tree.children[1])
+        self.metadata[key] = value
+        return value
 
     # Block handling
     def assignment_block(self, tree):

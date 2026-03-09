@@ -16,26 +16,59 @@ from dyno.language import ProductNormal, Normal
 
 class DynoModel(AbstractModel):
 
-    def import_model(self: Self, txt: str) -> None:
+    def __init__(
+        self: Self,
+        filename: str | None = None,
+        txt: str | None = None,
+        yaml: str | None = None,
+        **kwargs,
+    ) -> None:
+        if yaml is not None:
+            if txt is not None:
+                raise ValueError("Pass either `txt` or `yaml`, not both.")
+            txt = yaml
+            if filename is None:
+                filename = "<anonymous>.yaml"
+
+        super().__init__(filename=filename, txt=txt, **kwargs)
+
+    def import_model(self: Self, txt: str, **kwargs) -> None:
 
         try:
             if self.filename.endswith(".mod"):
-                self.data = LModFile(content=txt, filename=self.filename)
+                self.symbolic = LModFile(content=txt, filename=self.filename)
+            elif self.filename.endswith(".yaml") or self.filename.endswith(".yml"):
+                data = yaml.safe_load(txt)
+                if not isinstance(data, dict):
+                    raise ValueError("YAML model input must be a mapping with a `model` key.")
+
+                model_txt = data.get("model")
+                if not isinstance(model_txt, str):
+                    raise ValueError("YAML model input must provide a string `model` block.")
+
+                self.symbolic = DynoFile(content=model_txt, filename=self.filename)
+
+                yaml_metadata = {k: v for (k, v) in data.items() if k != "model"}
+                merged_metadata = yaml_metadata | self.symbolic.metadata
+                self.symbolic.metadata = merged_metadata
+                self.symbolic.context["metadata"] = merged_metadata
             elif self.filename.endswith(".dyno"):
-                self.data = DynoFile(content=txt, filename=self.filename)
+                self.symbolic = DynoFile(content=txt, filename=self.filename)
+            else:
+                self.symbolic = DynoFile(content=txt, filename=self.filename)
         except UnexpectedInput as e:
             raise LARKParserError(e, txt) from e
 
     def _set_context(self: Self) -> None:
-        context = self.data.context.copy()
+        context = self.symbolic.context.copy()
         self.context = context
 
     def recalibrate(self: Self, **calib):
         m = self.copy()
         previous = getattr(self, "_calibration_overrides", {})
         merged = previous | calib
-        m.data.context = {}
-        m.data.process_assignments(**merged)
+        m.symbolic.context = {}
+        m.symbolic.process_assignments(**merged)
         m._set_context()
         m._set_exogenous()
         m._calibration_overrides = merged
@@ -44,11 +77,11 @@ class DynoModel(AbstractModel):
     @property
     def equations(self):
 
-        return [str_expression(eq) for eq in self.data.equations]
+        return [str_expression(eq) for eq in self.symbolic.equations]
 
     def latex_equations(self):
 
-        return self.data.latex_equations()
+        return self.symbolic.latex_equations()
 
     def compute_residuals(self, y2, y1, y0, e):
 
@@ -59,7 +92,7 @@ class DynoModel(AbstractModel):
 
         import copy
 
-        cc = copy.deepcopy(self.data.context)
+        cc = copy.deepcopy(self.symbolic.context)
 
         for i, name in enumerate(endogenous):
             cc["variables"][name] = {
@@ -75,7 +108,7 @@ class DynoModel(AbstractModel):
 
         E = EquationsEvaluator(cc)
 
-        results = [E.visit(eq) for eq in self.data.equations]
+        results = [E.visit(eq) for eq in self.symbolic.equations]
 
         r = np.array([float(el) for el in results])
 
@@ -93,7 +126,7 @@ class DynoModel(AbstractModel):
 
         import copy
 
-        cc = copy.deepcopy(self.data.context)
+        cc = copy.deepcopy(self.symbolic.context)
 
         for i, name in enumerate(endogenous):
             cc["variables"][name] = {
@@ -108,7 +141,7 @@ class DynoModel(AbstractModel):
         from dyno.dynsym.analyze import EquationsEvaluator
 
         E = EquationsEvaluator(cc)
-        results = [E.visit(eq) for eq in self.data.equations]
+        results = [E.visit(eq) for eq in self.symbolic.equations]
 
         neq = len(results)
         nv = len(endogenous)
@@ -144,7 +177,7 @@ class DynoModel(AbstractModel):
 
         # works if the is one and exactly one exogenous variable?
         # does it?
-        for key, value in model.data.context["values"].items():
+        for key, value in model.symbolic.context["values"].items():
             i = model.symbols["variables"].index(key)
             v0[:, i] = 0.0  # TODO: use steady-state of exogenous process
             for a, b in value.items():
@@ -170,7 +203,7 @@ class DynoModel(AbstractModel):
 
         import copy
 
-        cc = copy.deepcopy(model.data.context)
+        cc = copy.deepcopy(model.symbolic.context)
         for i, name in enumerate(model.symbols["variables"]):
             cc["variables"][name] = {-1: v_b[:, i], 0: v[:, i], 1: v_f[:, i]}
 
@@ -178,7 +211,7 @@ class DynoModel(AbstractModel):
 
         E = EquationsEvaluator(cc)
 
-        results = [E.visit(eq) for eq in model.data.equations]
+        results = [E.visit(eq) for eq in model.symbolic.equations]
 
         # number of variables not pinned down by dynamic equations
         n_exo = len(model.symbols["variables"]) - len(results)
@@ -204,11 +237,11 @@ class DynoModel(AbstractModel):
         # Override last row with explicit terminal condition
         if T >= 1:
             # t = T: f(v_T, v_T, v_T)
-            cc_T = copy.deepcopy(model.data.context)
+            cc_T = copy.deepcopy(model.symbolic.context)
             for i, name in enumerate(model.symbols["variables"]):
                 cc_T["variables"][name] = {-1: v[T, i], 0: v[T, i], 1: v[T, i]}
             E_T = EquationsEvaluator(cc_T)
-            res_T = [E_T.visit(eq) for eq in model.data.equations]
+            res_T = [E_T.visit(eq) for eq in model.symbolic.equations]
             res[T, : len(res_T)] = res_T
             res[T, len(res_T) :] = v[T, -n_exo:] - v1_exo[T, :]
 
@@ -233,7 +266,7 @@ class DynoModel(AbstractModel):
 
         import copy
 
-        context = copy.deepcopy(model.data.context)
+        context = copy.deepcopy(model.symbolic.context)
         for i, name in enumerate(model.symbols["variables"]):
             context["variables"][name] = {
                 -1: DNumber(v_b[:, i], {(name, -1): 1.0}),
@@ -245,7 +278,7 @@ class DynoModel(AbstractModel):
 
         E = EquationsEvaluator(context)
 
-        results = [E.visit(eq) for eq in model.data.equations]
+        results = [E.visit(eq) for eq in model.symbolic.equations]
 
         n_exo = len(model.symbols["variables"]) - len(results)
 
@@ -255,7 +288,7 @@ class DynoModel(AbstractModel):
         # works if the is one and exactly one exogenous variable?
         # does it?
         v1 = np.concatenate([y, e])[None, :].repeat(T + 1, axis=0)
-        for key, value in model.data.context["values"].items():
+        for key, value in model.symbolic.context["values"].items():
             i = model.symbols["variables"].index(key)
             for a, b in value.items():
                 v1[a, i] = b
@@ -293,7 +326,7 @@ class DynoModel(AbstractModel):
 
         if T >= 1:
             # t = T: f(v_T, v_T, v_T)
-            context_T = copy.deepcopy(model.data.context)
+            context_T = copy.deepcopy(model.symbolic.context)
             for i, name in enumerate(model.symbols["variables"]):
                 context_T["variables"][name] = {
                     -1: DNumber(v[T, i], {(name, -1): 1.0}),
@@ -301,7 +334,7 @@ class DynoModel(AbstractModel):
                     1: DNumber(v[T, i], {(name, 1): 1.0}),
                 }
             E_T = EquationsEvaluator(context_T)
-            results_T = [E_T.visit(eq) for eq in model.data.equations]
+            results_T = [E_T.visit(eq) for eq in model.symbolic.equations]
             res[T, :q] = [e.value for e in results_T]
             res[T, q:] = v[T, -n_exo:] - exo[T, :]
 

@@ -14,7 +14,7 @@ from .errors import DynareParserError
 class DynareModel(AbstractModel):
 
     def import_model(self: Self, txt: str, deriv_order=1, params_deriv_order=0) -> None:
-        """imports model written in `.mod` format into data attribute using Dynare's preprocessor
+        """imports model written in `.mod` format into symbolic attribute using Dynare's preprocessor
 
         Parameters
         ----------
@@ -22,18 +22,18 @@ class DynareModel(AbstractModel):
             the model being imported in `.mod` form
         """
         try:
-            self.data = Modfile(txt, deriv_order, params_deriv_order)
+            self.symbolic = Modfile(txt, deriv_order, params_deriv_order)
         except PreprocessorException as e:
             raise DynareParserError(e) from e
 
     def _set_context(self: Self) -> None:
         """retrieves calibration values"""
 
-        c = self.data.context  # dynare preprocessor context
-        endogenous = self.data.endogenous
-        exogenous = self.data.exogenous
+        c = self.symbolic.context  # dynare preprocessor context
+        endogenous = self.symbolic.endogenous
+        exogenous = self.symbolic.exogenous
         variables = endogenous + exogenous
-        parameters = self.data.parameters
+        parameters = self.symbolic.parameters
 
         steady_states = {
             k: v for (k, v) in c.items() if (k in endogenous) or (k in exogenous)
@@ -41,13 +41,13 @@ class DynareModel(AbstractModel):
         constants = {k: v for (k, v) in c.items() if (k in parameters)}
 
         # read specification of exogenous shocks in the modfile
-        assert len(self.data.trajectories) == 0 or len(self.data.covariances) == 0
-        isdeterministic = len(self.data.trajectories) > 0
+        assert len(self.symbolic.trajectories) == 0 or len(self.symbolic.covariances) == 0
+        isdeterministic = len(self.symbolic.trajectories) > 0
         exo = exogenous
 
         if isdeterministic:
             det_vals = {v: [] for v in exo}
-            for var, traj in self.data.trajectories.items():
+            for var, traj in self.symbolic.trajectories.items():
                 for p1, p2, val in traj:
                     pad_list(det_vals[var], p2)
                     det_vals[var][p1 - 1 : p2] = [val] * (p2 - p1 + 1)
@@ -60,7 +60,7 @@ class DynareModel(AbstractModel):
             n = len(exo)
             covar = np.zeros((n, n))
             index = {name: i for (i, name) in enumerate(exo)}
-            for (var1, var2), val in self.data.covariances.items():
+            for (var1, var2), val in self.symbolic.covariances.items():
                 covar[index[var1], index[var2]] = val
                 covar[index[var2], index[var1]] = val
             # self.processes =
@@ -81,15 +81,15 @@ class DynareModel(AbstractModel):
     @property
     def equations(self):
 
-        return self.data.equations
+        return self.symbolic.equations
 
     def compute_residuals(self, y1, y2, y3, e):
-        p = [self.context["constants"][p] for p in self.data.parameters]
+        p = [self.context["constants"][p] for p in self.symbolic.parameters]
         y, e = self.__steady_state_vectors__
         return self._f_dynamic(y, y, y, e, p)
 
     def compute_jacobians(self, y1, y2, y3, e):
-        p = [self.context["constants"][p] for p in self.data.parameters]
+        p = [self.context["constants"][p] for p in self.symbolic.parameters]
         y, e = self.__steady_state_vectors__
         return self._f_dynamic(y, y, y, e, p, diff=True)
 
@@ -99,7 +99,7 @@ class DynareModel(AbstractModel):
         e = [model.steady_state[v] for v in model.symbols["exogenous"]]
         p = [model.context["constants"][v] for v in model.symbols["parameters"]]
 
-        return model.data.derivatives(y, y, y, e, e, p)
+        return model.symbolic.derivatives(y, y, y, e, e, p)
 
     def deterministic_residuals(self, v):
 
@@ -147,10 +147,10 @@ class DynareModel(AbstractModel):
             args[4] = []
             # this is a deterministic model
 
-        r = np.array(self.data.residuals(*args))
+        r = np.array(self.symbolic.residuals(*args))
 
         if diff:
-            jacobians = self.data.jacobians(*args)
+            jacobians = self.symbolic.jacobians(*args)
             if len(self.context["processes"]) == 0:
                 del jacobians[3]
             else:

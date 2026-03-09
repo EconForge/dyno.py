@@ -20,7 +20,7 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
 
 theme:
-  name: material 
+  name: material
   features:
     - content.tooltips 
     - navigation.expand 
@@ -38,5 +38,7 @@ extra_javascript:
 
 nav:
   - index.md
-  - classes.md
+  - model_classes.md
+  - model.md
+  - model2.md
   - solution_methods.md
