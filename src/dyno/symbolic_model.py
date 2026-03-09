@@ -1,5 +1,6 @@
 from dyno.model import AbstractModel
 import yaml
+import math
 from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
 
 from dyno.dynsym.grammar import parser, str_expression
@@ -16,6 +17,14 @@ from dyno.language import ProductNormal, Normal
 
 class DynoModel(AbstractModel):
 
+    def _constants_used_in_equations(self: Self) -> set[str]:
+        names: set[str] = set()
+        for eq in self.symbolic.equations:
+            for subtree in eq.iter_subtrees_topdown():
+                if subtree.data == "constant":
+                    names.add(str(subtree.children[0].children[0]))
+        return names
+
     def __init__(
         self: Self,
         filename: str | None = None,
@@ -28,7 +37,7 @@ class DynoModel(AbstractModel):
                 raise ValueError("Pass either `txt` or `yaml`, not both.")
             txt = yaml
             if filename is None:
-                filename = "<anonymous>.yaml"
+                filename = "*anonymous*.yaml"
 
         super().__init__(filename=filename, txt=txt, **kwargs)
 
@@ -61,6 +70,20 @@ class DynoModel(AbstractModel):
 
     def _set_context(self: Self) -> None:
         context = self.symbolic.context.copy()
+
+        constants = context.setdefault("constants", {})
+        steady_states = context.setdefault("steady_states", {})
+        variables = context.setdefault("variables", {})
+
+        # Ensure constants used in equations are explicit in context, even if
+        # they were never assigned in declarations.
+        for name in self._constants_used_in_equations():
+            constants.setdefault(name, math.nan)
+
+        # Ensure every referenced variable has a steady-state entry.
+        for name in variables.keys():
+            steady_states.setdefault(name, math.nan)
+
         self.context = context
 
     def recalibrate(self: Self, **calib):

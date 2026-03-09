@@ -1,18 +1,21 @@
 import numpy as np
 import pandas as pd
-from .solver import RecursiveSolution
+from .solver import RecursiveDecisionRule, PerturbationSolution
 from .model import AbstractModel
 from .typedefs import IRFType
 
 
 def irf(
-    dr: RecursiveSolution, i: int, T: int = 40, type: IRFType = "level"
+    dr: RecursiveDecisionRule | PerturbationSolution,
+    i: int,
+    T: int = 40,
+    type: IRFType = "level",
 ) -> pd.DataFrame:
     """Impulse response function simulation in response to a shock on a specific exogenous variable
 
     Parameters
     ----------
-    dr : RecursiveSolution
+    dr : RecursiveDecisionRule | PerturbationSolution
         linearized model, contains all variables and parameters
     i : int
         index representing the exogenous variable of the shock
@@ -62,13 +65,16 @@ def irf(
 
 
 def irfs(
-    model: AbstractModel, dr: RecursiveSolution, type: IRFType = "log-deviation", T=40
+    model: AbstractModel,
+    dr: RecursiveDecisionRule | PerturbationSolution,
+    type: IRFType = "log-deviation",
+    T=40,
 ) -> dict[str, pd.DataFrame]:
     """Impulse response function simulation in response to shocks on each exogenous variable
 
     Parameters
     ----------
-    dr : RecursiveSolution
+    dr : RecursiveDecisionRule | PerturbationSolution
         linearized model, contains all variables and parameters
     T : int, optional
         time horizon over which the simulation is done, by default 40
@@ -90,12 +96,12 @@ def irfs(
     return res
 
 
-def simulate(dr: RecursiveSolution, T: int = 40) -> pd.DataFrame:
+def simulate(dr: RecursiveDecisionRule | PerturbationSolution, T: int = 40) -> pd.DataFrame:
     """Simulates the evolution of the endogenous variables
 
     Parameters
     ----------
-    dr : RecursiveSolution
+    dr : RecursiveDecisionRule | PerturbationSolution
         linearized model, contains all variables and parameters
     T : int, optional
         time horizon over which the simulation is done, by default 40

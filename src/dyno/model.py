@@ -11,9 +11,15 @@ from typing_extensions import Self
 
 from .errors import SteadyStateError
 from .language import ProductNormal
+from .model_render import (
+    model_repr_data,
+    render_model_html,
+    render_model_markdown,
+    render_model_text,
+)
 
 if TYPE_CHECKING:
-    from .solver import RecursiveSolution
+    from .solver import PerturbationSolution
 from .typedefs import IRFType, Solver, TVector, TMatrix
 
 
@@ -42,7 +48,7 @@ class AbstractModel(ABC):
                 )
             case (None, txt):
                 assert txt is not None
-                self.filename = "<anonymous>.dyno"
+                self.filename = "*anonymous*.dyno"
                 self.import_model(txt, **kwargs)
             case (filename, None):
                 assert filename is not None
@@ -64,6 +70,18 @@ class AbstractModel(ABC):
         import copy
 
         return copy.deepcopy(self)
+
+    def _repr_data(self: Self) -> dict[str, Any]:
+        return model_repr_data(self)
+
+    def _render_repr_text(self: Self, data: dict[str, Any]) -> str:
+        return render_model_text(data)
+
+    def _render_repr_html(self: Self, data: dict[str, Any]) -> str:
+        return render_model_html(data)
+
+    def __repr__(self: Self) -> str:
+        return self._render_repr_text(self._repr_data())
 
     @property
     def data(self):
@@ -202,48 +220,25 @@ class AbstractModel(ABC):
         console.print(Markdown(self._markdown_()))
 
     def _markdown_(self: Self) -> str:
-        txt = f"""# {self.name}
-- *filename*: {self.filename}
-- *symbols*:
-    - variables:
-        - endogenous: {str.join(", ", self.symbols["endogenous"])}
-        - exogenous: {str.join(", ", self.symbols["exogenous"])}
-    - constants: {str.join(", ", self.symbols["parameters"])}
-"""
-        return txt
+        return render_model_markdown(self._repr_data(), self.filename)
 
     def _repr_html_(self: Self) -> str:
-        return f"""<h3>Model</h3>
-<ul>
-<li>name: {self.name if self.name is not None else "Unnamed"}</li>
-<li>symbols:
-    <ul>
-        <li>variables:
-            <ul>
-                <li>endogenous: {str.join(",", self.symbols["endogenous"])}</li>
-                <li>exogenous: {str.join(",", self.symbols["exogenous"])}</li>
-            </ul>
-        </li>
-        <li> constants: {str.join(",", self.symbols["parameters"])}</li>
-    </ul>
-</li>
-</ul>
-"""
+        return self._render_repr_html(self._repr_data())
 
-    def solve(self: Self, **args: Any) -> "RecursiveSolution | pd.DataFrame":
+    def solve(self: Self, **args: Any) -> "PerturbationSolution | pd.DataFrame":
         if self.is_deterministic:
             from .solver import deterministic_solve
 
             return deterministic_solve(self, **args)
         return self.perturb(**args)
 
-    def perturb(self: Self, method: Solver = "qz") -> "RecursiveSolution":
-        from .solver import RecursiveSolution
-        from .solver import solve as solveit
+    def perturb(self: Self, method: Solver = "qz") -> "PerturbationSolution":
+        from .solver import PerturbationSolution, RecursiveDecisionRule
+        from .solver import solve as solve_quadratic_matrix
 
         r, A, B, C, D = self.jacobians
 
-        X, evs = solveit(A, B, C, method=method)
+        X, evs = solve_quadratic_matrix(A, B, C, method=method)
         Y = linsolve(A @ X + B, -D)
 
         v = self.symbols["endogenous"]
@@ -255,15 +250,15 @@ class AbstractModel(ABC):
         y, _ = self.__steady_state_vectors__
         y0 = np.reshape(y, len(y))
 
-        return RecursiveSolution(
+        dr = RecursiveDecisionRule(
             X,
             Y,
             Σ,
             {"endogenous": v, "exogenous": e},
-            evs=evs,
             x0=y0,
             model=self,
         )
+        return PerturbationSolution(dr, evs=evs)
 
     def deterministic_guess(self: Self, T: int | None = None):
         if T is None:

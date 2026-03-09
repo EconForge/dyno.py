@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from .model import AbstractModel
 
 
-class RecursiveSolution:
+class RecursiveDecisionRule:
     """VAR(1) representing a linearized model
 
     Attributes
@@ -28,9 +28,6 @@ class RecursiveSolution:
     x0: N Vector | None
         the state around which the linearization is done, generally the steady state, by default None
 
-    evs: 2N Vector | None
-        eigenvalues containing information about the stability of the model,
-        only available if the qz solver was used for linearization, by default None
     """
 
     def __init__(
@@ -40,7 +37,6 @@ class RecursiveSolution:
         Σ: TMatrix,
         symbols: dict[str, list[str]],
         x0: TVector | None = None,
-        evs: TVector | None = None,
         model: "AbstractModel | None" = None,
     ) -> None:
 
@@ -48,8 +44,6 @@ class RecursiveSolution:
         self.X = X
         self.Y = Y
         self.Σ = Σ
-
-        self.evs = evs
 
         self.symbols = symbols
         self._model = model
@@ -134,6 +128,64 @@ class RecursiveSolution:
         fig.update_xaxes(title_text="")
 
         return fig
+
+
+class PerturbationSolution:
+    """Container for perturbation outputs.
+
+    Attributes
+    ----------
+    decision_rule: RecursiveDecisionRule
+        First-order recursive decision rule.
+    """
+
+    def __init__(
+        self: Self,
+        decision_rule: RecursiveDecisionRule,
+        evs: TVector | None = None,
+    ) -> None:
+        self.decision_rule = decision_rule
+        self.evs = evs
+
+    # Backward-compatible passthroughs
+    @property
+    def X(self):
+        return self.decision_rule.X
+
+    @property
+    def Y(self):
+        return self.decision_rule.Y
+
+    @property
+    def Σ(self):
+        return self.decision_rule.Σ
+
+    @property
+    def x0(self):
+        return self.decision_rule.x0
+
+    @property
+    def symbols(self):
+        return self.decision_rule.symbols
+
+    def moments(self):
+        return self.decision_rule.moments()
+
+    def coefficients_as_df(self):
+        return self.decision_rule.coefficients_as_df()
+
+    def irfs(self, type: IRFType = "log-deviation", T=40):
+        return self.decision_rule.irfs(type=type, T=T)
+
+    def plot(self, type: IRFType = "log-deviation"):
+        return self.decision_rule.plot(type=type)
+
+    def _repr_html_(self):
+        return self.decision_rule._repr_html_()
+
+
+# Backward-compatible alias
+RecursiveSolution = RecursiveDecisionRule
 
         # html = f"""
         # <h3>Eigenvalues</h3>
