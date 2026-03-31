@@ -239,6 +239,8 @@ class AbstractModel(ABC):
         r, A, B, C, D = self.jacobians
 
         X, evs = solve_quadratic_matrix(A, B, C, method=method)
+        
+
         Y = linsolve(A @ X + B, -D)
 
         v = self.symbols["endogenous"]

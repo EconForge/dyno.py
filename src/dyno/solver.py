@@ -336,13 +336,23 @@ def solve_qz(
     T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1 + tol)  # type: ignore
     λ_all = vgenev(α, β, tol=tol)
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
+
     # TODO: verify whether Blanchard-Kahn conditions are valid
+    evs = np.sort(λ_all).reshape(2 * n)
+    n = len(evs)//2
+    l1 = evs[n-1]
+    l2 = evs[n]
+    if l1<=l2<1:
+        raise Exception(f"Eigenvalue condition not satisfied: l1={l1}, l2={l2}. Too many stable solutions.")
+    if 1<l1<=l2:
+        raise Exception(f"Eigenvalue condition not satisfied: l1={l1}, l2={l2}. No stable solution.")
+
 
     X = (Z21 @ np.linalg.inv(Z11)).reshape(
         (n, n)
     )  # Reshape necessary for static type checking
 
-    return X, np.sort(λ_all).reshape(2 * n)
+    return X, evs
 
 
 def decompose_blocks(Z: TMatrix) -> tuple[TMatrix, TMatrix, TMatrix, TMatrix]:
