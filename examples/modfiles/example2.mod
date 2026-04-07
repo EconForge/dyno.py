@@ -59,9 +59,11 @@ end;
 
 steady;
 
+check;
+
 shocks;
 var e = 0.009^2;
 var u = 0.009^2;
 end;
 
-stoch_simul(periods=2000, drop=200);
+//stoch_simul(periods=2000, drop=200);

@@ -1,21 +1,110 @@
 from dyno.model import AbstractModel
+import warnings
 import yaml
 import math
 from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
 
 from dyno.dynsym.grammar import parser, str_expression
 from dyno.dynsym.analyze import FormulaEvaluator
+from typing import Any
 from typing_extensions import Self
 
 import numpy as np
+from scipy.optimize import root
 
-from .errors import LARKParserError, ParserError
+from .errors import LARKParserError, ParserError, SteadyStateError
 from lark.exceptions import UnexpectedInput
 from dyno.larkfiles import DynoFile, LModFile
 from dyno.language import ProductNormal, Normal
 
 
 class DynoModel(AbstractModel):
+
+    def _normalize_run_commands(self: Self) -> list[dict[str, Any]]:
+        raw = self.metadata.get("run", [])
+
+        if isinstance(raw, str):
+            items = [raw]
+        elif isinstance(raw, list):
+            items = raw
+        else:
+            raise TypeError("model.metadata['run'] must be a string or a list")
+
+        commands: list[dict[str, Any]] = []
+        for item in items:
+            if isinstance(item, str):
+                commands.append({"command": item, "options": {}})
+            elif isinstance(item, dict):
+                if "command" in item:
+                    command = item.get("command")
+                    if not isinstance(command, str):
+                        raise TypeError(
+                            "run command dictionaries must define a string 'command'"
+                        )
+                    options = item.get("options", {})
+                    if not isinstance(options, dict):
+                        raise TypeError("run command 'options' must be a dictionary")
+                    commands.append({"command": command, "options": options})
+                elif len(item) == 1:
+                    command, options = next(iter(item.items()))
+                    if not isinstance(command, str):
+                        raise TypeError("run command keys must be strings")
+                    if options is None:
+                        options = {}
+                    if not isinstance(options, dict):
+                        raise TypeError(
+                            "compact run command options must be a dictionary or null"
+                        )
+                    commands.append({"command": command, "options": options})
+                else:
+                    raise TypeError(
+                        "run command dictionaries must use either {'command': ...} or a single-key form like {'simul': {...}}"
+                    )
+            else:
+                raise TypeError("run commands must be strings or dictionaries")
+
+        return commands
+
+    def run(self: Self) -> "DynoRunResults":
+        warnings.warn(
+            "DynoModel.run() is experimental and its command metadata format may change.",
+            UserWarning,
+            stacklevel=2,
+        )
+
+        commands = self._normalize_run_commands()
+        model = self
+        results = DynoRunResults(model=model)
+
+        for cmd in commands:
+            name = cmd["command"]
+            options = cmd.get("options", {})
+
+            if name == "steady":
+                model = model.steady(**options)
+                results.model = model
+            elif name in {"check", "resid"}:
+                model = model.check(**options)
+                results.model = model
+            elif name in {"solve", "perturb"}:
+                results.solution = model.solve(**options)
+            elif name in {"simul", "simulate"}:
+                if model.is_deterministic:
+                    results.simulation = model.solve(**options)
+                else:
+                    from .simul import simulate
+
+                    solve_options = {k: v for k, v in options.items() if k != "T"}
+                    solution = results.solution
+                    if solution is None or not hasattr(solution, "X"):
+                        solution = model.solve(**solve_options)
+                        results.solution = solution
+                    horizon = int(options.get("T", 40))
+                    results.simulation = simulate(solution, T=horizon)
+            else:
+                raise NotImplementedError(f"Unsupported DynoModel.run command: {name}")
+
+        return results
 
     def _constants_used_in_equations(self: Self) -> set[str]:
         names: set[str] = set()
@@ -96,6 +185,44 @@ class DynoModel(AbstractModel):
         m._set_exogenous()
         m._calibration_overrides = merged
         return m
+
+    def steady(self: Self, tol: float = 1e-10, maxiter: int = 100) -> Self:
+        endogenous = self.symbols["endogenous"]
+        if len(endogenous) == 0:
+            return self.copy()
+
+        y0, _ = self.__steady_state_vectors__
+        guess = np.nan_to_num(np.asarray(y0, dtype=float), nan=1.0)
+
+        def _candidate(values: np.ndarray) -> Self:
+            calib = {
+                name: float(values[i])
+                for i, name in enumerate(endogenous)
+            }
+            model = self.recalibrate(**calib)
+            for name, value in calib.items():
+                model.context["steady_states"][name] = value
+            model.__steady_state__ = model.context["steady_states"]
+            return model
+
+        def _fun(values: np.ndarray) -> np.ndarray:
+            model = _candidate(values)
+            return np.asarray(model.residuals, dtype=float)
+
+        def _jac(values: np.ndarray) -> np.ndarray:
+            model = _candidate(values)
+            _, A, B, C, _ = model.jacobians
+            return A + B + C
+
+        sol = root(_fun, guess, jac=_jac, method="hybr", options={"maxfev": maxiter})
+
+        solved = _candidate(np.asarray(sol.x, dtype=float))
+        residuals = np.asarray(solved.residuals, dtype=float)
+
+        if (not sol.success) or (np.max(np.abs(residuals)) > tol):
+            raise SteadyStateError(residuals)
+
+        return solved
 
     @property
     def equations(self):
@@ -583,3 +710,20 @@ class DynoModel(AbstractModel):
                         ] = deriv_matrix
 
             return res.ravel(), J
+
+
+class DynoRunResults:
+    """Container returned by DynoModel.run()."""
+
+    def __init__(self, model: DynoModel, solution=None, simulation=None) -> None:
+        self.model = model
+        self.solution = solution
+        self.simulation = simulation
+
+    def __repr__(self) -> str:
+        parts = [f"model={self.model.name!r}"]
+        if self.solution is not None:
+            parts.append("solution=<computed>")
+        if self.simulation is not None:
+            parts.append("simulation=<computed>")
+        return f"DynoRunResults({', '.join(parts)})"

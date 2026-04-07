@@ -192,6 +192,12 @@ class AbstractModel(ABC):
         y, e = self.__steady_state_vectors__
         return self.compute_residuals(y, y, y, e)
 
+    def check(self: "Self", tol: float = 1e-6) -> "Self":
+        r = self.residuals
+        if not all(abs(x) < tol for x in r):
+            raise SteadyStateError(r)
+        return self
+
     @property
     def jacobians(self):
         y, e = self.__steady_state_vectors__

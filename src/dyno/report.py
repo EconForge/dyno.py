@@ -350,7 +350,6 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
             )  # =txt, filename=filename)
         elif filename.endswith(".dyno.yaml"):
             from dyno.yamlfile import YAMLFile
-
             model = YAMLFile(txt=txt)
         elif filename.endswith(".dyno"):
             from dyno.symbolic_model import DynoModel

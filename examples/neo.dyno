@@ -20,3 +20,7 @@ c[t] = exp(z[t])*k[t-1]^α - i[t]
 
 e_z[t] <- N(0, 0.002^2)
 e_y[t] <- N(0, 0.001^2)
+
+@run: steady
+@run: check
+@run: solve
