@@ -182,8 +182,6 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
             name = str(tree.children[1].children[0].children[0])
             return self.steady_states.get(name, math.nan)
         else:
-            print(func_name)
-            print(self.function_table)
             raise ValueError(f"Undefined function: {func_name}")
 
     def lequation(self, tree):

@@ -156,7 +156,7 @@ class Printer(Interpreter):
         try:
             funname = tree.children[0].children[0].value
         except:
-            print(tree.pretty())
+            # print(tree.pretty())
             funname = str(tree.children[0].children[0])
 
         args = self.visit(tree.children[1])

@@ -345,7 +345,7 @@ def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
                 from dyno.modfile import DynareModel as Model
             else:
                 from dyno.symbolic_model import DynoModel as Model
-            model = AbstractModel(
+            model = Model(
                 filename=filename, txt=txt
             )  # =txt, filename=filename)
         elif filename.endswith(".dyno.yaml"):
