@@ -120,6 +120,10 @@ class AbstractModel(ABC):
         self: Self, y2, y1, y0, e
     ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix, TMatrix]: ...
 
+    def run(self: Self, default_pipeline: bool = False) -> "RunResults":
+        from .report import RunResults
+        return RunResults(model=self)
+
     def import_file(self: Self, filename: str, **kwargs: Any) -> None:
         txt = open(filename, "rt", encoding="utf-8").read()
         self.import_model(txt, **kwargs)

@@ -24,3 +24,4 @@ e_y[t] <- N(0, 0.001^2)
 @run: steady
 @run: check
 @run: solve
+@run: simul: {T: 20}

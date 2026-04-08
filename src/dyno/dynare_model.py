@@ -48,23 +48,47 @@ class DynareModel(AbstractModel):
         m._calibration_overrides = previous | {k: float(v) for k, v in calib.items()}
         return m
 
-    def run(self: Self) -> "DynareRunResults":
+    def run(self: Self, default_pipeline: bool = False) -> "RunResults":
+        from .report import RunResults
+
         commands = self.metadata.get("dynare_commands", self.metadata.get("run", []))
         model = self
-        results = DynareRunResults(model=model)
+        results = RunResults(model=model)
 
-        for cmd in commands:
-            name = cmd["command"]
-            if name == "steady":
-                model = model.steady()
-                results.model = model
-            elif name == "check":
-                model.check()
-            elif name == "resid":
-                model.check()
-            elif name == "stoch_simul":
-                results.solution = model.perturb()
+        if not commands and default_pipeline:
+            # Default pipeline: residuals + solve + IRFs
+            results.residuals = model.residuals
+            if not model.is_deterministic:
+                dr = model.perturb()
+                results.solution = dr
+                results.simulation = dr.irfs(type="deviation", T=40)
+            else:
+                from .solver import deterministic_solve
+                sim = deterministic_solve(model, T=40)
+                results.simulation = {"Perfect Foresight": sim}
+        else:
+            for cmd in commands:
+                name = cmd["command"]
+                options = cmd.get("options", {})
+                if name == "steady":
+                    model = model.steady()
+                    results.model = model
+                elif name == "check":
+                    model.check()
+                elif name == "resid":
+                    results.residuals = model.residuals
+                elif name == "stoch_simul":
+                    dr = model.perturb()
+                    results.solution = dr
+                    irf_type = options.get("type", "deviation")
+                    horizon = int(options.get("irf", 40))
+                    results.simulation = dr.irfs(type=irf_type, T=horizon)
 
+        if results.simulation is not None and isinstance(results.simulation, dict):
+            from .plots import plot_irfs
+            results.figure = plot_irfs(results.simulation)
+
+        results.finish()
         return results
 
     def steady(self: Self, tol: float = 1e-10, maxiter: int = 100) -> Self:
@@ -423,24 +447,5 @@ def sparse_to_dense(
     return res
 
 
-class DynareRunResults:
-    """Container returned by DynareModel.run().
-
-    Attributes
-    ----------
-    model : DynareModel
-        The model state after processing (updated by ``steady`` commands).
-    solution : PerturbationSolution | None
-        The perturbation solution produced by a ``stoch_simul`` command,
-        or ``None`` if none was requested.
-    """
-
-    def __init__(self, model: "DynareModel", solution=None) -> None:
-        self.model = model
-        self.solution = solution
-
-    def __repr__(self) -> str:
-        parts = [f"model={self.model.name!r}"]
-        if self.solution is not None:
-            parts.append("solution=<PerturbationSolution>")
-        return f"DynareRunResults({', '.join(parts)})"
+# Backward-compatible alias
+from .report import RunResults as DynareRunResults

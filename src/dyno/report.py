@@ -1,17 +1,22 @@
-from IPython.display import display, HTML, Markdown, TextDisplayObject
+from __future__ import annotations
+
 import time
-import rich
-from rich import inspect
-import pandas
-import altair
+import numpy as np
 import tempita
 
 from dyno.errors import ParserError
 
-import altair as alt
+from typing import TYPE_CHECKING, Any
 
-# load a simple dataset as a pandas DataFrame
+if TYPE_CHECKING:
+    from dyno.model import AbstractModel
+    from dyno.solver import PerturbationSolution
+    import pandas as pd
 
+
+# ---------------------------------------------------------------------------
+# Markdown template (used by RunResults._repr_markdown_)
+# ---------------------------------------------------------------------------
 
 template = tempita.Template(
     r"""
@@ -81,7 +86,7 @@ Steady state values
 ## Solution
 
                                                    
-{[if not abs(residuals).max() < 1e-6]}
+{[if residuals is not None and not abs(residuals).max() < 1e-6]}
 :::{warning} Non zero residuals
 :class: dropdown
 The model has non zero residuals after calibration. This may be due to a missing steady-state
@@ -179,260 +184,321 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 )
 
 
-class Report:
+# ---------------------------------------------------------------------------
+# RunResults — unified result container for all model execution paths
+# ---------------------------------------------------------------------------
 
-    def __init__(self, *elements, **options):
 
-        self.elements = {}
-        self.output_type = options.get("output_type", "markdown")
-        self.t_start = time.time()
+class RunResults:
+    """Unified result container returned by model ``run()`` methods and ``dsge_report``.
 
-    def __enter__(self):
-        pass
+    All fields are optional and populated progressively during the pipeline.
+    Display methods adapt to whatever data is available.
+    """
 
-    def __exit__(self, type, value, traceback):
+    def __init__(
+        self,
+        model: AbstractModel | None = None,
+        *,
+        source_txt: str | None = None,
+    ) -> None:
+        self.model: AbstractModel | None = model
+        self.source_txt: str | None = source_txt
 
-        self("Elapsed time: {:.3f} sec".format(time.time() - self.t_start))
+        # Pipeline outputs
+        self.residuals: np.ndarray | None = None
+        self.solution: PerturbationSolution | None = None
+        self.simulation: dict | pd.DataFrame | None = None
+        self.figure: Any | None = None
 
-    # def __repr__(self):
+        # Structured diagnostics: list of {line, type, message}
+        self.errors: list[dict[str, Any]] = []
+        self.warnings: list[dict[str, Any]] = []
 
-    #     self("Elapsed time: {:.3f} sec".format(time.time() - self.t_start))
+        # Timing
+        self._t_start: float = time.time()
+        self.elapsed: float | None = None
 
-    #     if self.output_type != "text":
-    #         return None
+    # -- Diagnostic helpers --------------------------------------------------
 
-    def _repr_html_(self):
-        import time
+    def add_error(self, message: str, *, line: int | None = None) -> None:
+        entry: dict[str, Any] = {"type": "error", "message": message}
+        if line is not None:
+            entry["line"] = line
+        self.errors.append(entry)
 
-        if self.output_type == "text":
-            import rich
-            from rich.console import Console
-            from rich import print, inspect
-            import os
+    def add_warning(self, message: str, *, line: int | None = None) -> None:
+        entry: dict[str, Any] = {"type": "warning", "message": message}
+        if line is not None:
+            entry["line"] = line
+        self.warnings.append(entry)
 
-            console = Console(
-                record=True,
-                file=open(os.devnull, "wt"),
-                color_system="truecolor",
-                width=100,
-            )
-            for k, w in self.elements.items():
-                if isinstance(k, int):
-                    console.print("---")
-                else:
-                    console.print("[bold magenta]=== {} ===[/]".format(k))
-                console.print(w)
+    def finish(self) -> None:
+        self.elapsed = time.time() - self._t_start
 
-            return console.export_html(inline_styles=True)
+    # -- Blanchard-Kahn check ------------------------------------------------
 
-        elif self.output_type != "html":
+    @property
+    def bk_check(self) -> bool | None:
+        if self.solution is None or self.solution.evs is None:
             return None
+        evs = abs(self.solution.evs)
+        n = len(evs) // 2
+        if n == 0:
+            return None
+        return bool(evs[n - 1] < 1 < evs[n])
 
-        reprs = []
-        for r in self.elements.values():
-            if hasattr(r, "_repr_html_"):
-                reprs.append(r._repr_html_())
-            else:
-                reprs.append(f"<pre>{str(r)}</pre>")
+    # -- Display: Markdown ---------------------------------------------------
 
-        html = "<br>".join([str(e) for e in reprs])
+    def _repr_markdown_(self) -> str:
+        if self.elapsed is None:
+            self.finish()
 
-        return html
+        import traceback as tb_mod
+        import altair
+        from math import nan
 
-    def _repr_markdown_(self):
+        # Separate parser errors from other collected exceptions
+        exception_errors = [
+            e for e in self.errors if isinstance(e.get("_exception"), Exception)
+        ]
+        parser_errors = [
+            e["_exception"]
+            for e in exception_errors
+            if isinstance(e.get("_exception"), ParserError)
+        ]
+        unhandled_errors = [
+            e["_exception"]
+            for e in exception_errors
+            if not isinstance(e.get("_exception"), ParserError)
+        ]
+        error_lines = [
+            str(e.line) for e in parser_errors if hasattr(e, "line")
+        ]
 
-        self("Elapsed time: {:.3f} sec".format(time.time() - self.t_start))
-
-        import traceback
-
-        errors = [e for e in self.elements.values() if isinstance(e, Exception)]
-
-        parser_errors = [e for e in errors if isinstance(e, ParserError)]
-        unhandled_errors = [e for e in errors if e not in parser_errors]
-
-        error_lines = [str(e.line) for e in errors if isinstance(e, ParserError)]
-        from rich import inspect
-
-        context = {
-            "traceback": traceback,
-            "errors": errors,
+        context: dict[str, Any] = {
+            "traceback": tb_mod,
+            "errors": [e.get("_exception") for e in exception_errors if "_exception" in e],
             "parser_errors": parser_errors,
             "unhandled_errors": unhandled_errors,
             "error_lines": error_lines,
             "alt": altair,
-            "inspect": inspect,
         }
-        if "model" in self.elements:
-            model = self.elements["model"]
-            from math import nan
 
+        model = self.model
+        if model is not None:
             steady_values = str(
                 {
                     v: model.context["steady_states"].get(v, nan)
                     for v in model.symbols["variables"]
                 }
             )
-            context.update({"steady_values": steady_values})
+            context["steady_values"] = steady_values
 
-        if "dr" in self.elements:
-            dr = self.elements["dr"]
-            evs = abs(dr.evs)
-            n = len(evs) // 2
-            if evs[n - 1] < 1 < evs[n]:
-                bk_check = True
-            else:
-                bk_check = False
-            context.update({"bk_check": bk_check, "jacs": dr.coefficients_as_df()})
+        dr = self.solution
+        if dr is not None:
+            bk = self.bk_check
+            context["bk_check"] = bk
+            context["jacs"] = dr.coefficients_as_df()
 
-        d = {k: w for k, w in self.elements.items() if not isinstance(k, int)} | context
+        d: dict[str, Any] = {
+            "model": model,
+            "residuals": self.residuals,
+            "dr": dr,
+            "sim": self.simulation,
+            "fig": self.figure,
+        }
+        d.update(context)
 
         txt = template.substitute(**d)
 
         for e in unhandled_errors:
-            # raise (e)
             print("Unhandled error:")
             print(e)
+
         return txt
 
-    def __call__(self, *s, **options):
+    # -- Display: HTML (rich console) ----------------------------------------
 
-        for e in s:
-            self.elements[len(self.elements) + 1] = e
+    def _repr_html_(self) -> str:
+        parts: list[str] = []
+        if self.model is not None and hasattr(self.model, "_repr_html_"):
+            parts.append(self.model._repr_html_())
+        if self.residuals is not None:
+            parts.append(f"<pre>Residuals: {self.residuals}</pre>")
+        if self.solution is not None and hasattr(self.solution, "_repr_html_"):
+            parts.append(self.solution._repr_html_())
+        for e in self.errors:
+            parts.append(f"<pre style='color:red'>{e['message']}</pre>")
+        return "<br>".join(parts)
 
-        for k, w in options.items():
-            self.elements[k] = w
+    # -- Display: JupyterLab highlighting ------------------------------------
 
-
-def dsge_report(txt: str = None, filename: str = None, **options) -> Report:
-
-    d = {}
-
-    from dyno.symbolic_model import DynoModel
-
-    output_type = options.get("output_type", "markown")
-    check_output = options.get("check_output", False)
-
-    report = Report(output_type=output_type)
-
-    if check_output:
-        try:
-            exec(txt, d, d)
-        except Exception as e:
-            report(str(e))
-            return report
-        try:
-            return d["html"]
-        except Exception as e:
-            report(str(e))
-            return report
-
-    import time
-
-    report(code=txt)
-
-    try:
-        if txt is not None:
-            if filename is None:
-                filename = "unknown"
-        elif filename is not None:
-            txt = open(filename).read()
-        else:
-            raise ValueError("Either `txt` or `filename` must be provided.")
-
-        if filename.endswith(".mod"):
-            preprocessor = options.get("modfile-preprocessor", "dynare")
-            if preprocessor == "dynare":
-                from dyno.modfile import DynareModel as Model
-            else:
-                from dyno.symbolic_model import DynoModel as Model
-            model = Model(
-                filename=filename, txt=txt
-            )  # =txt, filename=filename)
-        elif filename.endswith(".dyno.yaml"):
-            from dyno.yamlfile import YAMLFile
-            model = YAMLFile(txt=txt)
-        elif filename.endswith(".dyno"):
-            from dyno.symbolic_model import DynoModel
-
-            model = DynoModel(filename=filename, txt=txt)
-        else:
-            raise ValueError("Unsupported Model type")
-        report(model=model)
-
-        r = model.residuals
-
-        if abs(r).max() >= 1e-6 and isinstance(model, DynoModel):
-            import numpy as np
-
-            (inds,) = np.where(abs(r) >= 1e-6)
-            highlighting_data = []
-            for i in inds:
-                tree = model.symbolic.equations[i]
-                highlighting_data.append(
+    @property
+    def _highlighting_data(self) -> list[dict[str, Any]]:
+        data: list[dict[str, Any]] = []
+        for entry in self.errors + self.warnings:
+            if "line" in entry:
+                data.append(
                     {
-                        "line": tree.meta.line,
-                        "type": "warning",
-                        "message": f"{str(r[i])}",
-                    },
+                        "line": entry["line"],
+                        "type": entry["type"],
+                        "message": entry["message"],
+                    }
                 )
-                display(
-                    {
-                        "application/vnd.jupyterlab-dyno.highlighting+json": highlighting_data
-                    },
-                    raw=True,
-                )
-        report(residuals=r)
-        if model.checks["deterministic"]:
-            from dyno.solver import deterministic_solve
+        return data
 
-            sim = deterministic_solve(model, T=options.get("irf-horizon", 40))
-            report(sim={"Perfect Foresight": sim})
-        else:
-            dr = model.solve()
-            report(dr=dr)
-            sim = dr.irfs(
-                type=options.get("irf-type", "deviation"),
-                T=options.get("irf-horizon", 40),
-            )
+    def jupyter_display(self) -> None:
+        try:
+            from IPython.display import display, Markdown
+        except ImportError:
+            self.console_display()
+            return
 
-            report(sim=sim)
+        if self.elapsed is None:
+            self.finish()
 
-        from dyno.plots import plot_irfs
-
-        fig = plot_irfs(sim)
-        report(fig=fig)
-
-    except Exception as e:
-
-        report(e)
-
-        if hasattr(e, "line"):
-
-            # print("Displaying error highlighting for line:", e.line)
-
-            highlighting_data = [
-                {"line": e.line, "type": "error", "message": f"{str(e)}"},
-            ]
+        highlighting = self._highlighting_data
+        if highlighting:
             display(
                 {
-                    "application/vnd.jupyterlab-dyno.highlighting+json": highlighting_data
+                    "application/vnd.jupyterlab-dyno.highlighting+json": highlighting
                 },
                 raw=True,
             )
 
-        return report
+        display(Markdown(self._repr_markdown_()))
 
-    display(Markdown(report._repr_markdown_()))
-    display(fig)
-    display(Markdown("---"))
+        if self.figure is not None:
+            display(self.figure)
 
-    # highlighting_data = [
-    #     {"line": 5, "type": "error", "message": "Syntax error here"},
-    #     {"line": 10, "type": "warning", "message": "Warning: deprecated function"},
-    #     {"line": 15, "type": "success", "message": "Analysis complete"},
-    #     {"line": 20, "type": "error", "message": "Syntax error here"},
+        display(Markdown("---"))
 
-    # ]
-    # display({
-    #     "application/vnd.jupyterlab-dyno.highlighting+json": highlighting_data
-    # }, raw=True)
+    def console_display(self) -> None:
+        if self.elapsed is None:
+            self.finish()
+
+        if self.model is not None:
+            print(repr(self.model))
+
+        if self.residuals is not None:
+            r = self.residuals
+            if abs(r).max() < 1e-6:
+                print("Residuals: OK")
+            else:
+                print(f"Residuals: max |r| = {abs(r).max():.2e}")
+
+        if self.solution is not None:
+            bk = self.bk_check
+            if bk is True:
+                print("Blanchard-Kahn conditions: met")
+            elif bk is False:
+                print("Blanchard-Kahn conditions: NOT met")
+            print(f"Solution: computed")
+
+        if self.simulation is not None:
+            if isinstance(self.simulation, dict):
+                print(f"IRFs: {len(self.simulation)} shock(s)")
+            else:
+                print(f"Simulation: computed")
+
+        for e in self.errors:
+            print(f"ERROR: {e['message']}")
+
+        print(f"Elapsed: {self.elapsed:.3f}s")
+
+    # -- Plain text ----------------------------------------------------------
+
+    def __repr__(self) -> str:
+        parts = []
+        if self.model is not None:
+            parts.append(f"model={self.model.name!r}")
+        if self.solution is not None:
+            parts.append("solution=<computed>")
+        if self.simulation is not None:
+            parts.append("simulation=<computed>")
+        if self.errors:
+            parts.append(f"errors={len(self.errors)}")
+        if self.elapsed is not None:
+            parts.append(f"elapsed={self.elapsed:.3f}s")
+        return f"RunResults({', '.join(parts)})"
+
+
+# ---------------------------------------------------------------------------
+# Backward-compatible aliases
+# ---------------------------------------------------------------------------
+
+# Keep the old names importable; they now point to RunResults.
+Report = RunResults
+DynareRunResults = RunResults
+DynoRunResults = RunResults
+
+
+# ---------------------------------------------------------------------------
+# dsge_report — JupyterLab entry point
+# ---------------------------------------------------------------------------
+
+
+def _create_model(
+    txt: str | None, filename: str | None, **options
+) -> "AbstractModel":
+    if txt is not None:
+        if filename is None:
+            filename = "unknown"
+    elif filename is not None:
+        with open(filename, encoding="utf-8") as f:
+            txt = f.read()
+    else:
+        raise ValueError("Either `txt` or `filename` must be provided.")
+
+    if filename.endswith(".mod"):
+        preprocessor = options.get("modfile-preprocessor", "dynare")
+        if preprocessor == "dynare":
+            from dyno.dynare_model import DynareModel as Model
+        else:
+            from dyno.symbolic_model import DynoModel as Model
+        return Model(filename=filename, txt=txt)
+    elif filename.endswith(".dyno.yaml"):
+        from dyno.yamlfile import YAMLFile
+        return YAMLFile(txt=txt)
+    elif filename.endswith(".dyno"):
+        from dyno.symbolic_model import DynoModel
+
+        return DynoModel(filename=filename, txt=txt)
+    else:
+        raise ValueError("Unsupported Model type")
+
+
+def dsge_report(txt: str | None = None, filename: str | None = None, **options) -> RunResults:
+
+    check_output = options.get("check_output", False)
+    results = RunResults(source_txt=txt)
+
+    if check_output:
+        d: dict[str, Any] = {}
+        try:
+            exec(txt, d, d)  # noqa: S102  — preserved existing behaviour
+        except Exception as e:
+            results.add_error(str(e))
+            return results
+        try:
+            return d["html"]
+        except Exception as e:
+            results.add_error(str(e))
+            return results
+
+    try:
+        model = _create_model(txt, filename, **options)
+        results = model.run(default_pipeline=True)
+        results.source_txt = txt
+
+    except Exception as e:
+        results.add_error(str(e), line=getattr(e, "line", None))
+        if isinstance(e, Exception):
+            results.errors[-1]["_exception"] = e
+        results.finish()
+        results.jupyter_display()  # show partial results + errors
+        return results
+
+    results.jupyter_display()
+    return results

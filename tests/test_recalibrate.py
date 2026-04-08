@@ -324,20 +324,47 @@ model: |
 
 
 def test_dyno_run_accepts_compact_null_options() -> None:
-        txt = """
+    txt = """
 run:
-    - steady: null
-    - check: null
+  - steady: null
+  - check: null
 model: |
-    alpha <- 0.9
-    beta <- 2.0
+  alpha <- 0.9
+  beta <- 2.0
 
-    x[t] = alpha*x[t-1] + beta
+  x[t] = alpha*x[t-1] + beta
 """
 
-        model = DynoModel(filename="<run3>.yaml", yaml=txt)
+    model = DynoModel(filename="<run3>.yaml", yaml=txt)
 
-        with pytest.warns(UserWarning, match="experimental"):
-                result = model.run()
+    with pytest.warns(UserWarning, match="experimental"):
+        result = model.run()
 
-        assert result.model.context["steady_states"]["x"] == pytest.approx(20.0)
+    assert result.model.context["steady_states"]["x"] == pytest.approx(20.0)
+
+
+def test_dyno_run_accumulates_repeated_metadata_assignments() -> None:
+    from dyno.symbolic_model import DynoRunResults
+
+    txt = """
+rho <- 0.8
+
+x[t] = rho*x[t-1] + e[t]
+e[t] <- N(0, 0.1^2)
+
+@run: steady
+@run: check
+@run: solve
+@run: simul: {T: 4}
+"""
+
+    model = DynoModel(txt=txt)
+    assert isinstance(model.metadata["run"], list)
+    assert len(model.metadata["run"]) == 4
+
+    with pytest.warns(UserWarning, match="experimental"):
+        result = model.run()
+
+    assert isinstance(result, DynoRunResults)
+    assert result.solution is not None
+    assert result.simulation is not None

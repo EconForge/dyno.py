@@ -28,13 +28,21 @@ for cmd in model2.metadata['dynare_commands']:
 
 
 
-DynareModel("examples/modfiles/example2.mod").run()
+report = DynareModel("examples/modfiles/example2.mod").run()
 
 
-
+from dyno import DynoModel
 
 DynoModel("examples/neo.dyno").run()
 
+
+
+
+from dyno.report import dsge_report
+
+dsge_report(
+    filename="examples/modfiles/example2.mod"
+)
 
 
 # model2.residuals

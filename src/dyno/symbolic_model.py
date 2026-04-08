@@ -25,10 +25,12 @@ class DynoModel(AbstractModel):
 
         if isinstance(raw, str):
             items = [raw]
+        elif isinstance(raw, dict):
+            items = [raw]
         elif isinstance(raw, list):
             items = raw
         else:
-            raise TypeError("model.metadata['run'] must be a string or a list")
+            raise TypeError("model.metadata['run'] must be a string, dict or a list")
 
         commands: list[dict[str, Any]] = []
         for item in items:
@@ -65,7 +67,9 @@ class DynoModel(AbstractModel):
 
         return commands
 
-    def run(self: Self) -> "DynoRunResults":
+    def run(self: Self, default_pipeline: bool = False) -> "RunResults":
+        from .report import RunResults
+
         warnings.warn(
             "DynoModel.run() is experimental and its command metadata format may change.",
             UserWarning,
@@ -74,36 +78,64 @@ class DynoModel(AbstractModel):
 
         commands = self._normalize_run_commands()
         model = self
-        results = DynoRunResults(model=model)
+        results = RunResults(model=model)
 
-        for cmd in commands:
-            name = cmd["command"]
-            options = cmd.get("options", {})
-
-            if name == "steady":
-                model = model.steady(**options)
-                results.model = model
-            elif name in {"check", "resid"}:
-                model = model.check(**options)
-                results.model = model
-            elif name in {"solve", "perturb"}:
-                results.solution = model.solve(**options)
-            elif name in {"simul", "simulate"}:
-                if model.is_deterministic:
-                    results.simulation = model.solve(**options)
-                else:
-                    from .simul import simulate
-
-                    solve_options = {k: v for k, v in options.items() if k != "T"}
-                    solution = results.solution
-                    if solution is None or not hasattr(solution, "X"):
-                        solution = model.solve(**solve_options)
-                        results.solution = solution
-                    horizon = int(options.get("T", 40))
-                    results.simulation = simulate(solution, T=horizon)
+        if not commands and default_pipeline:
+            # Default pipeline: residuals + solve + IRFs
+            results.residuals = model.residuals
+            if model.is_deterministic:
+                from .solver import deterministic_solve
+                sim = deterministic_solve(model, T=40)
+                results.simulation = {"Perfect Foresight": sim}
             else:
-                raise NotImplementedError(f"Unsupported DynoModel.run command: {name}")
+                dr = model.solve()
+                results.solution = dr
+                results.simulation = dr.irfs(type="deviation", T=40)
+        else:
+            for cmd in commands:
+                name = cmd["command"]
+                options = cmd.get("options", {})
 
+                if name == "steady":
+                    model = model.steady(**options)
+                    results.model = model
+                elif name in {"check", "resid"}:
+                    results.residuals = model.residuals
+                    model = model.check(**options)
+                    results.model = model
+                elif name in {"solve", "perturb"}:
+                    results.solution = model.solve(**options)
+                elif name in {"simul", "simulate"}:
+                    if model.is_deterministic:
+                        from .solver import deterministic_solve
+                        sim = deterministic_solve(model, **options)
+                        results.simulation = {"Perfect Foresight": sim}
+                    else:
+                        from .simul import simulate
+
+                        solve_options = {k: v for k, v in options.items() if k != "T"}
+                        solution = results.solution
+                        if solution is None or not hasattr(solution, "X"):
+                            solution = model.solve(**solve_options)
+                            results.solution = solution
+                        horizon = int(options.get("T", 40))
+                        results.simulation = simulate(solution, T=horizon)
+                else:
+                    raise NotImplementedError(f"Unsupported DynoModel.run command: {name}")
+
+        # Add line-level warnings for non-zero residuals
+        r = results.residuals
+        if r is not None and abs(r).max() >= 1e-6:
+            inds = np.where(abs(r) >= 1e-6)[0]
+            for i in inds:
+                tree = model.symbolic.equations[i]
+                results.add_warning(str(r[i]), line=tree.meta.line)
+
+        if results.simulation is not None and isinstance(results.simulation, dict):
+            from .plots import plot_irfs
+            results.figure = plot_irfs(results.simulation)
+
+        results.finish()
         return results
 
     def _constants_used_in_equations(self: Self) -> set[str]:
@@ -712,18 +744,5 @@ class DynoModel(AbstractModel):
             return res.ravel(), J
 
 
-class DynoRunResults:
-    """Container returned by DynoModel.run()."""
-
-    def __init__(self, model: DynoModel, solution=None, simulation=None) -> None:
-        self.model = model
-        self.solution = solution
-        self.simulation = simulation
-
-    def __repr__(self) -> str:
-        parts = [f"model={self.model.name!r}"]
-        if self.solution is not None:
-            parts.append("solution=<computed>")
-        if self.simulation is not None:
-            parts.append("simulation=<computed>")
-        return f"DynoRunResults({', '.join(parts)})"
+# Backward-compatible alias
+from .report import RunResults as DynoRunResults
