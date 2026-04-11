@@ -136,7 +136,9 @@ def render_model_html(data: dict[str, Any]) -> str:
         formatted: list[str] = []
         for name, is_uninitialized in items:
             if is_uninitialized:
-                formatted.append(f'<span style="color:#d97706">{name}<sup>^</sup></span>')
+                formatted.append(
+                    f'<span style="color:#d97706">{name}<sup>^</sup></span>'
+                )
             else:
                 formatted.append(name)
         return ", ".join(formatted)

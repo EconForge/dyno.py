@@ -2,7 +2,7 @@ import dyno
 from rich import print, inspect
 import yaml
 
-from dyno.symbolic_model import DynoModel
+from dyno.dyno_model import DynoModel
 
 data = yaml.safe_load(open("import_tests.yaml"))
 model = DynoModel(txt=data["solvable"]["rbc_deterministic"])

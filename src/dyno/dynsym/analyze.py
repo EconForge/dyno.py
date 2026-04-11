@@ -340,7 +340,15 @@ class AssignmentEvaluator(FormulaEvaluator):
     def metadata_assignment(self, tree):
         key = str(tree.children[0].children[0])
         value = self.visit(tree.children[1])
-        self.metadata[key] = value
+        if key == "run" and key in self.metadata:
+            current = self.metadata[key]
+            if isinstance(current, list):
+                current.append(value)
+                self.metadata[key] = current
+            else:
+                self.metadata[key] = [current, value]
+        else:
+            self.metadata[key] = value
         return value
 
     # Block handling

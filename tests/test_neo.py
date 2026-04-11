@@ -1,13 +1,8 @@
 import dyno
-from dyno import YAMLFile
 
 
 def test_solution_ti():
-
-    # from dyno import YAMLFile
-    # model = YAMLFile("examples/neo.yaml")
-
-    from dyno.symbolic_model import DynoModel
+    from dyno.dyno_model import DynoModel
 
     model = DynoModel("examples/neo.dyno")
 
@@ -19,11 +14,7 @@ def test_solution_ti():
 
 
 def test_solution_qz():
-
-    # from dyno import YAMLFile
-    # model = YAMLFile("examples/neo.yaml")
-
-    from dyno.symbolic_model import DynoModel
+    from dyno.dyno_model import DynoModel
 
     model = DynoModel("examples/neo.dyno")
 

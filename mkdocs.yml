@@ -38,6 +38,9 @@ extra_javascript:
 
 nav:
   - index.md
+  - Getting Started:
+    - Solving a Dynare Model: getting_started_dynare.md
+    - Writing a Dyno Model: getting_started_dyno.md
   - model_classes.md
   - model.md
   - model2.md

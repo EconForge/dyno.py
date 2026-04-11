@@ -13,7 +13,7 @@ def test_modfile_describe():
     for f in files:
         print("Trying to import and describe", f)
         filename = "examples/modfiles/" + f
-        from dyno.symbolic_model import DynoModel
+        from dyno.dyno_model import DynoModel
 
         model = DynoModel(filename)
         print(model.describe())

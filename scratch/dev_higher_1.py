@@ -1,9 +1,10 @@
 from dyno.modfile import DynareModel
+from dyno import examples_path
 
 
 def do_it():
 
-    model = DynareModel("examples/modfiles/RBC.mod", deriv_order=3)
+    model = DynareModel(examples_path("modfiles", "RBC.mod"), deriv_order=3)
 
     res = model.compute_derivatives()
     return res
@@ -23,7 +24,7 @@ from rich import print
 for r in res:
     print(r)
 
-model = DynareModel("examples/modfiles/RBC.mod", deriv_order=3)
+model = DynareModel(examples_path("modfiles", "RBC.mod"), deriv_order=3)
 
 n = len(model.symbols["endogenous"])
 m = len(model.symbols["exogenous"])

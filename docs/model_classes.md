@@ -7,7 +7,6 @@ classDiagram
     class AbstractModel
     class DynoModel
     class DynareModel
-    class YAMLFile
     class DynoFile
     class LModFile
 
@@ -18,14 +17,13 @@ classDiagram
     
     DynoModel ..> DynoFile : loads .dyno
     DynoModel ..> LModFile : loads .mod (Lark)
-    AbstractModel <|-- YAMLFile
 ```
 
 
 Notes:
 
 - `AbstractModel` is the abstract base class for models.
-- `DynoModel`, `DynareModel`, and `YAMLFile` are the main concrete model types.
+- `DynoModel` and `DynareModel` are the main concrete model types.
 - `DynoModel` uses `DynoFile` / `LModFile` (both `SymbolicModel` subclasses) to parse textual model descriptions.
 
 ## `DynoModel` vs `DynareModel`

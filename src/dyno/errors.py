@@ -1,9 +1,15 @@
 class ParserError(Exception):
 
-    line: int
-    column: int
+    line: int | None
+    column: int | None
     message: str
     details: str | None
+
+    def __init__(self, message: str) -> None:
+        self.line = None
+        self.column = None
+        self.details = None
+        super().__init__(message)
 
 
 from lark.exceptions import UnexpectedInput

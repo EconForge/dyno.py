@@ -1,31 +1,278 @@
 from dyno.model import AbstractModel
 from dyno.language import pad_list, Normal, Deterministic
 import numpy as np
+from scipy.optimize import root
 
 from typing_extensions import Self
 from typing import Any
 from .typedefs import TVector, TMatrix
 
 from dynare_preprocessor import PreprocessorException, UnsupportedFeatureException
-from .errors import DynareParserError
+from .errors import DynareParserError, SteadyStateError
 
 
 class DynareModel(AbstractModel):
 
-    def import_model(self: Self, txt: str, deriv_order=1, params_deriv_order=0) -> None:
+    def _rebuild(self: Self) -> Self:
+        txt = getattr(self, "_original_txt", None)
+        if txt is None:
+            txt = open(self.filename, "rt", encoding="utf-8").read()
+
+        options = getattr(self, "_import_options", {})
+        model = self.__class__(filename=self.filename, txt=txt, **options)
+
+        previous = getattr(self, "_calibration_overrides", {})
+        if len(previous) > 0:
+            model = model.recalibrate(**previous)
+
+        return model
+
+    def recalibrate(self: Self, **calib):
+        m = self._rebuild()
+
+        known = set(m.context["constants"].keys()) | set(
+            m.context["steady_states"].keys()
+        )
+        unknown = [k for k in calib.keys() if k not in known]
+        if len(unknown) > 0:
+            raise KeyError(f"Unknown calibration key(s): {', '.join(unknown)}")
+
+        for key, value in calib.items():
+            val = float(value)
+            if key in m.context["constants"]:
+                m.context["constants"][key] = val
+            if key in m.context["steady_states"]:
+                m.context["steady_states"][key] = val
+
+        m.__steady_state__ = m.context["steady_states"]
+
+        previous = getattr(self, "_calibration_overrides", {})
+        m._calibration_overrides = previous | {k: float(v) for k, v in calib.items()}
+        return m
+
+    def run(self: Self, default_pipeline: bool = False) -> "RunResults":
+        from .report import RunResults
+
+        commands = self.metadata.get("dynare_commands", self.metadata.get("run", []))
+        model = self
+        results = RunResults(model=model)
+
+        if not commands and default_pipeline:
+            # Default pipeline: residuals + solve + IRFs
+            results.residuals = model.residuals
+            if not model.is_deterministic:
+                dr = model.perturb()
+                results.solution = dr
+                results.simulation = dr.irfs(type="deviation", T=40)
+            else:
+                from .solver import deterministic_solve
+
+                sim = deterministic_solve(model, T=40)
+                results.simulation = {"Perfect Foresight": sim}
+        else:
+            for cmd in commands:
+                name = cmd["command"]
+                options = cmd.get("options", {})
+                if name == "steady":
+                    model = model.steady()
+                    results.model = model
+                elif name == "check":
+                    model.check()
+                elif name == "resid":
+                    results.residuals = model.residuals
+                elif name == "stoch_simul":
+                    dr = model.perturb()
+                    results.solution = dr
+                    irf_type = options.get("type", "deviation")
+                    horizon = int(options.get("irf", 40))
+                    results.simulation = dr.irfs(type=irf_type, T=horizon)
+
+        if results.simulation is not None and isinstance(results.simulation, dict):
+            from .plots import plot_irfs
+
+            results.figure = plot_irfs(results.simulation)
+
+        results.finish()
+        return results
+
+    def import_model(
+        self: Self,
+        txt: str,
+        deriv_order=1,
+        params_deriv_order=0,
+        allow_undeclared_params=False,
+    ) -> None:
         """imports model written in `.mod` format into symbolic attribute using Dynare's preprocessor
 
         Parameters
         ----------
         txt : str
             the model being imported in `.mod` form
+        deriv_order : int, optional
+            derivative order, by default 1
+        params_deriv_order : int, optional
+            parameters derivative order, by default 0
+        allow_undeclared_params : bool, optional
+            if True, automatically declare parameters that are assigned values
+            without being explicitly declared in the parameters section, by default False
         """
         from dynare_preprocessor import DynareModel as Modfile
+
+        self._import_options = {
+            "deriv_order": deriv_order,
+            "params_deriv_order": params_deriv_order,
+            "allow_undeclared_params": allow_undeclared_params,
+        }
+
+        # Keep original modfile text for rebuilding immutable model variants.
+        self._original_txt = txt
+
+        # Preprocess to declare undeclared parameters if needed
+        if allow_undeclared_params:
+            txt = self._declare_undeclared_params(txt)
 
         try:
             self.symbolic = Modfile(txt, deriv_order, params_deriv_order)
         except PreprocessorException as e:
             raise DynareParserError(e) from e
+
+    def _extract_dynare_commands(self: Self) -> list[dict[str, Any]]:
+        """Extract Dynare statements/commands from the preprocessor JSON.
+
+        Returns
+        -------
+        list[dict[str, Any]]
+            Ordered list of command dictionaries with ``command`` and ``options``.
+        """
+        import json
+
+        payload = json.loads(self.symbolic.json_string)
+        transformed = payload.get("transformed_modfile", {})
+        statements = transformed.get("statements", [])
+
+        ignored = {"param_init", "initval"}
+
+        commands: list[dict[str, Any]] = []
+        for statement in statements:
+            command = statement.get("statementName")
+            if not isinstance(command, str):
+                continue
+            if command in ignored:
+                continue
+
+            options = statement.get("options", {})
+            if not isinstance(options, dict):
+                options = {}
+
+            commands.append({"command": command, "options": options})
+
+        return commands
+
+    def _declare_undeclared_params(self: Self, txt: str) -> str:
+        """Automatically declare parameters that are assigned values without being declared.
+
+        Parameters
+        ----------
+        txt : str
+            the model text in `.mod` format
+
+        Returns
+        -------
+        str
+            the modified model text with undeclared parameters declared
+        """
+        import re
+
+        # Remove comments from text for parsing
+        txt_no_comments = re.sub(r"/\*.*?\*/", "", txt, flags=re.DOTALL)
+        txt_no_comments = re.sub(r"//.*?$", "", txt_no_comments, flags=re.MULTILINE)
+
+        # Only look at declarations before the model block
+        # Split by 'model;' and take only the declarations part
+        model_split = re.split(r"\bmodel\s*;", txt_no_comments, flags=re.IGNORECASE)
+        declarations_part = model_split[0] if model_split else txt_no_comments
+
+        # Split original text into lines for reconstruction
+        lines = txt.split("\n")
+
+        # Find all declared identifiers (vars, varexo, parameters)
+        declared_identifiers = set()
+        params_section_idx = None
+
+        # Extract var declarations (only before model block)
+        var_matches = re.findall(
+            r"^\s*var\s+(.*?);\s*$", declarations_part, re.MULTILINE | re.IGNORECASE
+        )
+        for match in var_matches:
+            declared_identifiers.update(re.findall(r"\b([a-zA-Z_]\w*)\b", match))
+
+        # Extract varexo declarations (only before model block)
+        varexo_matches = re.findall(
+            r"^\s*varexo\s+(.*?);\s*$", declarations_part, re.MULTILINE | re.IGNORECASE
+        )
+        for match in varexo_matches:
+            declared_identifiers.update(re.findall(r"\b([a-zA-Z_]\w*)\b", match))
+
+        # Extract parameters declarations and find section (only before model block)
+        params_matches = re.findall(
+            r"^\s*parameters\s+(.*?);\s*$",
+            declarations_part,
+            re.MULTILINE | re.IGNORECASE,
+        )
+        for match in params_matches:
+            declared_identifiers.update(re.findall(r"\b([a-zA-Z_]\w*)\b", match))
+
+        # Find parameters section index in original file
+        for i, line in enumerate(lines):
+            if re.match(r"\s*parameters\s", line, re.IGNORECASE):
+                params_section_idx = i
+                break
+
+        # Find parameter assignments (identifier = number;) that are not yet declared
+        # Only look at assignments before model block
+        undeclared = set()
+        assignment_pattern = r"^\s*([a-zA-Z_]\w*)\s*=\s*[+-]?[\d.eE+-]+(?:\s*[;]|$)"
+
+        for line in declarations_part.split("\n"):
+            match = re.match(assignment_pattern, line)
+            if match:
+                param_name = match.group(1)
+                if param_name not in declared_identifiers:
+                    undeclared.add(param_name)
+
+        # If there are undeclared parameters, add them to the declaration
+        if undeclared:
+            undeclared_list = ", ".join(sorted(undeclared))
+
+            if params_section_idx is not None:
+                # There's already a parameters section - append to it
+                # Find the semicolon at the end of the parameters declaration
+                j = params_section_idx
+                while j < len(lines):
+                    if ";" in lines[j]:
+                        # Insert before the semicolon
+                        lines[j] = lines[j].replace(";", f", {undeclared_list};", 1)
+                        break
+                    j += 1
+            else:
+                # No parameters section exists, create one after var/varexo declarations
+                # Find the last var/varexo declaration
+                last_var_section = 0
+                for i, line in enumerate(lines):
+                    if re.match(r"\s*(var|varexo)\s", line, re.IGNORECASE):
+                        last_var_section = i
+                        # Find end of this declaration
+                        j = i
+                        while j < len(lines) and ";" not in lines[j]:
+                            j += 1
+                        if j < len(lines):
+                            last_var_section = j
+
+                # Insert parameters section after the last var/varexo
+                insert_idx = last_var_section + 1
+                lines.insert(insert_idx, f"\nparameters {undeclared_list};")
+
+        return "\n".join(lines)
 
     def _set_context(self: Self) -> None:
         """retrieves calibration values"""
@@ -42,7 +289,11 @@ class DynareModel(AbstractModel):
         constants = {k: v for (k, v) in c.items() if (k in parameters)}
 
         # read specification of exogenous shocks in the modfile
-        assert len(self.symbolic.trajectories) == 0 or len(self.symbolic.covariances) == 0
+        if len(self.symbolic.trajectories) > 0 and len(self.symbolic.covariances) > 0:
+            raise ValueError(
+                "A model cannot simultaneously define deterministic trajectories and "
+                "stochastic covariances. Check the shocks block in your .mod file."
+            )
         isdeterministic = len(self.symbolic.trajectories) > 0
         exo = exogenous
 
@@ -74,6 +325,9 @@ class DynareModel(AbstractModel):
             "values": values,
             "processes": processes,
             "steady_states": steady_states,
+            "metadata": {
+                "dynare_commands": self._extract_dynare_commands(),
+            },
         }
         # self.paths = None
         # self.exogenous = self.processes
@@ -94,13 +348,13 @@ class DynareModel(AbstractModel):
         y, e = self.__steady_state_vectors__
         return self._f_dynamic(y, y, y, e, p, diff=True)
 
-    def compute_derivatives(model):
+    def compute_derivatives(self: Self):
 
-        y = [model.steady_state[v] for v in model.symbols["endogenous"]]
-        e = [model.steady_state[v] for v in model.symbols["exogenous"]]
-        p = [model.context["constants"][v] for v in model.symbols["parameters"]]
+        y = [self.steady_state[v] for v in self.symbols["endogenous"]]
+        e = [self.steady_state[v] for v in self.symbols["exogenous"]]
+        p = [self.context["constants"][v] for v in self.symbols["parameters"]]
 
-        return model.symbolic.derivatives(y, y, y, e, e, p)
+        return self.symbolic.derivatives(y, y, y, e, e, p)
 
     def deterministic_residuals(self, v):
 
@@ -142,11 +396,11 @@ class DynareModel(AbstractModel):
 
         args = [y0, y1, y2, e, e, p]
         if len(self.context["processes"]) == 0:
-            # this is a stochastic model
+            # deterministic model: no stochastic processes defined
             args[3] = []
         else:
+            # stochastic model: has processes; second exogenous slot is unused
             args[4] = []
-            # this is a deterministic model
 
         r = np.array(self.symbolic.residuals(*args))
 

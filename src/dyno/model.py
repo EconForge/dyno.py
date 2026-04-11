@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from math import nan
+import os
 from typing import Any, TYPE_CHECKING
 
 import numpy as np
@@ -11,6 +12,7 @@ from typing_extensions import Self
 
 from .errors import SteadyStateError
 from .language import ProductNormal
+from scipy.optimize import root
 from .model_render import (
     model_repr_data,
     render_model_html,
@@ -20,7 +22,7 @@ from .model_render import (
 
 if TYPE_CHECKING:
     from .solver import PerturbationSolution
-from .typedefs import IRFType, Solver, TVector, TMatrix
+from .typedefs import IRFType, Solver, TVector, TMatrix, ModelContext
 
 
 class AbstractModel(ABC):
@@ -28,7 +30,7 @@ class AbstractModel(ABC):
 
     name: str | None
     filename: str
-    context: dict[str, Any]
+    context: ModelContext
     symbols: dict[str, list[str]]
     processes: ProductNormal | None
     paths: dict[str, dict[int, float]] | None
@@ -37,10 +39,13 @@ class AbstractModel(ABC):
 
     def __init__(
         self: Self,
-        filename: str | None = None,
+        filename: str | os.PathLike[str] | None = None,
         txt: str | None = None,
         **kwargs: Any,
     ) -> None:
+        if filename is not None:
+            filename = os.fspath(filename)
+
         match filename, txt:
             case (None, None):
                 raise ValueError(
@@ -120,8 +125,16 @@ class AbstractModel(ABC):
         self: Self, y2, y1, y0, e
     ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix, TMatrix]: ...
 
-    def import_file(self: Self, filename: str, **kwargs: Any) -> None:
-        txt = open(filename, "rt", encoding="utf-8").read()
+    def run(self: Self, default_pipeline: bool = False) -> "RunResults":
+        from .report import RunResults
+
+        return RunResults(model=self)
+
+    def import_file(
+        self: Self, filename: str | os.PathLike[str], **kwargs: Any
+    ) -> None:
+        with open(filename, "rt", encoding="utf-8") as f:
+            txt = f.read()
         self.import_model(txt, **kwargs)
 
     def _set_name(self: Self) -> None:
@@ -192,6 +205,52 @@ class AbstractModel(ABC):
         y, e = self.__steady_state_vectors__
         return self.compute_residuals(y, y, y, e)
 
+    def check(self: "Self", tol: float = 1e-6) -> "Self":
+        r = self.residuals
+        if not all(abs(x) < tol for x in r):
+            raise SteadyStateError(r)
+        return self
+
+    def steady(self: Self, tol: float = 1e-10, maxiter: int = 100) -> Self:
+        endogenous = self.symbols["endogenous"]
+        if len(endogenous) == 0:
+            return self.copy()
+
+        y0, _ = self.__steady_state_vectors__
+        guess = np.nan_to_num(np.asarray(y0, dtype=float), nan=1.0)
+
+        def _candidate(values: np.ndarray) -> Self:
+            calib = {name: float(values[i]) for i, name in enumerate(endogenous)}
+            model = self.recalibrate(**calib)
+            for name, value in calib.items():
+                model.context["steady_states"][name] = value
+            model.__steady_state__ = model.context["steady_states"]
+            return model
+
+        def _fun(values: np.ndarray) -> np.ndarray:
+            model = _candidate(values)
+            return np.asarray(model.residuals, dtype=float)
+
+        def _jac(values: np.ndarray) -> np.ndarray:
+            model = _candidate(values)
+            jac = model.jacobians
+            A, B, C = jac[1], jac[2], jac[3]
+            return A + B + C
+
+        sol = root(_fun, guess, jac=_jac, method="hybr", options={"maxfev": maxiter})
+
+        solved = _candidate(np.asarray(sol.x, dtype=float))
+        residuals = np.asarray(solved.residuals, dtype=float)
+
+        if (
+            (not sol.success)
+            or (not np.isfinite(residuals).all())
+            or (np.max(np.abs(residuals)) > tol)
+        ):
+            raise SteadyStateError(residuals)
+
+        return solved
+
     @property
     def jacobians(self):
         y, e = self.__steady_state_vectors__
@@ -239,7 +298,6 @@ class AbstractModel(ABC):
         r, A, B, C, D = self.jacobians
 
         X, evs = solve_quadratic_matrix(A, B, C, method=method)
-        
 
         Y = linsolve(A @ X + B, -D)
 

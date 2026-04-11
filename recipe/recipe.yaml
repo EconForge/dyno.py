@@ -14,11 +14,11 @@ source:
 
 requirements:
   build:
-    - python <3.13,>=3.11
+    - python <3.14,>=3.12
     - poetry >=1.2
 
   run:
-    - python <3.12,>=3.10
+    - python <3.14,>=3.12
     - dolang
     - numpy
     - pandas

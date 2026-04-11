@@ -59,6 +59,8 @@ end;
 
 steady;
 
+check;
+
 shocks;
 var e = 0.009^2;
 var u = 0.009^2;

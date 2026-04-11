@@ -1,11 +1,12 @@
 import os
 import time
+from dyno import examples_path
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
-f_o = "examples/RBC.dyno"
-f_r = "examples/modfiles/RBC.mod"
+f_o = examples_path("RBC.dyno")
+f_r = examples_path("modfiles", "RBC.mod")
 
 from dyno.model import AbstractModel
 
@@ -47,7 +48,7 @@ t2 = time.time()
 print("Elapsed: ", t2 - t1)
 
 
-from dyno.symbolic_model import DynoModel
+from dyno.dyno_model import DynoModel
 
 t1 = time.time()
 model_o = DynoModel(f_o)
@@ -59,7 +60,7 @@ print("Model parsing time: ", t2 - t1)
 print("Model solving time: ", t3 - t2)
 
 
-from dyno.symbolic_model import DynoModel
+from dyno.dyno_model import DynoModel
 
 t1 = time.time()
 model_r = DynoModel(f_r)
