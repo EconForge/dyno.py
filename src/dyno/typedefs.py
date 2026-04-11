@@ -11,3 +11,13 @@ Solver = Literal["ti", "qz"]
 IRFType = Literal["level", "log-deviation", "deviation"]
 
 DynamicFunction = Callable[[TVector, TVector, TVector, TVector, TVector, TVector], None]
+
+from typing import TypedDict
+
+class ModelContext(TypedDict, total=False):
+    constants: dict[str, float]
+    variables: dict[str, dict]
+    steady_states: dict[str, float]
+    processes: dict[tuple[str, ...], Any]
+    values: dict[str, dict[int, float]]
+    metadata: dict[str, Any]

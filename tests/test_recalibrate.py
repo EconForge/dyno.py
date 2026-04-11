@@ -219,7 +219,7 @@ x[t] = alpha*x[t-1] + beta
         model.check()
 
 def test_dynare_run_executes_commands_from_metadata() -> None:
-    from dyno.dynare_model import DynareRunResults
+    from dyno import DynareRunResults
 
     txt = """
 var x;
@@ -276,7 +276,7 @@ def test_dynare_commands_omit_param_init_and_initval() -> None:
 
 
 def test_dyno_run_is_experimental_and_executes_commands() -> None:
-    from dyno.symbolic_model import DynoRunResults
+    from dyno import DynoRunResults
 
     txt = """
 run:
@@ -344,7 +344,7 @@ model: |
 
 
 def test_dyno_run_accumulates_repeated_metadata_assignments() -> None:
-    from dyno.symbolic_model import DynoRunResults
+    from dyno import DynoRunResults
 
     txt = """
 rho <- 0.8

@@ -471,210 +471,196 @@ class DynoModel(AbstractModel):
             return res, DD
         else:
             if sparsify:
-                import scipy.sparse
-
-                # Build sparse matrix directly using COO format with vectorized operations
-                # Pre-allocate lists with estimated size
-                max_nnz = (
-                    p + (N - 2) * 3 * p * p + 2 * p * p
-                )  # upper bound on non-zeros
-                row_indices = np.empty(max_nnz, dtype=np.int32)
-                col_indices = np.empty(max_nnz, dtype=np.int32)
-                data_vals = np.empty(max_nnz, dtype=DD.dtype)
-
-                idx = 0
-
-                # First block: identity matrix (n=0)
-                n = 0
-                row_indices[idx : idx + p] = np.arange(p)
-                col_indices[idx : idx + p] = np.arange(p)
-                data_vals[idx : idx + p] = 1.0
-                idx += p
-
-                # Middle blocks (n=1 to N-3) - standard treatment
-                for n in range(1, max(1, N - 2)):
-                    base_row = p * n
-
-                    # Previous time block (DD[n,:,:,0])
-                    mask0 = DD[n, :, :, 0] != 0
-                    nnz0 = np.sum(mask0)
-                    if nnz0 > 0:
-                        ii, jj = np.nonzero(mask0)
-                        row_indices[idx : idx + nnz0] = base_row + ii
-                        col_indices[idx : idx + nnz0] = p * (n - 1) + jj
-                        data_vals[idx : idx + nnz0] = DD[n, :, :, 0][mask0]
-                        idx += nnz0
-
-                    # Current time block (DD[n,:,:,1])
-                    mask1 = DD[n, :, :, 1] != 0
-                    nnz1 = np.sum(mask1)
-                    if nnz1 > 0:
-                        ii, jj = np.nonzero(mask1)
-                        row_indices[idx : idx + nnz1] = base_row + ii
-                        col_indices[idx : idx + nnz1] = p * n + jj
-                        data_vals[idx : idx + nnz1] = DD[n, :, :, 1][mask1]
-                        idx += nnz1
-
-                    # Next time block (DD[n,:,:,2])
-                    mask2 = DD[n, :, :, 2] != 0
-                    nnz2 = np.sum(mask2)
-                    if nnz2 > 0:
-                        ii, jj = np.nonzero(mask2)
-                        row_indices[idx : idx + nnz2] = base_row + ii
-                        col_indices[idx : idx + nnz2] = p * (n + 1) + jj
-                        data_vals[idx : idx + nnz2] = DD[n, :, :, 2][mask2]
-                        idx += nnz2
-
-                # Special handling for last three blocks (T-2, T-1, T)
-                if N >= 3:
-                    # Block n=N-2 (t=T-2): has standard structure with 3 blocks
-                    n = N - 2
-                    base_row = p * n
-
-                    mask0 = DD[n, :, :, 0] != 0
-                    nnz0 = np.sum(mask0)
-                    if nnz0 > 0:
-                        ii, jj = np.nonzero(mask0)
-                        row_indices[idx : idx + nnz0] = base_row + ii
-                        col_indices[idx : idx + nnz0] = p * (n - 1) + jj
-                        data_vals[idx : idx + nnz0] = DD[n, :, :, 0][mask0]
-                        idx += nnz0
-
-                    mask1 = DD[n, :, :, 1] != 0
-                    nnz1 = np.sum(mask1)
-                    if nnz1 > 0:
-                        ii, jj = np.nonzero(mask1)
-                        row_indices[idx : idx + nnz1] = base_row + ii
-                        col_indices[idx : idx + nnz1] = p * n + jj
-                        data_vals[idx : idx + nnz1] = DD[n, :, :, 1][mask1]
-                        idx += nnz1
-
-                    mask2 = DD[n, :, :, 2] != 0
-                    nnz2 = np.sum(mask2)
-                    if nnz2 > 0:
-                        ii, jj = np.nonzero(mask2)
-                        row_indices[idx : idx + nnz2] = base_row + ii
-                        col_indices[idx : idx + nnz2] = p * (n + 1) + jj
-                        data_vals[idx : idx + nnz2] = DD[n, :, :, 2][mask2]
-                        idx += nnz2
-
-                    # Block n=N-1 (t=T-1): derivatives wrt v_{T-1} and v_T
-                    n = N - 1
-                    base_row = p * n
-
-                    mask0 = DD[n, :, :, 0] != 0
-                    nnz0 = np.sum(mask0)
-                    if nnz0 > 0:
-                        ii, jj = np.nonzero(mask0)
-                        row_indices[idx : idx + nnz0] = base_row + ii
-                        col_indices[idx : idx + nnz0] = p * (n - 1) + jj
-                        data_vals[idx : idx + nnz0] = DD[n, :, :, 0][mask0]
-                        idx += nnz0
-
-                    mask1 = DD[n, :, :, 1] != 0
-                    nnz1 = np.sum(mask1)
-                    if nnz1 > 0:
-                        ii, jj = np.nonzero(mask1)
-                        row_indices[idx : idx + nnz1] = base_row + ii
-                        col_indices[idx : idx + nnz1] = p * n + jj
-                        data_vals[idx : idx + nnz1] = DD[n, :, :, 1][mask1]
-                        idx += nnz1
-
-                    # Note: DD[n, :, :, 2] should be zero for N-1 since we already combined derivatives
-                else:
-                    # Fallback for small N
-                    for n in range(max(1, N - 2), N):
-                        base_row = p * n
-
-                        mask0 = DD[n, :, :, 0] != 0
-                        nnz0 = np.sum(mask0)
-                        if nnz0 > 0:
-                            ii, jj = np.nonzero(mask0)
-                            row_indices[idx : idx + nnz0] = base_row + ii
-                            col_indices[idx : idx + nnz0] = p * (n - 1) + jj
-                            data_vals[idx : idx + nnz0] = DD[n, :, :, 0][mask0]
-                            idx += nnz0
-
-                        combined = DD[n, :, :, 1] + DD[n, :, :, 2]
-                        mask_c = combined != 0
-                        nnz_c = np.sum(mask_c)
-                        if nnz_c > 0:
-                            ii, jj = np.nonzero(mask_c)
-                            row_indices[idx : idx + nnz_c] = base_row + ii
-                            col_indices[idx : idx + nnz_c] = p * n + jj
-                            data_vals[idx : idx + nnz_c] = combined[mask_c]
-                            idx += nnz_c
-
-                # Trim to actual size
-                row_indices = row_indices[:idx]
-                col_indices = col_indices[:idx]
-                data_vals = data_vals[:idx]
-
-                # Add terminal derivatives that don't fit the tridiagonal structure
-                if terminal_derivatives:
-                    terminal_rows = []
-                    terminal_cols = []
-                    terminal_data = []
-
-                    for (
-                        row_block,
-                        col_block,
-                    ), deriv_matrix in terminal_derivatives.items():
-                        mask = deriv_matrix != 0
-                        if np.any(mask):
-                            ii, jj = np.nonzero(mask)
-                            terminal_rows.extend(p * row_block + ii)
-                            terminal_cols.extend(p * col_block + jj)
-                            terminal_data.extend(deriv_matrix[mask])
-
-                    if terminal_data:
-                        row_indices = np.concatenate(
-                            [row_indices, np.array(terminal_rows, dtype=np.int32)]
-                        )
-                        col_indices = np.concatenate(
-                            [col_indices, np.array(terminal_cols, dtype=np.int32)]
-                        )
-                        data_vals = np.concatenate(
-                            [data_vals, np.array(terminal_data, dtype=DD.dtype)]
-                        )
-
-                J = scipy.sparse.coo_matrix(
-                    (data_vals, (row_indices, col_indices)), shape=(N * p, N * p)
-                ).tocsr()
+                J = _build_sparse_jacobian(N, p, DD, terminal_derivatives)
             else:
-                J = np.zeros((N * p, N * p))
-                for n in range(N):
-                    if n == 0:
-                        J[p * n : p * (n + 1), p * n : p * (n + 1)] = np.eye(p, p)
-                    elif n == N and terminal_derivatives:
-                        # Terminal condition (last row) handled separately - skip for now
-                        pass
-                    elif n == N - 1:
-                        # Fallback for small T or when no terminal conditions
-                        J[p * n : p * (n + 1), p * (n - 1) : p * (n)] = DD[n, :, :, 0]
-                        J[p * n : p * (n + 1), p * n : p * (n + 1)] = (
-                            DD[n, :, :, 1] + DD[n, :, :, 2]
-                        )
-                    else:
-                        J[p * n : p * (n + 1), p * (n - 1) : p * (n)] = DD[n, :, :, 0]
-                        J[p * n : p * (n + 1), p * n : p * (n + 1)] = DD[n, :, :, 1]
-                        J[p * n : p * (n + 1), p * (n + 1) : p * (n + 2)] = DD[
-                            n, :, :, 2
-                        ]
-
-                # Add terminal derivatives
-                if terminal_derivatives:
-                    for (
-                        row_block,
-                        col_block,
-                    ), deriv_matrix in terminal_derivatives.items():
-                        J[
-                            p * row_block : p * (row_block + 1),
-                            p * col_block : p * (col_block + 1),
-                        ] = deriv_matrix
+                J = _build_dense_jacobian(N, p, DD, terminal_derivatives)
 
             return res.ravel(), J
 
+def _build_sparse_jacobian(N: int, p: int, DD: np.ndarray, terminal_derivatives: dict) -> "scipy.sparse.csr_matrix":
+    import scipy.sparse
 
-# Backward-compatible alias
-from .report import RunResults as DynoRunResults
+    # Build sparse matrix directly using COO format with vectorized operations
+    # Pre-allocate lists with estimated size
+    max_nnz = p + (N - 2) * 3 * p * p + 2 * p * p  # upper bound on non-zeros
+    row_indices = np.empty(max_nnz, dtype=np.int32)
+    col_indices = np.empty(max_nnz, dtype=np.int32)
+    data_vals = np.empty(max_nnz, dtype=DD.dtype)
+
+    idx = 0
+
+    # First block: identity matrix (n=0)
+    row_indices[idx : idx + p] = np.arange(p)
+    col_indices[idx : idx + p] = np.arange(p)
+    data_vals[idx : idx + p] = 1.0
+    idx += p
+
+    # Middle blocks (n=1 to N-3) - standard treatment
+    for n in range(1, max(1, N - 2)):
+        base_row = p * n
+
+        # Previous time block (DD[n,:,:,0])
+        mask0 = DD[n, :, :, 0] != 0
+        nnz0 = np.sum(mask0)
+        if nnz0 > 0:
+            ii, jj = np.nonzero(mask0)
+            row_indices[idx : idx + nnz0] = base_row + ii
+            col_indices[idx : idx + nnz0] = p * (n - 1) + jj
+            data_vals[idx : idx + nnz0] = DD[n, :, :, 0][mask0]
+            idx += nnz0
+
+        # Current time block (DD[n,:,:,1])
+        mask1 = DD[n, :, :, 1] != 0
+        nnz1 = np.sum(mask1)
+        if nnz1 > 0:
+            ii, jj = np.nonzero(mask1)
+            row_indices[idx : idx + nnz1] = base_row + ii
+            col_indices[idx : idx + nnz1] = p * n + jj
+            data_vals[idx : idx + nnz1] = DD[n, :, :, 1][mask1]
+            idx += nnz1
+
+        # Next time block (DD[n,:,:,2])
+        mask2 = DD[n, :, :, 2] != 0
+        nnz2 = np.sum(mask2)
+        if nnz2 > 0:
+            ii, jj = np.nonzero(mask2)
+            row_indices[idx : idx + nnz2] = base_row + ii
+            col_indices[idx : idx + nnz2] = p * (n + 1) + jj
+            data_vals[idx : idx + nnz2] = DD[n, :, :, 2][mask2]
+            idx += nnz2
+
+    # Special handling for last three blocks (T-2, T-1, T)
+    if N >= 3:
+        # Block n=N-2 (t=T-2): has standard structure with 3 blocks
+        n = N - 2
+        base_row = p * n
+
+        mask0 = DD[n, :, :, 0] != 0
+        nnz0 = np.sum(mask0)
+        if nnz0 > 0:
+            ii, jj = np.nonzero(mask0)
+            row_indices[idx : idx + nnz0] = base_row + ii
+            col_indices[idx : idx + nnz0] = p * (n - 1) + jj
+            data_vals[idx : idx + nnz0] = DD[n, :, :, 0][mask0]
+            idx += nnz0
+
+        mask1 = DD[n, :, :, 1] != 0
+        nnz1 = np.sum(mask1)
+        if nnz1 > 0:
+            ii, jj = np.nonzero(mask1)
+            row_indices[idx : idx + nnz1] = base_row + ii
+            col_indices[idx : idx + nnz1] = p * n + jj
+            data_vals[idx : idx + nnz1] = DD[n, :, :, 1][mask1]
+            idx += nnz1
+
+        mask2 = DD[n, :, :, 2] != 0
+        nnz2 = np.sum(mask2)
+        if nnz2 > 0:
+            ii, jj = np.nonzero(mask2)
+            row_indices[idx : idx + nnz2] = base_row + ii
+            col_indices[idx : idx + nnz2] = p * (n + 1) + jj
+            data_vals[idx : idx + nnz2] = DD[n, :, :, 2][mask2]
+            idx += nnz2
+
+        # Block n=N-1 (t=T-1): derivatives wrt v_{T-1} and v_T
+        n = N - 1
+        base_row = p * n
+
+        mask0 = DD[n, :, :, 0] != 0
+        nnz0 = np.sum(mask0)
+        if nnz0 > 0:
+            ii, jj = np.nonzero(mask0)
+            row_indices[idx : idx + nnz0] = base_row + ii
+            col_indices[idx : idx + nnz0] = p * (n - 1) + jj
+            data_vals[idx : idx + nnz0] = DD[n, :, :, 0][mask0]
+            idx += nnz0
+
+        mask1 = DD[n, :, :, 1] != 0
+        nnz1 = np.sum(mask1)
+        if nnz1 > 0:
+            ii, jj = np.nonzero(mask1)
+            row_indices[idx : idx + nnz1] = base_row + ii
+            col_indices[idx : idx + nnz1] = p * n + jj
+            data_vals[idx : idx + nnz1] = DD[n, :, :, 1][mask1]
+            idx += nnz1
+
+        # Note: DD[n, :, :, 2] should be zero for N-1 since we already combined derivatives
+    else:
+        # Fallback for small N
+        for n in range(max(1, N - 2), N):
+            base_row = p * n
+
+            mask0 = DD[n, :, :, 0] != 0
+            nnz0 = np.sum(mask0)
+            if nnz0 > 0:
+                ii, jj = np.nonzero(mask0)
+                row_indices[idx : idx + nnz0] = base_row + ii
+                col_indices[idx : idx + nnz0] = p * (n - 1) + jj
+                data_vals[idx : idx + nnz0] = DD[n, :, :, 0][mask0]
+                idx += nnz0
+
+            combined = DD[n, :, :, 1] + DD[n, :, :, 2]
+            mask_c = combined != 0
+            nnz_c = np.sum(mask_c)
+            if nnz_c > 0:
+                ii, jj = np.nonzero(mask_c)
+                row_indices[idx : idx + nnz_c] = base_row + ii
+                col_indices[idx : idx + nnz_c] = p * n + jj
+                data_vals[idx : idx + nnz_c] = combined[mask_c]
+                idx += nnz_c
+
+    # Trim to actual size
+    row_indices = row_indices[:idx]
+    col_indices = col_indices[:idx]
+    data_vals = data_vals[:idx]
+
+    # Add terminal derivatives that don't fit the tridiagonal structure
+    if terminal_derivatives:
+        terminal_rows = []
+        terminal_cols = []
+        terminal_data = []
+
+        for (row_block, col_block), deriv_matrix in terminal_derivatives.items():
+            mask = deriv_matrix != 0
+            if np.any(mask):
+                ii, jj = np.nonzero(mask)
+                terminal_rows.extend(p * row_block + ii)
+                terminal_cols.extend(p * col_block + jj)
+                terminal_data.extend(deriv_matrix[mask])
+
+        if terminal_data:
+            row_indices = np.concatenate([row_indices, np.array(terminal_rows, dtype=np.int32)])
+            col_indices = np.concatenate([col_indices, np.array(terminal_cols, dtype=np.int32)])
+            data_vals = np.concatenate([data_vals, np.array(terminal_data, dtype=DD.dtype)])
+
+    return scipy.sparse.coo_matrix(
+        (data_vals, (row_indices, col_indices)), shape=(N * p, N * p)
+    ).tocsr()
+
+def _build_dense_jacobian(N: int, p: int, DD: np.ndarray, terminal_derivatives: dict) -> np.ndarray:
+    J = np.zeros((N * p, N * p))
+    for n in range(N):
+        if n == 0:
+            J[p * n : p * (n + 1), p * n : p * (n + 1)] = np.eye(p, p)
+        elif n == N and terminal_derivatives:
+            # Terminal condition (last row) handled separately - skip for now
+            pass
+        elif n == N - 1:
+            # Fallback for small T or when no terminal conditions
+            J[p * n : p * (n + 1), p * (n - 1) : p * (n)] = DD[n, :, :, 0]
+            J[p * n : p * (n + 1), p * n : p * (n + 1)] = DD[n, :, :, 1] + DD[n, :, :, 2]
+        else:
+            J[p * n : p * (n + 1), p * (n - 1) : p * (n)] = DD[n, :, :, 0]
+            J[p * n : p * (n + 1), p * n : p * (n + 1)] = DD[n, :, :, 1]
+            J[p * n : p * (n + 1), p * (n + 1) : p * (n + 2)] = DD[n, :, :, 2]
+
+    # Add terminal derivatives
+    if terminal_derivatives:
+        for (row_block, col_block), deriv_matrix in terminal_derivatives.items():
+            J[
+                p * row_block : p * (row_block + 1),
+                p * col_block : p * (col_block + 1),
+            ] = deriv_matrix
+
+    return J
+

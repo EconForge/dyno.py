@@ -21,7 +21,7 @@ from .model_render import (
 
 if TYPE_CHECKING:
     from .solver import PerturbationSolution
-from .typedefs import IRFType, Solver, TVector, TMatrix
+from .typedefs import IRFType, Solver, TVector, TMatrix, ModelContext
 
 
 class AbstractModel(ABC):
@@ -29,7 +29,7 @@ class AbstractModel(ABC):
 
     name: str | None
     filename: str
-    context: dict[str, Any]
+    context: ModelContext
     symbols: dict[str, list[str]]
     processes: ProductNormal | None
     paths: dict[str, dict[int, float]] | None

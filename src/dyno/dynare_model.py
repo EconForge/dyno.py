@@ -411,6 +411,3 @@ def sparse_to_dense(
         res[i, j] = v
     return res
 
-
-# Backward-compatible alias
-from .report import RunResults as DynareRunResults

@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 __all__ = [
     "RecursiveDecisionRule",
     "PerturbationSolution",
-    "RecursiveSolution",
     "NoConvergence",
     "solve",
     "solve_ti",
@@ -162,45 +161,9 @@ class PerturbationSolution:
         self.decision_rule = decision_rule
         self.evs = evs
 
-    # Backward-compatible passthroughs
-    @property
-    def X(self):
-        return self.decision_rule.X
-
-    @property
-    def Y(self):
-        return self.decision_rule.Y
-
-    @property
-    def Σ(self):
-        return self.decision_rule.Σ
-
-    @property
-    def x0(self):
-        return self.decision_rule.x0
-
-    @property
-    def symbols(self):
-        return self.decision_rule.symbols
-
-    def moments(self):
-        return self.decision_rule.moments()
-
-    def coefficients_as_df(self):
-        return self.decision_rule.coefficients_as_df()
-
-    def irfs(self, type: IRFType = "log-deviation", T=40):
-        return self.decision_rule.irfs(type=type, T=T)
-
-    def plot(self, type: IRFType = "log-deviation"):
-        return self.decision_rule.plot(type=type)
-
-    def _repr_html_(self):
-        return self.decision_rule._repr_html_()
-
-
-# Backward-compatible alias
-RecursiveSolution = RecursiveDecisionRule
+    def __getattr__(self, name: str) -> Any:
+        # Delegate any other method/property access to the underlying decision_rule
+        return getattr(self.decision_rule, name)
 
 def solve(
     A: TMatrix, B: TMatrix, C: TMatrix, method: Solver = "qz", options={}
