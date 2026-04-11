@@ -121,11 +121,11 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 
 ### Steady-state
 
-{[jacs[0].to_html()]}
+{[to_html_table(jacs[0])]}
                             
 ### Jacobian 
 
-{[jacs[1].to_html()]}
+{[to_html_table(jacs[1])]}
 
 :::
 ---
@@ -142,7 +142,7 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 {[for k in sim.keys()]}
 :::{tab-item} {[k]}
 :sync: tab1
-{[sim[k].to_html()]}
+{[to_html_table(sim[k])]}
 :::
 {[endfor]}
 ::::
@@ -162,7 +162,7 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 {[for k in sim.keys()]}
 :::{tab-item} {[k]}
 :sync: tab1
-{[sim[k].to_html()]}
+{[to_html_table(sim[k])]}
 :::
 {[endfor]}
 ::::
@@ -250,6 +250,14 @@ class RunResults:
 
     # -- Display: Markdown ---------------------------------------------------
 
+    @staticmethod
+    def _to_html_table(value: Any) -> str:
+        if hasattr(value, "to_html"):
+            return value.to_html()
+        if hasattr(value, "to_frame"):
+            return value.to_frame().to_html()
+        return f"<pre>{value}</pre>"
+
     def _repr_markdown_(self) -> str:
         if self.elapsed is None:
             self.finish()
@@ -283,6 +291,7 @@ class RunResults:
             "unhandled_errors": unhandled_errors,
             "error_lines": error_lines,
             "alt": altair,
+            "to_html_table": self._to_html_table,
         }
 
         model = self.model
@@ -454,13 +463,17 @@ def _create_model(
     if filename.endswith(".mod"):
         preprocessor = options.get("modfile-preprocessor", "dynare")
         if preprocessor == "dynare":
-            from dyno.dynare_model import DynareModel as Model
+            from dyno.dynare_model import DynareModel
+
+            return DynareModel(filename=filename, txt=txt)
         else:
-            from dyno.symbolic_model import DynoModel as Model
-        return Model(filename=filename, txt=txt)
-    elif filename.endswith(".dyno.yaml"):
-        from dyno.yamlfile import YAMLFile
-        return YAMLFile(txt=txt)
+            from dyno.symbolic_model import DynoModel
+
+            return DynoModel(filename=filename, txt=txt)
+    elif filename.endswith((".yaml", ".yml")):
+        from dyno.symbolic_model import DynoModel
+
+        return DynoModel(filename=filename, txt=txt)
     elif filename.endswith(".dyno"):
         from dyno.symbolic_model import DynoModel
 

@@ -1,4 +1,6 @@
 from dyno import DynoModel
+from dyno.report import RunResults
+import pandas as pd
 import re
 
 
@@ -62,3 +64,23 @@ x[t] = a + y[t-1]
     assert "constants" in html
     assert "<sup>^</sup>" in html
     assert "uninitialized" in html
+
+
+def test_runresults_markdown_accepts_series_simulation_entries():
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+"""
+
+    model = DynoModel(filename="rbc_like.dyno", txt=txt)
+    model.checks["deterministic"] = False
+
+    results = RunResults(model=model)
+    results.simulation = {"e": pd.Series([0.1, 0.2, 0.3], name="x")}
+
+    md = results._repr_markdown_()
+
+    assert "Simulation" in md
+    assert "<table" in md

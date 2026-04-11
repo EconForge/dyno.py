@@ -1,4 +1,0 @@
-#
-
-model.recalibrate() 
-model.steady().perturb() -> creates new model with correct steady-state
