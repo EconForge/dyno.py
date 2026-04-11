@@ -494,8 +494,7 @@ def dsge_report(txt: str | None = None, filename: str | None = None, **options) 
 
     except Exception as e:
         results.add_error(str(e), line=getattr(e, "line", None))
-        if isinstance(e, Exception):
-            results.errors[-1]["_exception"] = e
+        results.errors[-1]["_exception"] = e
         results.finish()
         results.jupyter_display()  # show partial results + errors
         return results

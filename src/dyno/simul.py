@@ -29,8 +29,8 @@ def irf(
     pd.DataFrame
         impulse response function of all endogenous variables to a shock on the ith exogenous variable
     """
-    X = dr.X.data
-    Y = dr.Y.data
+    X = dr.X
+    Y = dr.Y
     Σ = dr.Σ
 
     assert X.shape is not None
@@ -111,8 +111,8 @@ def simulate(dr: RecursiveDecisionRule | PerturbationSolution, T: int = 40) -> p
     pd.DataFrame
         evolution of the endogenous variables over time
     """
-    X = dr.X.data
-    Y = dr.Y.data
+    X = dr.X
+    Y = dr.Y
     Σ = dr.Σ
     assert X.shape is not None  # Necessary for static typechecking
 

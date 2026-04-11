@@ -1,4 +1,5 @@
 from dyno.model import AbstractModel
+import copy
 import warnings
 import yaml
 import math
@@ -218,44 +219,6 @@ class DynoModel(AbstractModel):
         m._calibration_overrides = merged
         return m
 
-    def steady(self: Self, tol: float = 1e-10, maxiter: int = 100) -> Self:
-        endogenous = self.symbols["endogenous"]
-        if len(endogenous) == 0:
-            return self.copy()
-
-        y0, _ = self.__steady_state_vectors__
-        guess = np.nan_to_num(np.asarray(y0, dtype=float), nan=1.0)
-
-        def _candidate(values: np.ndarray) -> Self:
-            calib = {
-                name: float(values[i])
-                for i, name in enumerate(endogenous)
-            }
-            model = self.recalibrate(**calib)
-            for name, value in calib.items():
-                model.context["steady_states"][name] = value
-            model.__steady_state__ = model.context["steady_states"]
-            return model
-
-        def _fun(values: np.ndarray) -> np.ndarray:
-            model = _candidate(values)
-            return np.asarray(model.residuals, dtype=float)
-
-        def _jac(values: np.ndarray) -> np.ndarray:
-            model = _candidate(values)
-            _, A, B, C, _ = model.jacobians
-            return A + B + C
-
-        sol = root(_fun, guess, jac=_jac, method="hybr", options={"maxfev": maxiter})
-
-        solved = _candidate(np.asarray(sol.x, dtype=float))
-        residuals = np.asarray(solved.residuals, dtype=float)
-
-        if (not sol.success) or (np.max(np.abs(residuals)) > tol):
-            raise SteadyStateError(residuals)
-
-        return solved
-
     @property
     def equations(self):
 
@@ -267,12 +230,8 @@ class DynoModel(AbstractModel):
 
     def compute_residuals(self, y2, y1, y0, e):
 
-        import math
-
         endogenous = self.symbols["endogenous"]
         exogenous = self.symbols["exogenous"]
-
-        import copy
 
         cc = copy.deepcopy(self.symbolic.context)
 
@@ -300,13 +259,10 @@ class DynoModel(AbstractModel):
         self, y2, y1, y0, e
     ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix, TMatrix]:
 
-        import numpy as np
         from dyno.dynsym.autodiff import DNumber as DN
 
         endogenous = self.symbols["endogenous"]
         exogenous = self.symbols["exogenous"]
-
-        import copy
 
         cc = copy.deepcopy(self.symbolic.context)
 
@@ -347,26 +303,6 @@ class DynoModel(AbstractModel):
 
         return r, A, B, C, D
 
-    def deterministic_guess(model, T=None):
-
-        if T is None:
-            T = model.context["constants"].get("T", 50)
-
-        y, e = model.__steady_state_vectors__
-
-        # initial guess
-        v0 = np.concatenate([y, e])[None, :].repeat(T + 1, axis=0)
-
-        # works if the is one and exactly one exogenous variable?
-        # does it?
-        for key, value in model.symbolic.context["values"].items():
-            i = model.symbols["variables"].index(key)
-            v0[:, i] = 0.0  # TODO: use steady-state of exogenous process
-            for a, b in value.items():
-                v0[a, i] = b
-
-        return v0
-
     def deterministic_residuals(model, v, jac=False, **kwargs):
 
         if jac:
@@ -382,8 +318,6 @@ class DynoModel(AbstractModel):
         # For t = 0 to T-3: standard forward/backward indexing
         v_f = np.concatenate([v[1:, :], v[-1, :][None, :]], axis=0)
         v_b = np.concatenate([v[0, :][None, :], v[:-1, :]], axis=0)
-
-        import copy
 
         cc = copy.deepcopy(model.symbolic.context)
         for i, name in enumerate(model.symbols["variables"]):
@@ -445,8 +379,6 @@ class DynoModel(AbstractModel):
 
         v_f = np.concatenate([v[1:, :], v[-1, :][None, :]], axis=0)
         v_b = np.concatenate([v[0, :][None, :], v[:-1, :]], axis=0)
-
-        import copy
 
         context = copy.deepcopy(model.symbolic.context)
         for i, name in enumerate(model.symbols["variables"]):

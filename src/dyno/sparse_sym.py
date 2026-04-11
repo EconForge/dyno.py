@@ -1,3 +1,7 @@
+import numpy as np
+from itertools import permutations
+
+
 class SymTensor:
     """A simple symmetric tensor class.
 
@@ -23,9 +27,6 @@ class SymTensor:
             self.syms = syms
 
     def toarray(self):
-        import numpy as np
-        from itertools import permutations
-
         arr = np.zeros(self.shape)
 
         for indices, value in self.data.items():

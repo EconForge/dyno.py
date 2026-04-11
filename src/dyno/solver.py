@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import numpy as np
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
 from .typedefs import TVector, TMatrix, Solver
+
+_log = logging.getLogger(__name__)
 
 from typing import Any, TYPE_CHECKING
 
@@ -12,6 +15,18 @@ from .typedefs import IRFType
 
 if TYPE_CHECKING:
     from .model import AbstractModel
+
+__all__ = [
+    "RecursiveDecisionRule",
+    "PerturbationSolution",
+    "RecursiveSolution",
+    "NoConvergence",
+    "solve",
+    "solve_ti",
+    "solve_qz",
+    "moments",
+    "deterministic_solve",
+]
 
 
 class RecursiveDecisionRule:
@@ -187,25 +202,6 @@ class PerturbationSolution:
 # Backward-compatible alias
 RecursiveSolution = RecursiveDecisionRule
 
-        # html = f"""
-        # <h3>Eigenvalues</h3>
-        # {evv.to_html()}
-        # <h3>Decision Rule</h3>
-        # <h4>Steady-state</h4>
-        # {ss.to_html(index=False)}
-        # <h4>Jacobian</h4>
-        # {df.to_html()}
-        # <h3>Moments</h3>
-        # <h4>Unconditional moments</h4>
-        # {df_umoments.to_html()}
-        # <h4>Conditional moments</h4>
-        # {df_cmoments.to_html()}
-        # <h3>IRFs</h3>
-        # {fig.to_html(full_html=False, include_plotlyjs=False)}
-        # """
-        # return html
-
-
 def solve(
     A: TMatrix, B: TMatrix, C: TMatrix, method: Solver = "qz", options={}
 ) -> tuple[TMatrix, TVector | None]:
@@ -237,12 +233,13 @@ def solve(
     """
 
     if method == "ti":
-
         sol, evs = solve_ti(A, B, C, **options)
-
-    else:
-
+    elif method == "qz":
         sol, evs = solve_qz(A, B, C, **options)
+    else:
+        raise ValueError(
+            f"Unknown solver method: {method!r}. Valid choices are 'ti' and 'qz'."
+        )
 
     return sol, evs
 
@@ -332,10 +329,12 @@ def solve_qz(
     # Generalised eigenvalue problem
     F = np.block([[Z, I], [-C, -B]])
     G = np.block([[I, Z], [Z, A]])
-    tol = 1e-6
-    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol)) <= 1 + tol)  # type: ignore
-    λ_all = vgenev(α, β, tol=tol)
+    tol_sort = 1e-6
+    T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol_sort)) <= 1 + tol_sort)  # type: ignore
+    λ_all = vgenev(α, β, tol=tol_sort)
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
+    
+    λ_all = np.abs(λ_all)
 
     # TODO: verify whether Blanchard-Kahn conditions are valid
     evs = np.sort(λ_all).reshape(2 * n)
@@ -343,9 +342,9 @@ def solve_qz(
     l1 = evs[n-1]
     l2 = evs[n]
     if l1<=l2<1:
-        raise Exception(f"Eigenvalue condition not satisfied: l1={l1}, l2={l2}. Too many stable solutions.")
+        raise Exception(f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. Too many stable solutions.")
     if 1<l1<=l2:
-        raise Exception(f"Eigenvalue condition not satisfied: l1={l1}, l2={l2}. No stable solution.")
+        raise Exception(f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. No stable solution.")
 
 
     X = (Z21 @ np.linalg.inv(Z11)).reshape(
@@ -468,13 +467,9 @@ def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
     return Γ0, Γ
 
 
-import time
-
-old_print = print
-
-
 def serial_solve(a, b):
     return np.linalg.solve(a, b)
+
 
 
 def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
@@ -487,11 +482,6 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
     Return
     ------
     """
-    if verbose:
-        print = lambda txt: old_print(txt)
-    else:
-        print = lambda txt: None
-
     it = 0
     error = 10
     converged = False
@@ -519,10 +509,10 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
         if error_0 < tol:
 
             if verbose:
-                print(
-                    "> System was solved after iteration {}. Residual={}".format(
-                        it, error_0
-                    )
+                _log.debug(
+                    "> System was solved after iteration %d. Residual=%s",
+                    it,
+                    error_0,
                 )
             converged = True
 
@@ -547,7 +537,7 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
             x = xx
 
             if verbose:
-                print("\t> {} | {} | {}".format(it, err, bck))
+                _log.debug("\t> %d | %s | %s", it, err, bck)
 
     if not converged:
         import warnings

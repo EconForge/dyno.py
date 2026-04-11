@@ -56,9 +56,9 @@ class SymbolicModel:
         latex_str = str.join("\n", ["$${}$$".format(eq) for eq in eqs_str])
         return latex_str
 
-    def eval_residuals(self, context={}) -> None:
+    def eval_residuals(self, context: dict | None = None) -> list:
 
-        if len(context) == 0:
+        if context is None:
             context = self.context
 
         fe = EquationsEvaluator(context)

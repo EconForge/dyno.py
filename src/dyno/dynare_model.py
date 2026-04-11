@@ -91,45 +91,6 @@ class DynareModel(AbstractModel):
         results.finish()
         return results
 
-    def steady(self: Self, tol: float = 1e-10, maxiter: int = 100) -> Self:
-        endogenous = self.symbols["endogenous"]
-        if len(endogenous) == 0:
-            return self.copy()
-
-        y0, _ = self.__steady_state_vectors__
-        guess = np.nan_to_num(np.asarray(y0, dtype=float), nan=1.0)
-
-        def _candidate(values: np.ndarray) -> Self:
-            calib = {
-                name: float(values[i])
-                for i, name in enumerate(endogenous)
-            }
-            model = self.recalibrate(**calib)
-            for name, value in calib.items():
-                model.context["steady_states"][name] = value
-            model.__steady_state__ = model.context["steady_states"]
-            return model
-
-        def _fun(values: np.ndarray) -> np.ndarray:
-            model = _candidate(values)
-            return np.asarray(model.residuals, dtype=float)
-
-        def _jac(values: np.ndarray) -> np.ndarray:
-            model = _candidate(values)
-            jac = model.jacobians
-            A, B, C = jac[1], jac[2], jac[3]
-            return A + B + C
-
-        sol = root(_fun, guess, jac=_jac, method="hybr", options={"maxfev": maxiter})
-
-        solved = _candidate(np.asarray(sol.x, dtype=float))
-        residuals = np.asarray(solved.residuals, dtype=float)
-
-        if (not sol.success) or (not np.isfinite(residuals).all()) or (np.max(np.abs(residuals)) > tol):
-            raise SteadyStateError(residuals)
-
-        return solved
-
     def import_model(self: Self, txt: str, deriv_order=1, params_deriv_order=0, allow_undeclared_params=False) -> None:
         """imports model written in `.mod` format into symbolic attribute using Dynare's preprocessor
 
@@ -310,7 +271,11 @@ class DynareModel(AbstractModel):
         constants = {k: v for (k, v) in c.items() if (k in parameters)}
 
         # read specification of exogenous shocks in the modfile
-        assert len(self.symbolic.trajectories) == 0 or len(self.symbolic.covariances) == 0
+        if len(self.symbolic.trajectories) > 0 and len(self.symbolic.covariances) > 0:
+            raise ValueError(
+                "A model cannot simultaneously define deterministic trajectories and "
+                "stochastic covariances. Check the shocks block in your .mod file."
+            )
         isdeterministic = len(self.symbolic.trajectories) > 0
         exo = exogenous
 
@@ -365,13 +330,13 @@ class DynareModel(AbstractModel):
         y, e = self.__steady_state_vectors__
         return self._f_dynamic(y, y, y, e, p, diff=True)
 
-    def compute_derivatives(model):
+    def compute_derivatives(self: Self):
 
-        y = [model.steady_state[v] for v in model.symbols["endogenous"]]
-        e = [model.steady_state[v] for v in model.symbols["exogenous"]]
-        p = [model.context["constants"][v] for v in model.symbols["parameters"]]
+        y = [self.steady_state[v] for v in self.symbols["endogenous"]]
+        e = [self.steady_state[v] for v in self.symbols["exogenous"]]
+        p = [self.context["constants"][v] for v in self.symbols["parameters"]]
 
-        return model.symbolic.derivatives(y, y, y, e, e, p)
+        return self.symbolic.derivatives(y, y, y, e, e, p)
 
     def deterministic_residuals(self, v):
 
@@ -413,11 +378,11 @@ class DynareModel(AbstractModel):
 
         args = [y0, y1, y2, e, e, p]
         if len(self.context["processes"]) == 0:
-            # this is a stochastic model
+            # deterministic model: no stochastic processes defined
             args[3] = []
         else:
+            # stochastic model: has processes; second exogenous slot is unused
             args[4] = []
-            # this is a deterministic model
 
         r = np.array(self.symbolic.residuals(*args))
 

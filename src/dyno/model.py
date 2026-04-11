@@ -11,6 +11,7 @@ from typing_extensions import Self
 
 from .errors import SteadyStateError
 from .language import ProductNormal
+from scipy.optimize import root
 from .model_render import (
     model_repr_data,
     render_model_html,
@@ -125,7 +126,8 @@ class AbstractModel(ABC):
         return RunResults(model=self)
 
     def import_file(self: Self, filename: str, **kwargs: Any) -> None:
-        txt = open(filename, "rt", encoding="utf-8").read()
+        with open(filename, "rt", encoding="utf-8") as f:
+            txt = f.read()
         self.import_model(txt, **kwargs)
 
     def _set_name(self: Self) -> None:
@@ -201,6 +203,45 @@ class AbstractModel(ABC):
         if not all(abs(x) < tol for x in r):
             raise SteadyStateError(r)
         return self
+
+    def steady(self: Self, tol: float = 1e-10, maxiter: int = 100) -> Self:
+        endogenous = self.symbols["endogenous"]
+        if len(endogenous) == 0:
+            return self.copy()
+
+        y0, _ = self.__steady_state_vectors__
+        guess = np.nan_to_num(np.asarray(y0, dtype=float), nan=1.0)
+
+        def _candidate(values: np.ndarray) -> Self:
+            calib = {
+                name: float(values[i])
+                for i, name in enumerate(endogenous)
+            }
+            model = self.recalibrate(**calib)
+            for name, value in calib.items():
+                model.context["steady_states"][name] = value
+            model.__steady_state__ = model.context["steady_states"]
+            return model
+
+        def _fun(values: np.ndarray) -> np.ndarray:
+            model = _candidate(values)
+            return np.asarray(model.residuals, dtype=float)
+
+        def _jac(values: np.ndarray) -> np.ndarray:
+            model = _candidate(values)
+            jac = model.jacobians
+            A, B, C = jac[1], jac[2], jac[3]
+            return A + B + C
+
+        sol = root(_fun, guess, jac=_jac, method="hybr", options={"maxfev": maxiter})
+
+        solved = _candidate(np.asarray(sol.x, dtype=float))
+        residuals = np.asarray(solved.residuals, dtype=float)
+
+        if (not sol.success) or (not np.isfinite(residuals).all()) or (np.max(np.abs(residuals)) > tol):
+            raise SteadyStateError(residuals)
+
+        return solved
 
     @property
     def jacobians(self):
