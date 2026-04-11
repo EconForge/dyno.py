@@ -8,7 +8,7 @@ import numpy as np
 def test_jacobian_consistency():
     """Test that different methods of computing the Jacobian give the same result"""
 
-    from dyno.symbolic_model import DynoModel
+    from dyno.dyno_model import DynoModel
     import scipy.sparse
 
     # Load a simple model
@@ -199,7 +199,7 @@ def test_jacobian_consistency():
 def test_terminal_conditions():
     """Test that the last three rows have the correct terminal conditions"""
 
-    from dyno.symbolic_model import DynoModel
+    from dyno.dyno_model import DynoModel
 
     # Load a simple model
     model = DynoModel("examples/neo.dyno")

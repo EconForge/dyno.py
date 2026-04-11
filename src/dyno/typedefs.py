@@ -14,6 +14,7 @@ DynamicFunction = Callable[[TVector, TVector, TVector, TVector, TVector, TVector
 
 from typing import TypedDict
 
+
 class ModelContext(TypedDict, total=False):
     constants: dict[str, float]
     variables: dict[str, dict]

@@ -96,7 +96,9 @@ def irfs(
     return res
 
 
-def simulate(dr: RecursiveDecisionRule | PerturbationSolution, T: int = 40) -> pd.DataFrame:
+def simulate(
+    dr: RecursiveDecisionRule | PerturbationSolution, T: int = 40
+) -> pd.DataFrame:
     """Simulates the evolution of the endogenous variables
 
     Parameters

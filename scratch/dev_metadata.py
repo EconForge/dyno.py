@@ -1,21 +1,22 @@
 from dyno import DynoModel, DynareModel
+from dyno import examples_path
 import json
 
 
 # Test 1: DynareModel with undeclared params
-model = DynareModel("examples/modfiles/example1.mod", allow_undeclared_params=True)
+model = DynareModel(examples_path("modfiles", "example1.mod"), allow_undeclared_params=True)
 print("=== DynareModel example1.mod (with allow_undeclred_params) ===")
 print(json.dumps(model.metadata, indent=2))
 print()
 
 # Test 2: DynareModel with options parsing
-model2 = DynareModel("examples/modfiles/example2.mod", allow_undeclared_params=True)
+model2 = DynareModel(examples_path("modfiles", "example2.mod"), allow_undeclared_params=True)
 print("=== DynareModel example2.mod (with options) ===")
 print(json.dumps(model2.metadata, indent=2))
 print()
 
 # Test 3: DynareModel without option
-model3 = DynareModel("examples/modfiles/example2.mod")
+model3 = DynareModel(examples_path("modfiles", "example2.mod"))
 print("=== DynareModel commands ===")
 print(f"Commands: {model3.metadata.get('dynare_commands', [])}")
 print()
@@ -28,12 +29,12 @@ for cmd in model2.metadata['dynare_commands']:
 
 
 
-report = DynareModel("examples/modfiles/example2.mod").run()
+report = DynareModel(examples_path("modfiles", "example2.mod")).run()
 
 
 from dyno import DynoModel
 
-DynoModel("examples/neo.dyno").run()
+DynoModel(examples_path("neo.dyno")).run()
 
 
 
@@ -41,7 +42,7 @@ DynoModel("examples/neo.dyno").run()
 from dyno.report import dsge_report
 
 dsge_report(
-    filename="examples/modfiles/example2.mod"
+    filename=examples_path("modfiles", "example2.mod")
 )
 
 

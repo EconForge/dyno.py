@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import os
 import numpy as np
 import tempita
 
@@ -280,13 +281,13 @@ class RunResults:
             for e in exception_errors
             if not isinstance(e.get("_exception"), ParserError)
         ]
-        error_lines = [
-            str(e.line) for e in parser_errors if hasattr(e, "line")
-        ]
+        error_lines = [str(e.line) for e in parser_errors if hasattr(e, "line")]
 
         context: dict[str, Any] = {
             "traceback": tb_mod,
-            "errors": [e.get("_exception") for e in exception_errors if "_exception" in e],
+            "errors": [
+                e.get("_exception") for e in exception_errors if "_exception" in e
+            ],
             "parser_errors": parser_errors,
             "unhandled_errors": unhandled_errors,
             "error_lines": error_lines,
@@ -370,9 +371,7 @@ class RunResults:
         highlighting = self._highlighting_data
         if highlighting:
             display(
-                {
-                    "application/vnd.jupyterlab-dyno.highlighting+json": highlighting
-                },
+                {"application/vnd.jupyterlab-dyno.highlighting+json": highlighting},
                 raw=True,
             )
 
@@ -449,8 +448,11 @@ DynoRunResults = RunResults
 
 
 def _create_model(
-    txt: str | None, filename: str | None, **options
+    txt: str | None, filename: str | os.PathLike[str] | None, **options
 ) -> "AbstractModel":
+    if filename is not None:
+        filename = os.fspath(filename)
+
     if txt is not None:
         if filename is None:
             filename = "unknown"
@@ -467,22 +469,26 @@ def _create_model(
 
             return DynareModel(filename=filename, txt=txt)
         else:
-            from dyno.symbolic_model import DynoModel
+            from dyno.dyno_model import DynoModel
 
             return DynoModel(filename=filename, txt=txt)
     elif filename.endswith((".yaml", ".yml")):
-        from dyno.symbolic_model import DynoModel
+        from dyno.dyno_model import DynoModel
 
         return DynoModel(filename=filename, txt=txt)
     elif filename.endswith(".dyno"):
-        from dyno.symbolic_model import DynoModel
+        from dyno.dyno_model import DynoModel
 
         return DynoModel(filename=filename, txt=txt)
     else:
         raise ValueError("Unsupported Model type")
 
 
-def dsge_report(txt: str | None = None, filename: str | None = None, **options) -> RunResults:
+def dsge_report(
+    txt: str | None = None,
+    filename: str | os.PathLike[str] | None = None,
+    **options,
+) -> RunResults:
 
     check_output = options.get("check_output", False)
     results = RunResults(source_txt=txt)

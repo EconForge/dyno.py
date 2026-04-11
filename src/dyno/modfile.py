@@ -41,7 +41,9 @@ class DynareModel(AbstractModel):
         constants = {k: v for (k, v) in c.items() if (k in parameters)}
 
         # read specification of exogenous shocks in the modfile
-        assert len(self.symbolic.trajectories) == 0 or len(self.symbolic.covariances) == 0
+        assert (
+            len(self.symbolic.trajectories) == 0 or len(self.symbolic.covariances) == 0
+        )
         isdeterministic = len(self.symbolic.trajectories) > 0
         exo = exogenous
 

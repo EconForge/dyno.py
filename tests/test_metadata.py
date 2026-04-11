@@ -37,7 +37,7 @@ x[t] = alpha
 
 
 def test_dynomodel_yaml_argument_parses_model_block():
-        txt = """
+    txt = """
 name: [1, 2, 3]
 model: |
     a := 0.1
@@ -45,26 +45,26 @@ model: |
     x[t] = 0.9 * x[t-1]
 """
 
-        model = DynoModel(yaml=txt)
+    model = DynoModel(yaml=txt)
 
-        assert model.metadata["name"] == [1, 2, 3]
-        assert "x" in model.symbols["variables"]
+    assert model.metadata["name"] == [1, 2, 3]
+    assert "x" in model.symbols["variables"]
 
 
 def test_dynomodel_yaml_file_parses_model_block(tmp_path):
-        p = tmp_path / "wrapped_model.yaml"
-        p.write_text(
-                """
+    p = tmp_path / "wrapped_model.yaml"
+    p.write_text(
+        """
 name: Demo
 model: |
     a := 0.1
     e[t] := N(0, 1)
     x[t] = 0.9 * x[t-1]
 """,
-                encoding="utf-8",
-        )
+        encoding="utf-8",
+    )
 
-        model = DynoModel(str(p))
+    model = DynoModel(str(p))
 
-        assert model.metadata["name"] == "Demo"
-        assert "x" in model.symbols["variables"]
+    assert model.metadata["name"] == "Demo"
+    assert "x" in model.symbols["variables"]

@@ -218,6 +218,7 @@ x[t] = alpha*x[t-1] + beta
     with pytest.raises(SteadyStateError):
         model.check()
 
+
 def test_dynare_run_executes_commands_from_metadata() -> None:
     from dyno import DynareRunResults
 

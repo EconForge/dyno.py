@@ -165,6 +165,7 @@ class PerturbationSolution:
         # Delegate any other method/property access to the underlying decision_rule
         return getattr(self.decision_rule, name)
 
+
 def solve(
     A: TMatrix, B: TMatrix, C: TMatrix, method: Solver = "qz", options={}
 ) -> tuple[TMatrix, TVector | None]:
@@ -296,19 +297,22 @@ def solve_qz(
     T, S, α, β, Q, Z = ordqz(F, G, sort=lambda a, b: np.abs(vgenev(a, b, tol=tol_sort)) <= 1 + tol_sort)  # type: ignore
     λ_all = vgenev(α, β, tol=tol_sort)
     Z11, Z12, Z21, Z22 = decompose_blocks(Z)
-    
+
     λ_all = np.abs(λ_all)
 
     # TODO: verify whether Blanchard-Kahn conditions are valid
     evs = np.sort(λ_all).reshape(2 * n)
-    n = len(evs)//2
-    l1 = evs[n-1]
+    n = len(evs) // 2
+    l1 = evs[n - 1]
     l2 = evs[n]
-    if l1<=l2<1:
-        raise Exception(f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. Too many stable solutions.")
-    if 1<l1<=l2:
-        raise Exception(f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. No stable solution.")
-
+    if l1 <= l2 < 1:
+        raise Exception(
+            f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. Too many stable solutions."
+        )
+    if 1 < l1 <= l2:
+        raise Exception(
+            f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. No stable solution."
+        )
 
     X = (Z21 @ np.linalg.inv(Z11)).reshape(
         (n, n)
@@ -432,7 +436,6 @@ def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
 
 def serial_solve(a, b):
     return np.linalg.solve(a, b)
-
 
 
 def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):

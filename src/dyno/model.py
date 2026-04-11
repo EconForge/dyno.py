@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from math import nan
+import os
 from typing import Any, TYPE_CHECKING
 
 import numpy as np
@@ -38,10 +39,13 @@ class AbstractModel(ABC):
 
     def __init__(
         self: Self,
-        filename: str | None = None,
+        filename: str | os.PathLike[str] | None = None,
         txt: str | None = None,
         **kwargs: Any,
     ) -> None:
+        if filename is not None:
+            filename = os.fspath(filename)
+
         match filename, txt:
             case (None, None):
                 raise ValueError(
@@ -123,9 +127,12 @@ class AbstractModel(ABC):
 
     def run(self: Self, default_pipeline: bool = False) -> "RunResults":
         from .report import RunResults
+
         return RunResults(model=self)
 
-    def import_file(self: Self, filename: str, **kwargs: Any) -> None:
+    def import_file(
+        self: Self, filename: str | os.PathLike[str], **kwargs: Any
+    ) -> None:
         with open(filename, "rt", encoding="utf-8") as f:
             txt = f.read()
         self.import_model(txt, **kwargs)
@@ -213,10 +220,7 @@ class AbstractModel(ABC):
         guess = np.nan_to_num(np.asarray(y0, dtype=float), nan=1.0)
 
         def _candidate(values: np.ndarray) -> Self:
-            calib = {
-                name: float(values[i])
-                for i, name in enumerate(endogenous)
-            }
+            calib = {name: float(values[i]) for i, name in enumerate(endogenous)}
             model = self.recalibrate(**calib)
             for name, value in calib.items():
                 model.context["steady_states"][name] = value
@@ -238,7 +242,11 @@ class AbstractModel(ABC):
         solved = _candidate(np.asarray(sol.x, dtype=float))
         residuals = np.asarray(solved.residuals, dtype=float)
 
-        if (not sol.success) or (not np.isfinite(residuals).all()) or (np.max(np.abs(residuals)) > tol):
+        if (
+            (not sol.success)
+            or (not np.isfinite(residuals).all())
+            or (np.max(np.abs(residuals)) > tol)
+        ):
             raise SteadyStateError(residuals)
 
         return solved
@@ -290,7 +298,6 @@ class AbstractModel(ABC):
         r, A, B, C, D = self.jacobians
 
         X, evs = solve_quadratic_matrix(A, B, C, method=method)
-        
 
         Y = linsolve(A @ X + B, -D)
 

@@ -30,7 +30,9 @@ class DynareModel(AbstractModel):
     def recalibrate(self: Self, **calib):
         m = self._rebuild()
 
-        known = set(m.context["constants"].keys()) | set(m.context["steady_states"].keys())
+        known = set(m.context["constants"].keys()) | set(
+            m.context["steady_states"].keys()
+        )
         unknown = [k for k in calib.keys() if k not in known]
         if len(unknown) > 0:
             raise KeyError(f"Unknown calibration key(s): {', '.join(unknown)}")
@@ -64,6 +66,7 @@ class DynareModel(AbstractModel):
                 results.simulation = dr.irfs(type="deviation", T=40)
             else:
                 from .solver import deterministic_solve
+
                 sim = deterministic_solve(model, T=40)
                 results.simulation = {"Perfect Foresight": sim}
         else:
@@ -86,12 +89,19 @@ class DynareModel(AbstractModel):
 
         if results.simulation is not None and isinstance(results.simulation, dict):
             from .plots import plot_irfs
+
             results.figure = plot_irfs(results.simulation)
 
         results.finish()
         return results
 
-    def import_model(self: Self, txt: str, deriv_order=1, params_deriv_order=0, allow_undeclared_params=False) -> None:
+    def import_model(
+        self: Self,
+        txt: str,
+        deriv_order=1,
+        params_deriv_order=0,
+        allow_undeclared_params=False,
+    ) -> None:
         """imports model written in `.mod` format into symbolic attribute using Dynare's preprocessor
 
         Parameters
@@ -103,7 +113,7 @@ class DynareModel(AbstractModel):
         params_deriv_order : int, optional
             parameters derivative order, by default 0
         allow_undeclared_params : bool, optional
-            if True, automatically declare parameters that are assigned values 
+            if True, automatically declare parameters that are assigned values
             without being explicitly declared in the parameters section, by default False
         """
         from dynare_preprocessor import DynareModel as Modfile
@@ -116,7 +126,7 @@ class DynareModel(AbstractModel):
 
         # Keep original modfile text for rebuilding immutable model variants.
         self._original_txt = txt
-        
+
         # Preprocess to declare undeclared parameters if needed
         if allow_undeclared_params:
             txt = self._declare_undeclared_params(txt)
@@ -174,66 +184,74 @@ class DynareModel(AbstractModel):
         import re
 
         # Remove comments from text for parsing
-        txt_no_comments = re.sub(r'/\*.*?\*/', '', txt, flags=re.DOTALL)
-        txt_no_comments = re.sub(r'//.*?$', '', txt_no_comments, flags=re.MULTILINE)
-        
+        txt_no_comments = re.sub(r"/\*.*?\*/", "", txt, flags=re.DOTALL)
+        txt_no_comments = re.sub(r"//.*?$", "", txt_no_comments, flags=re.MULTILINE)
+
         # Only look at declarations before the model block
         # Split by 'model;' and take only the declarations part
-        model_split = re.split(r'\bmodel\s*;', txt_no_comments, flags=re.IGNORECASE)
+        model_split = re.split(r"\bmodel\s*;", txt_no_comments, flags=re.IGNORECASE)
         declarations_part = model_split[0] if model_split else txt_no_comments
-        
+
         # Split original text into lines for reconstruction
-        lines = txt.split('\n')
-        
+        lines = txt.split("\n")
+
         # Find all declared identifiers (vars, varexo, parameters)
         declared_identifiers = set()
         params_section_idx = None
-        
+
         # Extract var declarations (only before model block)
-        var_matches = re.findall(r'^\s*var\s+(.*?);\s*$', declarations_part, re.MULTILINE | re.IGNORECASE)
+        var_matches = re.findall(
+            r"^\s*var\s+(.*?);\s*$", declarations_part, re.MULTILINE | re.IGNORECASE
+        )
         for match in var_matches:
-            declared_identifiers.update(re.findall(r'\b([a-zA-Z_]\w*)\b', match))
-        
+            declared_identifiers.update(re.findall(r"\b([a-zA-Z_]\w*)\b", match))
+
         # Extract varexo declarations (only before model block)
-        varexo_matches = re.findall(r'^\s*varexo\s+(.*?);\s*$', declarations_part, re.MULTILINE | re.IGNORECASE)
+        varexo_matches = re.findall(
+            r"^\s*varexo\s+(.*?);\s*$", declarations_part, re.MULTILINE | re.IGNORECASE
+        )
         for match in varexo_matches:
-            declared_identifiers.update(re.findall(r'\b([a-zA-Z_]\w*)\b', match))
-        
+            declared_identifiers.update(re.findall(r"\b([a-zA-Z_]\w*)\b", match))
+
         # Extract parameters declarations and find section (only before model block)
-        params_matches = re.findall(r'^\s*parameters\s+(.*?);\s*$', declarations_part, re.MULTILINE | re.IGNORECASE)
+        params_matches = re.findall(
+            r"^\s*parameters\s+(.*?);\s*$",
+            declarations_part,
+            re.MULTILINE | re.IGNORECASE,
+        )
         for match in params_matches:
-            declared_identifiers.update(re.findall(r'\b([a-zA-Z_]\w*)\b', match))
-        
+            declared_identifiers.update(re.findall(r"\b([a-zA-Z_]\w*)\b", match))
+
         # Find parameters section index in original file
         for i, line in enumerate(lines):
-            if re.match(r'\s*parameters\s', line, re.IGNORECASE):
+            if re.match(r"\s*parameters\s", line, re.IGNORECASE):
                 params_section_idx = i
                 break
-        
+
         # Find parameter assignments (identifier = number;) that are not yet declared
         # Only look at assignments before model block
         undeclared = set()
-        assignment_pattern = r'^\s*([a-zA-Z_]\w*)\s*=\s*[+-]?[\d.eE+-]+(?:\s*[;]|$)'
-        
-        for line in declarations_part.split('\n'):
+        assignment_pattern = r"^\s*([a-zA-Z_]\w*)\s*=\s*[+-]?[\d.eE+-]+(?:\s*[;]|$)"
+
+        for line in declarations_part.split("\n"):
             match = re.match(assignment_pattern, line)
             if match:
                 param_name = match.group(1)
                 if param_name not in declared_identifiers:
                     undeclared.add(param_name)
-        
+
         # If there are undeclared parameters, add them to the declaration
         if undeclared:
-            undeclared_list = ', '.join(sorted(undeclared))
-            
+            undeclared_list = ", ".join(sorted(undeclared))
+
             if params_section_idx is not None:
                 # There's already a parameters section - append to it
                 # Find the semicolon at the end of the parameters declaration
                 j = params_section_idx
                 while j < len(lines):
-                    if ';' in lines[j]:
+                    if ";" in lines[j]:
                         # Insert before the semicolon
-                        lines[j] = lines[j].replace(';', f', {undeclared_list};', 1)
+                        lines[j] = lines[j].replace(";", f", {undeclared_list};", 1)
                         break
                     j += 1
             else:
@@ -241,20 +259,20 @@ class DynareModel(AbstractModel):
                 # Find the last var/varexo declaration
                 last_var_section = 0
                 for i, line in enumerate(lines):
-                    if re.match(r'\s*(var|varexo)\s', line, re.IGNORECASE):
+                    if re.match(r"\s*(var|varexo)\s", line, re.IGNORECASE):
                         last_var_section = i
                         # Find end of this declaration
                         j = i
-                        while j < len(lines) and ';' not in lines[j]:
+                        while j < len(lines) and ";" not in lines[j]:
                             j += 1
                         if j < len(lines):
                             last_var_section = j
-                
+
                 # Insert parameters section after the last var/varexo
                 insert_idx = last_var_section + 1
-                lines.insert(insert_idx, f'\nparameters {undeclared_list};')
-        
-        return '\n'.join(lines)
+                lines.insert(insert_idx, f"\nparameters {undeclared_list};")
+
+        return "\n".join(lines)
 
     def _set_context(self: Self) -> None:
         """retrieves calibration values"""
@@ -309,7 +327,7 @@ class DynareModel(AbstractModel):
             "steady_states": steady_states,
             "metadata": {
                 "dynare_commands": self._extract_dynare_commands(),
-            }
+            },
         }
         # self.paths = None
         # self.exogenous = self.processes
@@ -410,4 +428,3 @@ def sparse_to_dense(
     for (i, j), v in sparse.items():
         res[i, j] = v
     return res
-
