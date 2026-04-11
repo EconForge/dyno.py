@@ -14,7 +14,7 @@ version = "0.1.7.1"
 dyno = { path = "." , editable = true}
 
 [dependencies]
-python = ">=3.11.14,<3.14"
+python = ">=3.12.12,<3.14"
 rich = ">=14.3.2,<15"
 interegular = ">=0.3.3,<0.4"
 sympy = ">=1.14.0,<2"
@@ -38,7 +38,7 @@ backend = { name = "pixi-build-python", version = ">=0.4.0" }
 
 [package.host-dependencies] 
 hatchling = "==1.26.3"
-python = "<3.14,>=3.11"
+python = "<3.14,>=3.12"
 
 [feature.test.dependencies]
 pytest = ">=9.0.2,<10"
@@ -60,8 +60,8 @@ black = ">=26.1.0,<27"
 
 [feature.lint.tasks]
 typecheck = "mypy src --ignore-missing-imports"
-black = "black src tests"
-ci-qc = "black src tests --check"
+black = "black src tests scratch"
+ci-qc = "black src tests scratch --check"
 
 [feature.gui.dependencies]
 mock = ">=5.2.0,<6"
@@ -95,9 +95,6 @@ python-markdown-math = ">=0.9,<0.10"
 [feature.docs.tasks]
 docs = "mkdocs serve"
 
-[feature.py311.dependencies]
-python = ">=3.11.14,<3.12"
-
 [feature.py312.dependencies]
 python = ">=3.12.12,<3.13"
 
@@ -114,6 +111,5 @@ test = ["test"]
 prod = ["jupyter"]
 solara = ["gui"]
 dev = ["test", "lint", "jupyter", "docs"]
-py311 = ["test", "lint", "py311"]
 py312 = ["test", "lint", "py312"]
 py313 = ["test", "lint", "py313"]

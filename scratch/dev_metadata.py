@@ -2,15 +2,18 @@ from dyno import DynoModel, DynareModel
 from dyno import examples_path
 import json
 
-
 # Test 1: DynareModel with undeclared params
-model = DynareModel(examples_path("modfiles", "example1.mod"), allow_undeclared_params=True)
+model = DynareModel(
+    examples_path("modfiles", "example1.mod"), allow_undeclared_params=True
+)
 print("=== DynareModel example1.mod (with allow_undeclred_params) ===")
 print(json.dumps(model.metadata, indent=2))
 print()
 
 # Test 2: DynareModel with options parsing
-model2 = DynareModel(examples_path("modfiles", "example2.mod"), allow_undeclared_params=True)
+model2 = DynareModel(
+    examples_path("modfiles", "example2.mod"), allow_undeclared_params=True
+)
 print("=== DynareModel example2.mod (with options) ===")
 print(json.dumps(model2.metadata, indent=2))
 print()
@@ -23,10 +26,8 @@ print()
 
 # Test 4: Access specific commands
 print("=== Accessing specific commands ===")
-for cmd in model2.metadata['dynare_commands']:
+for cmd in model2.metadata["dynare_commands"]:
     print(f"Command: {cmd['command']}, Options: {cmd['options']}")
-
-
 
 
 report = DynareModel(examples_path("modfiles", "example2.mod")).run()
@@ -37,13 +38,9 @@ from dyno import DynoModel
 DynoModel(examples_path("neo.dyno")).run()
 
 
-
-
 from dyno.report import dsge_report
 
-dsge_report(
-    filename=examples_path("modfiles", "example2.mod")
-)
+dsge_report(filename=examples_path("modfiles", "example2.mod"))
 
 
 # model2.residuals
@@ -56,12 +53,8 @@ dsge_report(
 # model2.residuals
 
 
-
 # model2.steady().check().solve()
 # ms = model2.symbolic
 
 
-
 # report = model2.run()
-
-
