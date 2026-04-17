@@ -266,6 +266,40 @@ stoch_simul;
     assert model.context["steady_states"]["x"] != pytest.approx(20.0)
 
 
+def test_dynare_run_check_populates_residuals() -> None:
+    txt = """
+var x;
+varexo e;
+parameters alpha beta;
+
+alpha = 0.9;
+beta = 2.0;
+
+model;
+x = alpha*x(-1) + beta + e;
+end;
+
+initval;
+x = 0;
+e = 0;
+end;
+
+shocks;
+var e = 0.01;
+end;
+
+steady;
+check;
+"""
+
+    model = DynareModel(filename="<run_check>.mod", txt=txt)
+
+    results = model.run()
+
+    assert results.residuals is not None
+    assert np.max(np.abs(results.residuals)) < 1e-8
+
+
 def test_dynare_commands_omit_param_init_and_initval() -> None:
     model = DynareModel("examples/modfiles/example2.mod", allow_undeclared_params=True)
     names = [c["command"] for c in model.metadata["dynare_commands"]]

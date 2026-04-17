@@ -13,6 +13,8 @@ from .errors import DynareParserError, SteadyStateError
 
 class DynareModel(AbstractModel):
 
+    _check_eigenvalues: bool = True
+
     def _rebuild(self: Self) -> Self:
         txt = getattr(self, "_original_txt", None)
         if txt is None:
@@ -63,6 +65,7 @@ class DynareModel(AbstractModel):
             if not model.is_deterministic:
                 dr = model.perturb()
                 results.solution = dr
+                results.eigenvalues = dr.evs
                 results.simulation = dr.irfs(type="deviation", T=40)
             else:
                 from .solver import deterministic_solve
@@ -77,12 +80,15 @@ class DynareModel(AbstractModel):
                     model = model.steady()
                     results.model = model
                 elif name == "check":
-                    model.check()
+                    results.residuals = model.residuals
+                    model = model.check()
+                    results.eigenvalues = getattr(model, "_eigenvalues", None)
                 elif name == "resid":
                     results.residuals = model.residuals
                 elif name == "stoch_simul":
                     dr = model.perturb()
                     results.solution = dr
+                    results.eigenvalues = dr.evs
                     irf_type = options.get("type", "deviation")
                     horizon = int(options.get("irf", 40))
                     results.simulation = dr.irfs(type=irf_type, T=horizon)

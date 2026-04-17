@@ -9,6 +9,7 @@ from .simul import *
 from .dyno_model import DynoModel
 from .dynare_model import DynareModel
 from .report import DynoRunResults, DynareRunResults, Report, RunResults
+from .cli import dynare
 
 
 def examples_path(*parts: str) -> Path:

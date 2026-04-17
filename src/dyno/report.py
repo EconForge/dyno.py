@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import time
 import os
 import numpy as np
@@ -25,7 +26,8 @@ template = tempita.Template(
 {[default dr=None]}
 {[default bk_check=None]}
 {[default sim=None]}
-{[default fig=None]}                        
+{[default fig=None]}
+{[default eigenvalues=None]}
                             
 
 {[if len(parser_errors)>0]}      
@@ -77,6 +79,27 @@ Steady state values
 {[ model.latex_equations() ]}
 {[endif]}
 :::     
+
+---
+{[endif]}
+
+
+{[if eigenvalues is not None and dr is None]}
+
+## Eigenvalue Analysis
+
+{[py: import numpy as _np; _evs_mod = _np.abs(eigenvalues); _n = len(_evs_mod)//2; _bk = bool(_evs_mod[_n-1] < 1 < _evs_mod[_n]) if _n > 0 else None]}
+{[if _bk]}
+:::{tip} Blanchard-Kahn conditions are met
+{[else]}
+:::{warning} Blanchard-Kahn conditions are not met
+{[endif]}
+:class: dropdown
+Generalized Eigenvalues (sorted by modulus):
+```{code} python
+{[eigenvalues]}
+```
+:::
 
 ---
 {[endif]}
@@ -211,6 +234,7 @@ class RunResults:
         self.solution: PerturbationSolution | None = None
         self.simulation: dict | pd.DataFrame | None = None
         self.figure: Any | None = None
+        self.eigenvalues: np.ndarray | None = None
 
         # Structured diagnostics: list of {line, type, message}
         self.errors: list[dict[str, Any]] = []
@@ -258,6 +282,173 @@ class RunResults:
         if hasattr(value, "to_frame"):
             return value.to_frame().to_html()
         return f"<pre>{value}</pre>"
+
+    @staticmethod
+    def _figure_to_html(figure: Any) -> str:
+        if hasattr(figure, "to_html"):
+            try:
+                return figure.to_html(full_html=False, include_plotlyjs="cdn")
+            except TypeError:
+                try:
+                    return figure.to_html()
+                except TypeError:
+                    pass
+        if hasattr(figure, "_repr_html_"):
+            return figure._repr_html_()
+        return f"<pre>{figure}</pre>"
+
+    @staticmethod
+    def _vector_to_horizontal_html(
+        values: Any,
+        *,
+        title: str,
+        value_formatter: str = "{:.6g}",
+    ) -> str:
+        arr = np.asarray(values)
+        if arr.size == 0:
+            return ""
+
+        flat = arr.reshape(-1)
+        cells = []
+        for index, value in enumerate(flat, start=1):
+            if np.iscomplexobj(np.asarray([value])):
+                formatted = str(value)
+            else:
+                formatted = value_formatter.format(float(value))
+            cells.append(
+                "<td style=\"padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap;\">"
+                f"<div style=\"font-size:11px;color:#64748b;\">{index}</div>"
+                f"<div style=\"font-size:13px;color:#0f172a;\">{html.escape(formatted)}</div>"
+                "</td>"
+            )
+
+        return (
+            f"<div style=\"margin:10px 0 14px 0;\"><div style=\"font-weight:600;color:#0f172a;margin-bottom:6px;\">{html.escape(title)}</div>"
+            "<div style=\"overflow-x:auto;\"><table style=\"border-collapse:collapse;\"><tr>"
+            + "".join(cells)
+            + "</tr></table></div></div>"
+        )
+
+    @staticmethod
+    def _simulation_to_html(simulation: Any) -> str:
+        import pandas as pd
+
+        from dyno.simul import sim_to_nsim
+
+        if isinstance(simulation, dict):
+            data = sim_to_nsim(simulation).copy()
+        elif hasattr(simulation, "melt"):
+            data = simulation.copy()
+            if "t" not in data.columns:
+                data = data.reset_index().rename(columns={"index": "t"})
+            data = data.melt(id_vars=["t"], var_name="variable", value_name="value")
+            data["shock"] = "simulation"
+        else:
+            return ""
+
+        required = {"t", "variable", "value", "shock"}
+        if not required.issubset(data.columns):
+            return ""
+
+        data = data.loc[:, ["t", "variable", "value", "shock"]].copy()
+        data["t"] = pd.to_numeric(data["t"], errors="coerce")
+        data["value"] = pd.to_numeric(data["value"], errors="coerce")
+        data = data[np.isfinite(data["t"]) & np.isfinite(data["value"])]
+        if data.empty:
+            return ""
+
+        variables = list(dict.fromkeys(data["variable"].astype(str)))
+        shocks = list(dict.fromkeys(data["shock"].astype(str)))
+        colors = [
+            "#0f766e",
+            "#dc2626",
+            "#2563eb",
+            "#ca8a04",
+            "#7c3aed",
+            "#ea580c",
+        ]
+        color_map = {shock: colors[i % len(colors)] for i, shock in enumerate(shocks)}
+
+        panel_width = 260
+        panel_height = 170
+        cols = 2
+        rows = max(1, (len(variables) + cols - 1) // cols)
+        svg_width = cols * panel_width
+        svg_height = rows * panel_height + 28
+
+        parts = [
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_width}" height="{svg_height}" viewBox="0 0 {svg_width} {svg_height}" role="img" aria-label="Simulation charts">'
+        ]
+        parts.append('<rect width="100%" height="100%" fill="white"/>')
+
+        if shocks:
+            legend_x = 12
+            for shock in shocks:
+                color = color_map[shock]
+                safe_shock = html.escape(str(shock))
+                parts.append(f'<line x1="{legend_x}" y1="16" x2="{legend_x + 18}" y2="16" stroke="{color}" stroke-width="2"/>')
+                parts.append(f'<text x="{legend_x + 24}" y="20" font-size="12" fill="#334155">{safe_shock}</text>')
+                legend_x += 24 + max(36, len(safe_shock) * 7)
+
+        for index, variable in enumerate(variables):
+            subset = data[data["variable"].astype(str) == variable].copy()
+            subset = subset.sort_values(["shock", "t"])
+            if subset.empty:
+                continue
+
+            x0 = (index % cols) * panel_width
+            y0 = (index // cols) * panel_height + 28
+
+            left = x0 + 36
+            top = y0 + 18
+            plot_width = panel_width - 56
+            plot_height = panel_height - 52
+
+            xmin = float(subset["t"].min())
+            xmax = float(subset["t"].max())
+            ymin = float(subset["value"].min())
+            ymax = float(subset["value"].max())
+
+            if xmin == xmax:
+                xmax = xmin + 1.0
+            if ymin == ymax:
+                pad = 1.0 if ymin == 0 else abs(ymin) * 0.1
+                ymin -= pad
+                ymax += pad
+
+            def sx(value: float) -> float:
+                return left + ((value - xmin) / (xmax - xmin)) * plot_width
+
+            def sy(value: float) -> float:
+                return top + plot_height - ((value - ymin) / (ymax - ymin)) * plot_height
+
+            zero_y = sy(0.0) if ymin <= 0.0 <= ymax else None
+            if zero_y is not None:
+                parts.append(
+                    f'<line x1="{left}" y1="{zero_y:.2f}" x2="{left + plot_width}" y2="{zero_y:.2f}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>'
+                )
+
+            parts.append(f'<rect x="{left}" y="{top}" width="{plot_width}" height="{plot_height}" fill="none" stroke="#cbd5e1" stroke-width="1"/>')
+            parts.append(f'<text x="{left}" y="{y0 + 12}" font-size="13" font-weight="600" fill="#0f172a">{html.escape(str(variable))}</text>')
+            parts.append(f'<text x="{left}" y="{top + plot_height + 18}" font-size="11" fill="#64748b">{xmin:g}</text>')
+            parts.append(f'<text x="{left + plot_width - 8}" y="{top + plot_height + 18}" text-anchor="end" font-size="11" fill="#64748b">{xmax:g}</text>')
+            parts.append(f'<text x="{left - 6}" y="{top + 10}" text-anchor="end" font-size="11" fill="#64748b">{ymax:.3g}</text>')
+            parts.append(f'<text x="{left - 6}" y="{top + plot_height}" text-anchor="end" font-size="11" fill="#64748b">{ymin:.3g}</text>')
+
+            for shock in shocks:
+                shock_subset = subset[subset["shock"].astype(str) == shock]
+                if shock_subset.empty:
+                    continue
+                points = " ".join(
+                    f"{sx(float(row.t)):.2f},{sy(float(row.value)):.2f}"
+                    for row in shock_subset.itertuples(index=False)
+                )
+                if points:
+                    color = color_map[shock]
+                    parts.append(f'<polyline fill="none" stroke="{color}" stroke-width="2" points="{points}"/>')
+
+        parts.append("</svg>")
+        return "".join(parts)
 
     def _repr_markdown_(self) -> str:
         if self.elapsed is None:
@@ -317,6 +508,7 @@ class RunResults:
             "dr": dr,
             "sim": self.simulation,
             "fig": self.figure,
+            "eigenvalues": self.eigenvalues,
         }
         d.update(context)
 
@@ -334,10 +526,33 @@ class RunResults:
         parts: list[str] = []
         if self.model is not None and hasattr(self.model, "_repr_html_"):
             parts.append(self.model._repr_html_())
+
+        check_parts: list[str] = []
         if self.residuals is not None:
-            parts.append(f"<pre>Residuals: {self.residuals}</pre>")
+            check_parts.append(
+                self._vector_to_horizontal_html(self.residuals, title="Residuals")
+            )
+        if self.eigenvalues is not None:
+            check_parts.append(
+                self._vector_to_horizontal_html(
+                    self.eigenvalues,
+                    title="Generalized Eigenvalues",
+                )
+            )
+        if check_parts:
+            parts.append("<h3>Check</h3>")
+            parts.extend(check_parts)
+
         if self.solution is not None and hasattr(self.solution, "_repr_html_"):
             parts.append(self.solution._repr_html_())
+        if self.simulation is not None:
+            sim_html = self._simulation_to_html(self.simulation)
+            if sim_html:
+                parts.append("<h3>Simulation</h3>")
+                parts.append(sim_html)
+        elif self.figure is not None:
+            parts.append("<h3>Simulation</h3>")
+            parts.append(self._figure_to_html(self.figure))
         for e in self.errors:
             parts.append(f"<pre style='color:red'>{e['message']}</pre>")
         return "<br>".join(parts)

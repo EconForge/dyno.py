@@ -205,10 +205,25 @@ class AbstractModel(ABC):
         y, e = self.__steady_state_vectors__
         return self.compute_residuals(y, y, y, e)
 
-    def check(self: "Self", tol: float = 1e-6) -> "Self":
+    _check_eigenvalues: bool = False
+
+    def check(self: "Self", tol: float = 1e-6, compute_eigenvalues: bool | None = None) -> "Self":
         r = self.residuals
         if not all(abs(x) < tol for x in r):
             raise SteadyStateError(r)
+        if compute_eigenvalues is None:
+            compute_eigenvalues = self._check_eigenvalues
+        if compute_eigenvalues:
+            from .solver import solve_qz
+            jac = self.jacobians
+            A, B, C = jac[0], jac[1], jac[2]
+            try:
+                _, evs = solve_qz(A, B, C)
+            except Exception:
+                evs = None
+            self._eigenvalues = evs
+        else:
+            self._eigenvalues = None
         return self
 
     def steady(self: Self, tol: float = 1e-10, maxiter: int = 100) -> Self:

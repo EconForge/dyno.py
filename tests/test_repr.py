@@ -84,3 +84,53 @@ x[t] = alpha * x[t-1] + e[t]
 
     assert "Simulation" in md
     assert "<table" in md
+
+
+def test_runresults_html_includes_figure_html():
+    class DummyFigure:
+        def to_html(self, full_html=False, include_plotlyjs="cdn"):
+            assert full_html is False
+            assert include_plotlyjs == "cdn"
+            return "<div>dummy-figure</div>"
+
+    results = RunResults()
+    results.figure = DummyFigure()
+
+    html = results._repr_html_()
+
+    assert "Simulation" in html
+    assert "dummy-figure" in html
+
+
+def test_runresults_html_groups_residuals_and_eigenvalues_in_check_section():
+    results = RunResults()
+    results.residuals = pd.Series([0.0, 1.25, -0.5])
+    results.eigenvalues = pd.Series([0.9, 1.1, 1.4])
+
+    html = results._repr_html_()
+
+    assert "<h3>Check</h3>" in html
+    assert "Residuals" in html
+    assert "Generalized Eigenvalues" in html
+    assert "<h3>Generalized Eigenvalues</h3>" not in html
+    assert html.count("<tr>") >= 2
+    assert "1.25" in html
+    assert "1.4" in html
+
+
+def test_runresults_html_includes_static_svg_for_simulation():
+    results = RunResults()
+    results.simulation = {
+        "eps": pd.DataFrame(
+            {
+                "x": [0.0, 0.2, 0.1],
+                "y": [0.0, -0.1, 0.05],
+            }
+        )
+    }
+
+    html = results._repr_html_()
+
+    assert "Simulation" in html
+    assert "<svg" in html
+    assert "polyline" in html
