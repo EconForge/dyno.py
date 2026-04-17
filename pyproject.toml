@@ -1,7 +1,7 @@
 [project]
 name = "dyno"
-version = "0.1.7.3"
-requires-python = ">= 3.12,<3.14"
+version = "0.1.7.4"
+requires-python = ">= 3.10,<3.14"
 
 [project.scripts]
 dynare = "dyno.cli:dynare_cmd"
