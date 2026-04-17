@@ -21,7 +21,6 @@ sympy = ">=1.14.0,<2"
 altair = ">=6.0.0,<7"
 tempita = ">=0.6.0,<0.7"
 pytest = ">=9.0.2,<10"
-
 dynare-preprocessor-pylib = ">=0.0.0.dev1,<0.0.0.dev2"
 numpy = ">=2.4.2,<3" # Compatibility with notebook.link scipy
 scipy = ">=1.17.0,<2"
@@ -31,6 +30,7 @@ plotly = ">=6.5.2,<7"
 black = ">=26.1.0,<27"
 pathspec = ">=1.0.4,<2"
 ripgrep = ">=15.1.0,<16"
+lark = ">=1.3.1,<2"
 
 [package.build]
 backend = { name = "pixi-build-python", version = ">=0.4.0" }
