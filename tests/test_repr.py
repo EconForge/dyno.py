@@ -3,7 +3,27 @@ from dyno.report import RunResults, dsge_report, _send_interface_notifications
 import pandas as pd
 import re
 import numpy as np
-from unittest.mock import patch
+import sys
+from types import ModuleType
+from unittest.mock import Mock, patch
+
+
+def _patch_fake_ipython(display_mock: Mock):
+    ipython_module = ModuleType("IPython")
+    display_module = ModuleType("IPython.display")
+
+    display_module.display = display_mock
+    display_module.Markdown = lambda text: text
+    display_module.HTML = lambda text: text
+    ipython_module.display = display_module
+
+    return patch.dict(
+        sys.modules,
+        {
+            "IPython": ipython_module,
+            "IPython.display": display_module,
+        },
+    )
 
 
 def _strip_ansi(text: str) -> str:
@@ -393,7 +413,8 @@ x[t] = y[t-1]
 def test_send_interface_notifications_does_not_emit_markdown_mime():
     results = RunResults()
 
-    with patch("IPython.display.display") as display_mock:
+    display_mock = Mock()
+    with _patch_fake_ipython(display_mock):
         _send_interface_notifications(results)
 
     assert not any(
@@ -409,7 +430,8 @@ def test_runresults_display_emits_markdown_then_figure():
     results = RunResults(output_type="markdown")
     results.figure = DummyFigure()
 
-    with patch("IPython.display.display") as display_mock:
+    display_mock = Mock()
+    with _patch_fake_ipython(display_mock):
         results.display()
 
     assert len(display_mock.call_args_list) >= 2
@@ -419,7 +441,8 @@ def test_runresults_display_emits_markdown_then_figure():
 def test_runresults_display_text_mode_emits_plain_text():
     results = RunResults(output_type="text")
 
-    with patch("IPython.display.display") as display_mock:
+    display_mock = Mock()
+    with _patch_fake_ipython(display_mock):
         results.display()
 
     assert any(
