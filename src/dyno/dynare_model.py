@@ -66,6 +66,7 @@ class DynareModel(AbstractModel):
                 dr = model.perturb()
                 results.solution = dr
                 results.eigenvalues = dr.evs
+                results.moments = dr.moments()[1]
                 results.simulation = dr.irfs(type="deviation", T=40)
             else:
                 from .solver import deterministic_solve
@@ -89,6 +90,7 @@ class DynareModel(AbstractModel):
                     dr = model.perturb()
                     results.solution = dr
                     results.eigenvalues = dr.evs
+                    results.moments = dr.moments()[1]
                     irf_type = options.get("type", "deviation")
                     horizon = int(options.get("irf", 40))
                     results.simulation = dr.irfs(type=irf_type, T=horizon)

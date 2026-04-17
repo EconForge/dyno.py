@@ -1,7 +1,8 @@
 from dyno import DynoModel
-from dyno.report import RunResults
+from dyno.report import RunResults, dsge_report
 import pandas as pd
 import re
+import numpy as np
 
 
 def _strip_ansi(text: str) -> str:
@@ -134,3 +135,32 @@ def test_runresults_html_includes_static_svg_for_simulation():
     assert "Simulation" in html
     assert "<svg" in html
     assert "polyline" in html
+
+
+def test_dsge_report_handles_steady_state_error_gracefully():
+    """Test that dsge_report() gracefully handles models with bad steady states.
+    
+    This test verifies that when a check command fails on a model,
+    dsge_report() returns a partial report with residuals rather than crashing.
+    """
+    # Use explicit check command in metadata to trigger steady-state validation
+    txt = """
+alpha := 0.9
+beta := 2.0
+
+x[~] := 1.0
+x[t] = alpha*x[t-1] + beta
+
+check;
+"""
+    # Call dsge_report with a model that has an explicit check command
+    # The check command will fail because the steady state is inconsistent
+    results = dsge_report(txt, filename="bad_steady_state.dyno")
+    
+    # Should return RunResults, not raise exception
+    assert isinstance(results, RunResults)
+    
+    # Should have a warning or error from the failed check
+    assert len(results.warnings) > 0 or len(results.errors) > 0
+
+

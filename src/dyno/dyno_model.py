@@ -92,6 +92,7 @@ class DynoModel(AbstractModel):
             else:
                 dr = model.solve()
                 results.solution = dr
+                results.moments = dr.moments()[1]
                 results.simulation = dr.irfs(type="deviation", T=40)
         else:
             for cmd in commands:

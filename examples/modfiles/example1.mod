@@ -35,7 +35,6 @@ beta  = 0.99;
 delta = 0.025;
 psi   = 0;
 theta = 2.95;
-
 phi   = 0.1;
 
 model;
@@ -67,4 +66,4 @@ end;
 
 
 check;
-stoch_simul;
+//<!-- stoch_simul; -->

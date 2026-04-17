@@ -41,15 +41,15 @@ class LARKParserError(ParserError):
         else:
             message = str(type(lark_error))
 
-        # self.message = message
+        if txt is not None:
+            details = lark_error.get_context(txt)
+            details += str(lark_error)
+        else:
+            details = str(lark_error)
+        super().__init__(message)
         self.column = column
         self.line = line
-        if txt is not None:
-            self.details = lark_error.get_context(txt)
-            self.details += str(lark_error)
-        else:
-            self.details = str(lark_error)
-        super().__init__(message)
+        self.details = details
 
 
 from dynare_preprocessor import PreprocessorException, UnsupportedFeatureException

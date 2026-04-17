@@ -6,7 +6,7 @@ import os
 import numpy as np
 import tempita
 
-from dyno.errors import ParserError
+from dyno.errors import ParserError, SteadyStateError
 
 from typing import TYPE_CHECKING, Any
 
@@ -28,6 +28,8 @@ template = tempita.Template(
 {[default sim=None]}
 {[default fig=None]}
 {[default eigenvalues=None]}
+{[default residuals=None]}
+{[default moments=None]}
                             
 
 {[if len(parser_errors)>0]}      
@@ -83,11 +85,25 @@ Steady state values
 ---
 {[endif]}
 
+{[if residuals is not None or eigenvalues is not None]}
 
-{[if eigenvalues is not None and dr is None]}
+## Check
 
-## Eigenvalue Analysis
+{[if residuals is not None]}
+{[py: import numpy as _np; _res_ok = bool(_np.max(_np.abs(residuals)) < 1e-6)]}
+{[if _res_ok]}
+:::{tip} Residuals are zero
+{[else]}
+:::{warning} Residuals are not zero
+{[endif]}
+:class: dropdown
+```{code} python
+{[ str(residuals) ]}
+```
+:::
+{[endif]}
 
+{[if eigenvalues is not None]}
 {[py: import numpy as _np; _evs_mod = _np.abs(eigenvalues); _n = len(_evs_mod)//2; _bk = bool(_evs_mod[_n-1] < 1 < _evs_mod[_n]) if _n > 0 else None]}
 {[if _bk]}
 :::{tip} Blanchard-Kahn conditions are met
@@ -95,48 +111,24 @@ Steady state values
 :::{warning} Blanchard-Kahn conditions are not met
 {[endif]}
 :class: dropdown
-Generalized Eigenvalues (sorted by modulus):
+Sorted by modulus:
 ```{code} python
 {[eigenvalues]}
 ```
 :::
+{[endif]}
 
 ---
+
 {[endif]}
+
+
 
 
 {[if dr is not None]}
                     
 ## Solution
-
-                                                   
-{[if residuals is not None and not abs(residuals).max() < 1e-6]}
-:::{warning} Non zero residuals
-:class: dropdown
-The model has non zero residuals after calibration. This may be due to a missing steady-state
-calculation or an error in the model equations.
-```{code} python
-{[ str(residuals) ]}
-```
-:::
-{[endif]}
-
-                                       
-
-{[if bk_check]}
-:::{tip} Blanchard Kan conditions are met
-{[else]}
-:::{warning} Blanchard Kan conditions are not met
-{[endif]}
-:class: dropdown
-System Eigenvalues:
-```{code} python
-{[dr.evs.real]}
-```
-:::
-
-                                                            
-
+                         
 
 :::{dropdown} Recursive Decision Rule
                             
@@ -152,6 +144,7 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 {[to_html_table(jacs[1])]}
 
 :::
+
 ---
 {[endif]}
                             
@@ -159,6 +152,12 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 {[if sim is not None and model.checks['deterministic']==False]}
 
 ## Simulation
+
+{[if moments is not None]}
+:::{dropdown} Unconditional Moments
+{[to_html_table(moments_df)]}
+:::
+{[endif]}
 
 :::::{dropdown} IRFS
                             
@@ -179,6 +178,12 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 {[if sim is not None and model.checks['deterministic']==True]}
 
 ## Simulation
+
+{[if moments is not None]}
+:::{dropdown} Unconditional Moments
+{[to_html_table(moments_df)]}
+:::
+{[endif]}
 
 :::::{dropdown} IRFS
                             
@@ -235,6 +240,7 @@ class RunResults:
         self.simulation: dict | pd.DataFrame | None = None
         self.figure: Any | None = None
         self.eigenvalues: np.ndarray | None = None
+        self.moments: np.ndarray | None = None
 
         # Structured diagnostics: list of {line, type, message}
         self.errors: list[dict[str, Any]] = []
@@ -303,6 +309,8 @@ class RunResults:
         *,
         title: str,
         value_formatter: str = "{:.6g}",
+        tol: float | None = None,
+        labels: list[str] | None = None,
     ) -> str:
         arr = np.asarray(values)
         if arr.size == 0:
@@ -313,12 +321,17 @@ class RunResults:
         for index, value in enumerate(flat, start=1):
             if np.iscomplexobj(np.asarray([value])):
                 formatted = str(value)
+                is_bad = False
             else:
                 formatted = value_formatter.format(float(value))
+                is_bad = tol is not None and abs(float(value)) >= tol
+            label = labels[index - 1] if labels is not None else str(index)
+            val_color = "#dc2626" if is_bad else "#0f172a"
+            bg_color = "background:#fef2f2;" if is_bad else ""
             cells.append(
-                "<td style=\"padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap;\">"
-                f"<div style=\"font-size:11px;color:#64748b;\">{index}</div>"
-                f"<div style=\"font-size:13px;color:#0f172a;\">{html.escape(formatted)}</div>"
+                f"<td style=\"padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap;{bg_color}\">"
+                f"<div style=\"font-size:11px;color:#64748b;\">{html.escape(label)}</div>"
+                f"<div style=\"font-size:13px;color:{val_color};font-weight:{'600' if is_bad else '400'};\">{html.escape(formatted)}</div>"
                 "</td>"
             )
 
@@ -328,6 +341,18 @@ class RunResults:
             + "".join(cells)
             + "</tr></table></div></div>"
         )
+
+    @staticmethod
+    def _moments_to_html(moments: np.ndarray, variable_names: list[str]) -> str:
+        """Render unconditional covariance matrix as an HTML table."""
+        import pandas as pd
+
+        df = pd.DataFrame(
+            moments,
+            index=variable_names,
+            columns=variable_names,
+        )
+        return df.to_html()
 
     @staticmethod
     def _simulation_to_html(simulation: Any) -> str:
@@ -502,6 +527,15 @@ class RunResults:
             context["bk_check"] = bk
             context["jacs"] = dr.coefficients_as_df()
 
+        moments_df = None
+        if self.moments is not None and model is not None:
+            import pandas as pd
+            moments_df = pd.DataFrame(
+                self.moments,
+                index=model.symbols["endogenous"],
+                columns=model.symbols["endogenous"],
+            )
+
         d: dict[str, Any] = {
             "model": model,
             "residuals": self.residuals,
@@ -509,6 +543,8 @@ class RunResults:
             "sim": self.simulation,
             "fig": self.figure,
             "eigenvalues": self.eigenvalues,
+            "moments": self.moments,
+            "moments_df": moments_df,
         }
         d.update(context)
 
@@ -529,8 +565,21 @@ class RunResults:
 
         check_parts: list[str] = []
         if self.residuals is not None:
+            eq_labels: list[str] | None = None
+            if self.model is not None and hasattr(self.model, "symbolic"):
+                try:
+                    eq_labels = [
+                        f"eq {i + 1}" for i in range(len(self.model.symbolic.equations))
+                    ]
+                except Exception:
+                    pass
             check_parts.append(
-                self._vector_to_horizontal_html(self.residuals, title="Residuals")
+                self._vector_to_horizontal_html(
+                    self.residuals,
+                    title="Residuals",
+                    tol=1e-6,
+                    labels=eq_labels,
+                )
             )
         if self.eigenvalues is not None:
             check_parts.append(
@@ -545,7 +594,13 @@ class RunResults:
 
         if self.solution is not None and hasattr(self.solution, "_repr_html_"):
             parts.append(self.solution._repr_html_())
+
         if self.simulation is not None:
+            if self.moments is not None and self.model is not None:
+                moments_html = self._moments_to_html(self.moments, self.model.symbols["endogenous"])
+                if moments_html:
+                    parts.append("<h3>Moments</h3>")
+                    parts.append(moments_html)
             sim_html = self._simulation_to_html(self.simulation)
             if sim_html:
                 parts.append("<h3>Simulation</h3>")
@@ -571,6 +626,22 @@ class RunResults:
                         "message": entry["message"],
                     }
                 )
+        # Emit warnings for equations whose residual exceeds tolerance
+        if self.residuals is not None and self.model is not None and hasattr(self.model, "symbolic"):
+            try:
+                eqs = self.model.symbolic.equations
+                tol = 1e-6
+                for i, (eq, res) in enumerate(zip(eqs, np.asarray(self.residuals).reshape(-1))):
+                    if abs(float(res)) >= tol:
+                        line = getattr(getattr(eq, "meta", None), "line", None)
+                        if line is not None:
+                            data.append({
+                                "line": line,
+                                "type": "warning",
+                                "message": f"Equation {i + 1}: residual = {float(res):.3e}",
+                            })
+            except Exception:
+                pass
         return data
 
     def jupyter_display(self) -> None:
@@ -702,8 +773,28 @@ def _create_model(
 def dsge_report(
     txt: str | None = None,
     filename: str | os.PathLike[str] | None = None,
+    *,
+    display: bool = False,
     **options,
 ) -> RunResults:
+    """Run a model and return a :class:`RunResults` report.
+
+    Parameters
+    ----------
+    txt:
+        Model source text.
+    filename:
+        Path to a model file (used both to load text and to infer the model
+        type from the extension).
+    display:
+        When ``True``, call :meth:`RunResults.jupyter_display` to push
+        line-highlighting and the markdown report as rich Jupyter outputs
+        before returning the :class:`RunResults` object.
+        When ``False`` (default), return the :class:`RunResults` object
+        without any display side effects.
+    **options:
+        Forwarded to the model constructor and run pipeline.
+    """
 
     check_output = options.get("check_output", False)
     results = RunResults(source_txt=txt)
@@ -726,12 +817,18 @@ def dsge_report(
         results = model.run(default_pipeline=True)
         results.source_txt = txt
 
+    except SteadyStateError as e:
+        # Steady-state check failed: create partial report with model info and residuals
+        model = _create_model(txt, filename, **options)
+        results = RunResults(model=model, source_txt=txt)
+        results.residuals = e.residuals
+        results.add_warning(str(e))
+        results.finish()
+
     except Exception as e:
         results.add_error(str(e), line=getattr(e, "line", None))
         results.errors[-1]["_exception"] = e
-        results.finish()
-        results.jupyter_display()  # show partial results + errors
-        return results
+    if display:
+        results.jupyter_display()
 
-    results.jupyter_display()
     return results
