@@ -14,7 +14,7 @@ version = "0.1.7.3"
 dyno = { path = "." , editable = true}
 
 [dependencies]
-python = ">=3.12.12,<3.14"
+python = ">=3.10,<3.14"
 rich = ">=14.3.2,<15"
 interegular = ">=0.3.3,<0.4"
 sympy = ">=1.14.0,<2"
@@ -95,11 +95,17 @@ python-markdown-math = ">=0.9,<0.10"
 [feature.docs.tasks]
 docs = "mkdocs serve"
 
+[feature.py310.dependencies]
+python = ">=3.10.0,<3.11"
+
+[feature.py311.dependencies]
+python = ">=3.11.0,<3.12"
+
 [feature.py312.dependencies]
-python = ">=3.12.12,<3.13"
+python = ">=3.12.0,<3.13"
 
 [feature.py313.dependencies]
-python = ">=3.13.12,<3.14"
+python = ">=3.13.0,<3.14"
 
 # [feature.experimental.dependencies]
 # sympy = "*"
@@ -111,5 +117,7 @@ test = ["test"]
 prod = ["jupyter"]
 solara = ["gui"]
 dev = ["test", "lint", "jupyter", "docs"]
+py310 = ["test", "lint", "py310"]
+py311 = ["test", "lint", "py311"]
 py312 = ["test", "lint", "py312"]
 py313 = ["test", "lint", "py313"]
