@@ -11,3 +11,4 @@ temp*.yml
 .mypy*
 *ipynb*
 .github/workflows/.ci_pixi.yaml
+*.conda
