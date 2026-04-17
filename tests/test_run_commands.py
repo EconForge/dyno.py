@@ -57,8 +57,38 @@ stoch_simul(irf=6);
 
     assert isinstance(results, RunResults)
     assert results.solution is not None
+    assert results.eigenvalues is not None
     assert results.simulation is not None
     assert isinstance(results.simulation, dict)
+
+
+def test_dynomodel_run_check_populates_eigenvalues():
+    txt = """
+var x;
+varexo e;
+parameters a;
+
+a = 0.9;
+
+model;
+x = a*x(-1) + e;
+end;
+
+initval;
+x = 0;
+e = 0;
+end;
+
+steady;
+check;
+"""
+    model = DynoModel(filename="tiny_check.mod", txt=txt)
+
+    results = model.run(default_pipeline=False)
+
+    assert isinstance(results, RunResults)
+    assert results.residuals is not None
+    assert results.eigenvalues == getattr(results.model, "_eigenvalues", None)
 
 
 def test_dynaremodel_run_returns_report_on_failed_check():

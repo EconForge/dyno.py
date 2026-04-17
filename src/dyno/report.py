@@ -231,11 +231,15 @@ class RunResults:
         *,
         source_txt: str | None = None,
         output_type: str = "markdown",
+        mime_bundle_repr: str | None = None,
     ) -> None:
         self.model: AbstractModel | None = model
         self.source_txt: str | None = source_txt
         # Keep backward-compatible rendering policy: HTML is opt-in.
         self.output_type: str = output_type
+        # MIME bundle policy: None => include all rich reprs; else one of
+        # {"markdown", "html", "text"} to include only that representation.
+        self.mime_bundle_repr: str | None = mime_bundle_repr
 
         # Pipeline outputs
         self.residuals: np.ndarray | None = None
@@ -486,7 +490,10 @@ class RunResults:
         parts.append("</svg>")
         return "".join(parts)
 
-    def _repr_markdown_(self) -> str:
+    def _repr_markdown_(self) -> str | None:
+        if str(self.output_type).lower() == "text" and self.mime_bundle_repr is None:
+            return None
+
         if self.elapsed is None:
             self.finish()
 
@@ -594,10 +601,7 @@ class RunResults:
 
         return data
 
-    def _repr_html_(self) -> str | None:
-        if self.output_type != "html":
-            return None
-
+    def _render_html_report(self) -> str:
         parts: list[str] = []
         if self.model is not None and hasattr(self.model, "_repr_html_"):
             parts.append(self.model._repr_html_())
@@ -651,6 +655,11 @@ class RunResults:
             parts.append(f"<pre style='color:red'>{e['message']}</pre>")
         return "<br>".join(parts)
 
+    def _repr_html_(self) -> str | None:
+        if self.output_type != "html":
+            return None
+        return self._render_html_report()
+
     # -- Display: JupyterLab highlighting ------------------------------------
 
     @property
@@ -694,11 +703,27 @@ class RunResults:
         if highlighting:
             data["application/vnd.jupyterlab-dyno.highlighting+json"] = highlighting
 
-        markdown = self._repr_markdown_()
-        if markdown:
-            data["text/markdown"] = markdown
+        mode = self.mime_bundle_repr
+        if mode not in {None, "markdown", "html", "text"}:
+            mode = None
 
-        data["text/plain"] = repr(self)
+        output_mode = str(self.output_type).lower()
+        default_markdown = output_mode != "text"
+        default_html = output_mode == "html"
+
+        if mode == "markdown" or (mode is None and default_markdown):
+            markdown = self._repr_markdown_()
+            if markdown:
+                data["text/markdown"] = markdown
+
+        include_html = mode == "html" or (mode is None and default_html)
+        if include_html:
+            html_repr = self._render_html_report()
+            if html_repr:
+                data["text/html"] = html_repr
+
+        if mode in {None, "text"}:
+            data["text/plain"] = repr(self)
         return data
 
     def jupyter_display(self, *, emit_highlighting: bool = True) -> None:
@@ -728,6 +753,34 @@ class RunResults:
         # display(Markdown("---"))
         _ = emit_highlighting
         return
+
+    def display(self) -> None:
+        """Display the report in notebook frontends.
+
+        This renders the selected textual representation first, then emits the
+        figure object separately so frontends can render rich graph MIME.
+        """
+        try:
+            from IPython.display import display, Markdown, HTML
+        except ImportError:
+            self.console_display()
+            return
+
+        output_mode = str(self.output_type).lower()
+
+        if output_mode == "html":
+            html_repr = self._render_html_report()
+            if html_repr:
+                display(HTML(html_repr))
+        elif output_mode == "text":
+            display({"text/plain": repr(self)}, raw=True)
+        else:
+            markdown = self._repr_markdown_()
+            if markdown:
+                display(Markdown(markdown))
+
+        if self.figure is not None:
+            display(self.figure)
 
     def console_display(self) -> None:
         if self.elapsed is None:
@@ -851,8 +904,6 @@ def _create_model(
 def dsge_report(
     txt: str | None = None,
     filename: str | os.PathLike[str] | None = None,
-    *,
-    display: bool = False,
     **options,
 ) -> RunResults:
     """Run a model and return a :class:`RunResults` report.
@@ -864,9 +915,6 @@ def dsge_report(
     filename:
         Path to a model file (used both to load text and to infer the model
         type from the extension).
-    display:
-        Deprecated and ignored. ``dsge_report`` always returns the
-        :class:`RunResults` object and never triggers report display methods.
     **options:
         Forwarded to the model constructor and run pipeline.
     """
@@ -875,20 +923,31 @@ def dsge_report(
 
     check_output = options.get("check_output", False)
     output_type = options.get("output_type", "markdown")
+    mime_bundle_repr = options.get("mime_bundle_repr", None)
+    display_graph = options.get("display_graph", False)
     notify_interface = options.get("notify_interface", True)
+
 
     if check_output:
         d: dict[str, Any] = {}
         try:
             exec(txt or "", d, d)  # noqa: S102  — preserved existing behaviour
         except Exception as e:
-            results = RunResults(source_txt=txt, output_type=output_type)
+            results = RunResults(
+                source_txt=txt,
+                output_type=output_type,
+                mime_bundle_repr=mime_bundle_repr,
+            )
             results.add_error(str(e))
             return results
         try:
             return d["html"]
         except Exception as e:
-            results = RunResults(source_txt=txt, output_type=output_type)
+            results = RunResults(
+                source_txt=txt,
+                output_type=output_type,
+                mime_bundle_repr=mime_bundle_repr,
+            )
             results.add_error(str(e))
             return results
 
@@ -899,7 +958,12 @@ def dsge_report(
         model = _create_model(txt, filename, **options)
         run_output = model.run(default_pipeline=False)
         if not isinstance(run_output, RunResults):
-            results = RunResults(model=model, source_txt=txt, output_type=output_type)
+            results = RunResults(
+                model=model,
+                source_txt=txt,
+                output_type=output_type,
+                mime_bundle_repr=mime_bundle_repr,
+            )
             results.add_error(
                 f"Unexpected run() result type: {type(run_output).__name__}"
             )
@@ -909,18 +973,29 @@ def dsge_report(
                 results.model = model
         results.source_txt = txt
         results.output_type = output_type
+        results.mime_bundle_repr = mime_bundle_repr
 
     except SteadyStateError as e:
         # Steady-state check failed: return a partial report with model info/residuals.
         if model is None:
             model = _create_model(txt, filename, **options)
-        results = RunResults(model=model, source_txt=txt, output_type=output_type)
+        results = RunResults(
+            model=model,
+            source_txt=txt,
+            output_type=output_type,
+            mime_bundle_repr=mime_bundle_repr,
+        )
         results.residuals = e.residuals
         results.add_warning(str(e))
         results.finish()
 
     except Exception as e:
-        results = RunResults(model=model, source_txt=txt, output_type=output_type)
+        results = RunResults(
+            model=model,
+            source_txt=txt,
+            output_type=output_type,
+            mime_bundle_repr=mime_bundle_repr,
+        )
         results.add_error(
             str(e),
             line=getattr(e, "line", None),
@@ -931,4 +1006,7 @@ def dsge_report(
     if notify_interface:
         _send_interface_notifications(results)
 
-    return results
+    if bool(display_graph) and str(output_type).lower() == "markdown":
+        results.display()
+    else:
+        return results

@@ -94,6 +94,7 @@ class DynoModel(AbstractModel):
             else:
                 dr = model.solve()
                 results.solution = dr
+                results.eigenvalues = dr.evs
                 results.moments = dr.moments()[1]
                 results.simulation = dr.irfs(type="deviation", T=40)
         else:
@@ -106,10 +107,14 @@ class DynoModel(AbstractModel):
                     results.model = model
                 elif name in {"check", "resid"}:
                     results.residuals = model.residuals
-                    model = model.check(**options)
+                    check_options = {"compute_eigenvalues": True, **options}
+                    model = model.check(**check_options)
                     results.model = model
+                    results.eigenvalues = getattr(model, "_eigenvalues", None)
                 elif name in {"solve", "perturb"}:
-                    results.solution = model.solve(**options)
+                    solution = model.solve(**options)
+                    results.solution = solution
+                    results.eigenvalues = getattr(solution, "evs", None)
                 elif name in {"simul", "simulate", "stoch_simul"}:
                     if model.is_deterministic:
                         from .solver import deterministic_solve
@@ -128,6 +133,7 @@ class DynoModel(AbstractModel):
                         if solution is None or not hasattr(solution, "X"):
                             solution = model.solve(**solve_options)
                             results.solution = solution
+                        results.eigenvalues = getattr(solution, "evs", None)
                         if name == "stoch_simul":
                             irf_type = options.get("type", "deviation")
                             horizon = int(options.get("irf", options.get("periods", 40)))

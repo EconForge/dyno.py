@@ -99,9 +99,38 @@ x[t] = alpha * x[t-1] + e[t]
     results.simulation = {"e": pd.Series([0.1, 0.2, 0.3], name="x")}
 
     md = results._repr_markdown_()
+    assert md is not None
 
     assert "Simulation" in md
     assert "<table" in md
+
+
+def test_runresults_markdown_does_not_inline_simulation_graph_html():
+    class DummyFigure:
+        def to_html(self, full_html=False, include_plotlyjs="cdn"):
+            assert full_html is False
+            assert include_plotlyjs == "cdn"
+            return "<div>dummy-figure-md</div>"
+
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+"""
+
+    model = DynoModel(filename="rbc_like.dyno", txt=txt)
+    model.checks["deterministic"] = False
+
+    results = RunResults(model=model)
+    results.simulation = {"e": pd.DataFrame({"x": [0.1, 0.2, 0.3]})}
+    results.figure = DummyFigure()
+
+    md = results._repr_markdown_()
+    assert md is not None
+
+    assert "Simulation Graph" not in md
+    assert "dummy-figure-md" not in md
 
 
 def test_runresults_html_includes_figure_html():
@@ -172,8 +201,75 @@ def test_runresults_mimebundle_includes_highlighting_and_markdown():
         {"line": 7, "type": "error", "message": "boom"}
     ]
     assert "text/markdown" in bundle
+    assert "text/html" not in bundle
     assert "text/plain" in bundle
-    # Keep implicit frontend rendering on markdown/plain unless display=True.
+
+
+def test_runresults_mimebundle_includes_html_by_default_when_output_type_html():
+    results = RunResults(output_type="html")
+    results.add_error("boom")
+
+    bundle = results._repr_mimebundle_()
+
+    assert "text/html" in bundle
+
+
+def test_runresults_mimebundle_defaults_to_text_for_text_output_type():
+    results = RunResults(output_type="text")
+    results.add_error("boom")
+
+    bundle = results._repr_mimebundle_()
+
+    assert "text/plain" in bundle
+    assert "text/markdown" not in bundle
+    assert "text/html" not in bundle
+
+
+def test_runresults_markdown_repr_disabled_for_text_output_type_by_default():
+    results = RunResults(output_type="text")
+
+    assert results._repr_markdown_() is None
+
+
+def test_runresults_markdown_repr_still_available_when_explicitly_selected():
+    results = RunResults(output_type="text", mime_bundle_repr="markdown")
+
+    md = results._repr_markdown_()
+
+    assert isinstance(md, str)
+    assert md != ""
+
+
+def test_runresults_mimebundle_can_select_markdown_only():
+    results = RunResults(mime_bundle_repr="markdown")
+    results.add_error("boom")
+
+    bundle = results._repr_mimebundle_()
+
+    assert "text/markdown" in bundle
+    assert "text/html" not in bundle
+    assert "text/plain" not in bundle
+
+
+def test_runresults_mimebundle_can_select_html_only():
+    results = RunResults(mime_bundle_repr="html")
+    results.add_error("boom")
+
+    bundle = results._repr_mimebundle_()
+
+    assert "text/html" in bundle
+    assert "text/markdown" not in bundle
+    assert "text/plain" not in bundle
+
+
+def test_runresults_mimebundle_can_select_text_only():
+    results = RunResults(mime_bundle_repr="text")
+    results.add_error("boom")
+
+    bundle = results._repr_mimebundle_()
+
+    assert "text/plain" in bundle
+    assert "text/markdown" not in bundle
     assert "text/html" not in bundle
 
 
@@ -262,6 +358,38 @@ x[t] = y[t-1]
     jupyter_display_mock.assert_not_called()
 
 
+def test_dsge_report_display_graph_calls_display_for_markdown_only():
+    txt = """
+x[t] = y[t-1]
+"""
+
+    with patch("dyno.report.RunResults.display") as display_mock:
+        dsge_report(
+            txt,
+            filename="display_graph_markdown.dyno",
+            output_type="markdown",
+            display_graph=True,
+        )
+
+    display_mock.assert_called_once()
+
+
+def test_dsge_report_display_graph_does_not_call_display_for_html():
+    txt = """
+x[t] = y[t-1]
+"""
+
+    with patch("dyno.report.RunResults.display") as display_mock:
+        dsge_report(
+            txt,
+            filename="display_graph_html.dyno",
+            output_type="html",
+            display_graph=True,
+        )
+
+    display_mock.assert_not_called()
+
+
 def test_send_interface_notifications_does_not_emit_markdown_mime():
     results = RunResults()
 
@@ -272,6 +400,35 @@ def test_send_interface_notifications_does_not_emit_markdown_mime():
         call.args
         and isinstance(call.args[0], dict)
         and "text/markdown" in call.args[0]
+        for call in display_mock.call_args_list
+    )
+
+
+def test_runresults_display_emits_markdown_then_figure():
+    class DummyFigure:
+        pass
+
+    results = RunResults(output_type="markdown")
+    results.figure = DummyFigure()
+
+    with patch("IPython.display.display") as display_mock:
+        results.display()
+
+    assert len(display_mock.call_args_list) >= 2
+    assert display_mock.call_args_list[-1].args[0] is results.figure
+
+
+def test_runresults_display_text_mode_emits_plain_text():
+    results = RunResults(output_type="text")
+
+    with patch("IPython.display.display") as display_mock:
+        results.display()
+
+    assert any(
+        call.args
+        and isinstance(call.args[0], dict)
+        and "text/plain" in call.args[0]
+        and call.kwargs.get("raw") is True
         for call in display_mock.call_args_list
     )
 
