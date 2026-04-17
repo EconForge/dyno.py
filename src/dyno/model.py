@@ -207,7 +207,9 @@ class AbstractModel(ABC):
 
     _check_eigenvalues: bool = False
 
-    def check(self: "Self", tol: float = 1e-6, compute_eigenvalues: bool | None = None) -> "Self":
+    def check(
+        self: "Self", tol: float = 1e-6, compute_eigenvalues: bool | None = None
+    ) -> "Self":
         r = self.residuals
         if not all(abs(x) < tol for x in r):
             raise SteadyStateError(r)
@@ -215,6 +217,7 @@ class AbstractModel(ABC):
             compute_eigenvalues = self._check_eigenvalues
         if compute_eigenvalues:
             from .solver import solve_qz
+
             jac = self.jacobians
             A, B, C = jac[0], jac[1], jac[2]
             try:

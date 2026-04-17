@@ -212,7 +212,11 @@ class LModFile(SymbolicModel):
         """Extract Dynare command statements from the parsed modfile tree."""
 
         def _name_from_node(node: Any) -> str | None:
-            if isinstance(node, Tree) and node.data == "name" and len(node.children) > 0:
+            if (
+                isinstance(node, Tree)
+                and node.data == "name"
+                and len(node.children) > 0
+            ):
                 return str(node.children[0])
             return None
 

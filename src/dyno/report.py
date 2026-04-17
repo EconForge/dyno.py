@@ -344,15 +344,15 @@ class RunResults:
             val_color = "#dc2626" if is_bad else "#0f172a"
             bg_color = "background:#fef2f2;" if is_bad else ""
             cells.append(
-                f"<td style=\"padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap;{bg_color}\">"
-                f"<div style=\"font-size:11px;color:#64748b;\">{html.escape(label)}</div>"
+                f'<td style="padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap;{bg_color}">'
+                f'<div style="font-size:11px;color:#64748b;">{html.escape(label)}</div>'
                 f"<div style=\"font-size:13px;color:{val_color};font-weight:{'600' if is_bad else '400'};\">{html.escape(formatted)}</div>"
                 "</td>"
             )
 
         return (
-            f"<div style=\"margin:10px 0 14px 0;\"><div style=\"font-weight:600;color:#0f172a;margin-bottom:6px;\">{html.escape(title)}</div>"
-            "<div style=\"overflow-x:auto;\"><table style=\"border-collapse:collapse;\"><tr>"
+            f'<div style="margin:10px 0 14px 0;"><div style="font-weight:600;color:#0f172a;margin-bottom:6px;">{html.escape(title)}</div>'
+            '<div style="overflow-x:auto;"><table style="border-collapse:collapse;"><tr>'
             + "".join(cells)
             + "</tr></table></div></div>"
         )
@@ -426,8 +426,12 @@ class RunResults:
             for shock in shocks:
                 color = color_map[shock]
                 safe_shock = html.escape(str(shock))
-                parts.append(f'<line x1="{legend_x}" y1="16" x2="{legend_x + 18}" y2="16" stroke="{color}" stroke-width="2"/>')
-                parts.append(f'<text x="{legend_x + 24}" y="20" font-size="12" fill="#334155">{safe_shock}</text>')
+                parts.append(
+                    f'<line x1="{legend_x}" y1="16" x2="{legend_x + 18}" y2="16" stroke="{color}" stroke-width="2"/>'
+                )
+                parts.append(
+                    f'<text x="{legend_x + 24}" y="20" font-size="12" fill="#334155">{safe_shock}</text>'
+                )
                 legend_x += 24 + max(36, len(safe_shock) * 7)
 
         for index, variable in enumerate(variables):
@@ -460,7 +464,9 @@ class RunResults:
                 return left + ((value - xmin) / (xmax - xmin)) * plot_width
 
             def sy(value: float) -> float:
-                return top + plot_height - ((value - ymin) / (ymax - ymin)) * plot_height
+                return (
+                    top + plot_height - ((value - ymin) / (ymax - ymin)) * plot_height
+                )
 
             zero_y = sy(0.0) if ymin <= 0.0 <= ymax else None
             if zero_y is not None:
@@ -468,12 +474,24 @@ class RunResults:
                     f'<line x1="{left}" y1="{zero_y:.2f}" x2="{left + plot_width}" y2="{zero_y:.2f}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 3"/>'
                 )
 
-            parts.append(f'<rect x="{left}" y="{top}" width="{plot_width}" height="{plot_height}" fill="none" stroke="#cbd5e1" stroke-width="1"/>')
-            parts.append(f'<text x="{left}" y="{y0 + 12}" font-size="13" font-weight="600" fill="#0f172a">{html.escape(str(variable))}</text>')
-            parts.append(f'<text x="{left}" y="{top + plot_height + 18}" font-size="11" fill="#64748b">{xmin:g}</text>')
-            parts.append(f'<text x="{left + plot_width - 8}" y="{top + plot_height + 18}" text-anchor="end" font-size="11" fill="#64748b">{xmax:g}</text>')
-            parts.append(f'<text x="{left - 6}" y="{top + 10}" text-anchor="end" font-size="11" fill="#64748b">{ymax:.3g}</text>')
-            parts.append(f'<text x="{left - 6}" y="{top + plot_height}" text-anchor="end" font-size="11" fill="#64748b">{ymin:.3g}</text>')
+            parts.append(
+                f'<rect x="{left}" y="{top}" width="{plot_width}" height="{plot_height}" fill="none" stroke="#cbd5e1" stroke-width="1"/>'
+            )
+            parts.append(
+                f'<text x="{left}" y="{y0 + 12}" font-size="13" font-weight="600" fill="#0f172a">{html.escape(str(variable))}</text>'
+            )
+            parts.append(
+                f'<text x="{left}" y="{top + plot_height + 18}" font-size="11" fill="#64748b">{xmin:g}</text>'
+            )
+            parts.append(
+                f'<text x="{left + plot_width - 8}" y="{top + plot_height + 18}" text-anchor="end" font-size="11" fill="#64748b">{xmax:g}</text>'
+            )
+            parts.append(
+                f'<text x="{left - 6}" y="{top + 10}" text-anchor="end" font-size="11" fill="#64748b">{ymax:.3g}</text>'
+            )
+            parts.append(
+                f'<text x="{left - 6}" y="{top + plot_height}" text-anchor="end" font-size="11" fill="#64748b">{ymin:.3g}</text>'
+            )
 
             for shock in shocks:
                 shock_subset = subset[subset["shock"].astype(str) == shock]
@@ -485,7 +503,9 @@ class RunResults:
                 )
                 if points:
                     color = color_map[shock]
-                    parts.append(f'<polyline fill="none" stroke="{color}" stroke-width="2" points="{points}"/>')
+                    parts.append(
+                        f'<polyline fill="none" stroke="{color}" stroke-width="2" points="{points}"/>'
+                    )
 
         parts.append("</svg>")
         return "".join(parts)
@@ -548,6 +568,7 @@ class RunResults:
         moments_df = None
         if self.moments is not None and model is not None:
             import pandas as pd
+
             moments_df = pd.DataFrame(
                 self.moments,
                 index=model.symbols["endogenous"],
@@ -640,7 +661,9 @@ class RunResults:
 
         if self.simulation is not None:
             if self.moments is not None and self.model is not None:
-                moments_html = self._moments_to_html(self.moments, self.model.symbols["endogenous"])
+                moments_html = self._moments_to_html(
+                    self.moments, self.model.symbols["endogenous"]
+                )
                 if moments_html:
                     parts.append("<h3>Moments</h3>")
                     parts.append(moments_html)
@@ -676,19 +699,27 @@ class RunResults:
                     item["column"] = entry["column"]
                 data.append(item)
         # Emit warnings for equations whose residual exceeds tolerance
-        if self.residuals is not None and self.model is not None and hasattr(self.model, "symbolic"):
+        if (
+            self.residuals is not None
+            and self.model is not None
+            and hasattr(self.model, "symbolic")
+        ):
             try:
                 eqs = self.model.symbolic.equations
                 tol = 1e-6
-                for i, (eq, res) in enumerate(zip(eqs, np.asarray(self.residuals).reshape(-1))):
+                for i, (eq, res) in enumerate(
+                    zip(eqs, np.asarray(self.residuals).reshape(-1))
+                ):
                     if abs(float(res)) >= tol:
                         line = getattr(getattr(eq, "meta", None), "line", None)
                         if line is not None:
-                            data.append({
-                                "line": line,
-                                "type": "warning",
-                                "message": f"Equation {i + 1}: residual = {float(res):.3e}",
-                            })
+                            data.append(
+                                {
+                                    "line": line,
+                                    "type": "warning",
+                                    "message": f"Equation {i + 1}: residual = {float(res):.3e}",
+                                }
+                            )
             except Exception:
                 pass
         return data
@@ -919,14 +950,11 @@ def dsge_report(
         Forwarded to the model constructor and run pipeline.
     """
 
-
-
     check_output = options.get("check_output", False)
     output_type = options.get("output_type", "markdown")
     mime_bundle_repr = options.get("mime_bundle_repr", None)
     display_graph = options.get("display_graph", False)
     notify_interface = options.get("notify_interface", True)
-
 
     if check_output:
         d: dict[str, Any] = {}

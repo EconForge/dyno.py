@@ -136,7 +136,9 @@ class DynoModel(AbstractModel):
                         results.eigenvalues = getattr(solution, "evs", None)
                         if name == "stoch_simul":
                             irf_type = options.get("type", "deviation")
-                            horizon = int(options.get("irf", options.get("periods", 40)))
+                            horizon = int(
+                                options.get("irf", options.get("periods", 40))
+                            )
                             results.moments = solution.moments()[1]
                             results.simulation = solution.irfs(type=irf_type, T=horizon)
                         else:

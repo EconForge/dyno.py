@@ -295,7 +295,7 @@ def test_runresults_mimebundle_uses_same_markdown_renderer():
 
 def test_dsge_report_handles_steady_state_error_gracefully():
     """Test that dsge_report() gracefully handles models with bad steady states.
-    
+
     This test verifies that when a check command fails on a model,
     dsge_report() returns a partial report with residuals rather than crashing.
     """
@@ -312,10 +312,10 @@ check;
     # Call dsge_report with a model that has an explicit check command
     # The check command will fail because the steady state is inconsistent
     results = dsge_report(txt, filename="bad_steady_state.dyno")
-    
+
     # Should return RunResults, not raise exception
     assert isinstance(results, RunResults)
-    
+
     # Should have a warning or error from the failed check
     assert len(results.warnings) > 0 or len(results.errors) > 0
 
@@ -397,9 +397,7 @@ def test_send_interface_notifications_does_not_emit_markdown_mime():
         _send_interface_notifications(results)
 
     assert not any(
-        call.args
-        and isinstance(call.args[0], dict)
-        and "text/markdown" in call.args[0]
+        call.args and isinstance(call.args[0], dict) and "text/markdown" in call.args[0]
         for call in display_mock.call_args_list
     )
 
@@ -431,5 +429,3 @@ def test_runresults_display_text_mode_emits_plain_text():
         and call.kwargs.get("raw") is True
         for call in display_mock.call_args_list
     )
-
-
