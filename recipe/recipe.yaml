@@ -19,6 +19,5 @@ requirements:
 
   run:
     - python <3.14,>=3.12
-    - dolang
     - numpy
     - pandas

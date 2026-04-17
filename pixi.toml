@@ -23,7 +23,6 @@ tempita = ">=0.6.0,<0.7"
 pytest = ">=9.0.2,<10"
 
 dynare-preprocessor-pylib = ">=0.0.0.dev1,<0.0.0.dev2"
-dolang = ">=0.0.21,<0.0.22"
 numpy = ">=2.4.2,<3" # Compatibility with notebook.link scipy
 scipy = ">=1.17.0,<2"
 pandas = ">=3.0.0,<4"

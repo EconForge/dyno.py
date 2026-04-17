@@ -1,14 +1,45 @@
-# defines the dolang language elements recognized in the yaml file.
-
-# copied from dolo
+# Defines language helpers recognized in YAML files.
 
 from .typedefs import TVector, TMatrix
-
-from dolang.language import greek_tolerance, language_element  # type: ignore
+from functools import wraps
+from inspect import signature
 
 import numpy as np
 
 from scipy.stats import multivariate_normal
+
+
+def language_element(obj):
+    return obj
+
+
+_ASCII_TO_GREEK = {
+    "Sigma": "Σ",
+    "Mu": "Μ",
+    "sigma": "σ",
+    "mu": "μ",
+}
+
+
+def greek_tolerance(func):
+    params = set(signature(func).parameters.keys())
+    alias_to_greek = {
+        alias: greek for alias, greek in _ASCII_TO_GREEK.items() if greek in params
+    }
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        remapped: dict[str, object] = {}
+        for key, value in kwargs.items():
+            target = alias_to_greek.get(key, key)
+            if target in remapped:
+                raise TypeError(
+                    f"{func.__name__}() received duplicate values for '{target}'"
+                )
+            remapped[target] = value
+        return func(*args, **remapped)
+
+    return wrapper
 
 
 class NotPositiveSemidefinite(np.linalg.LinAlgError):
