@@ -1,5 +1,5 @@
 import math
-from lark import Tree
+from lark import Tree, Token
 from dyno.dynsym.grammar import parser, str_expression
 from dyno.dynsym.analyze import (
     FormulaEvaluator,
@@ -201,7 +201,61 @@ class LModFile(SymbolicModel):
             "processes": processes,
             "steady_states": fe.steady_states
             | {e: 0.0 for e in exo},  # set exogenous steady states to zero
-            "metadata": {},
+            "metadata": {
+                "dynare_commands": self._extract_dynare_commands(),
+            },
         }
 
         self.context = context
+
+    def _extract_dynare_commands(self: Self) -> list[dict[str, Any]]:
+        """Extract Dynare command statements from the parsed modfile tree."""
+
+        def _name_from_node(node: Any) -> str | None:
+            if isinstance(node, Tree) and node.data == "name" and len(node.children) > 0:
+                return str(node.children[0])
+            return None
+
+        def _coerce_value(node: Any) -> Any:
+            if isinstance(node, Token):
+                if node.type == "NUMBER":
+                    text = str(node)
+                    try:
+                        if any(ch in text for ch in ".eE"):
+                            return float(text)
+                        return int(text)
+                    except ValueError:
+                        return text
+                return str(node)
+            if isinstance(node, Tree):
+                name = _name_from_node(node)
+                if name is not None:
+                    return name
+            return str(node)
+
+        commands: list[dict[str, Any]] = []
+        for statement in self.tree.children:
+            if not isinstance(statement, Tree) or statement.data != "command_statement":
+                continue
+            if len(statement.children) == 0:
+                continue
+
+            first = statement.children[0]
+            if not isinstance(first, Token) or first.type != "COMMAND":
+                continue
+
+            command = str(first)
+            options: dict[str, Any] = {}
+
+            tail = list(statement.children[1:])
+            i = 0
+            while i + 1 < len(tail):
+                key = _name_from_node(tail[i])
+                if key is None:
+                    break
+                options[key] = _coerce_value(tail[i + 1])
+                i += 2
+
+            commands.append({"command": command, "options": options})
+
+        return commands

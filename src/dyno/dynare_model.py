@@ -15,6 +15,38 @@ class DynareModel(AbstractModel):
 
     _check_eigenvalues: bool = True
 
+    def _equation_line_numbers(self: Self) -> list[int]:
+        """Best-effort mapping from equation index to source line number."""
+        txt = getattr(self, "_original_txt", None)
+        if not isinstance(txt, str):
+            return []
+
+        lines = txt.splitlines()
+        in_model = False
+        eq_lines: list[int] = []
+
+        for idx, raw in enumerate(lines, start=1):
+            stripped = raw.strip()
+            if not in_model:
+                # Matches "model;" and "model(linear);" forms.
+                if stripped.lower().startswith("model"):
+                    in_model = True
+                continue
+
+            if stripped.lower() == "end;":
+                break
+
+            if not stripped:
+                continue
+            if stripped.startswith(("//", "%", "#")):
+                continue
+
+            # Keep only likely equation lines.
+            if "=" in stripped:
+                eq_lines.append(idx)
+
+        return eq_lines
+
     def _rebuild(self: Self) -> Self:
         txt = getattr(self, "_original_txt", None)
         if txt is None:
@@ -75,25 +107,42 @@ class DynareModel(AbstractModel):
                 results.simulation = {"Perfect Foresight": sim}
         else:
             for cmd in commands:
-                name = cmd["command"]
+                name = str(cmd.get("command", "")).lower()
                 options = cmd.get("options", {})
-                if name == "steady":
-                    model = model.steady()
-                    results.model = model
-                elif name == "check":
-                    results.residuals = model.residuals
-                    model = model.check()
-                    results.eigenvalues = getattr(model, "_eigenvalues", None)
-                elif name == "resid":
-                    results.residuals = model.residuals
-                elif name == "stoch_simul":
-                    dr = model.perturb()
-                    results.solution = dr
-                    results.eigenvalues = dr.evs
-                    results.moments = dr.moments()[1]
-                    irf_type = options.get("type", "deviation")
-                    horizon = int(options.get("irf", 40))
-                    results.simulation = dr.irfs(type=irf_type, T=horizon)
+                try:
+                    if name == "steady":
+                        model = model.steady()
+                        results.model = model
+                    elif name == "check":
+                        results.residuals = model.residuals
+                        model = model.check()
+                        results.eigenvalues = getattr(model, "_eigenvalues", None)
+                    elif name == "resid":
+                        results.residuals = model.residuals
+                    elif name == "stoch_simul":
+                        dr = model.perturb()
+                        results.solution = dr
+                        results.eigenvalues = dr.evs
+                        results.moments = dr.moments()[1]
+                        irf_type = options.get("type", "deviation")
+                        horizon = int(options.get("irf", options.get("periods", 40)))
+                        results.simulation = dr.irfs(type=irf_type, T=horizon)
+                except SteadyStateError as e:
+                    results.residuals = e.residuals
+                    results.add_warning(str(e))
+                    break
+
+        # Add line-level warnings for non-zero residuals where we can map lines.
+        r = results.residuals
+        if r is not None and abs(r).max() >= 1e-6:
+            inds = np.where(abs(r) >= 1e-6)[0]
+            eq_lines = model._equation_line_numbers()
+            for i in inds:
+                line = eq_lines[i] if i < len(eq_lines) else None
+                results.add_warning(
+                    f"Equation {i + 1}: residual = {float(r[i]):.3e}",
+                    line=line,
+                )
 
         if results.simulation is not None and isinstance(results.simulation, dict):
             from .plots import plot_irfs

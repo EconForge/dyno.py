@@ -53,15 +53,27 @@ class LARKParserError(ParserError):
 
 
 from dynare_preprocessor import PreprocessorException, UnsupportedFeatureException
+import re
 
 
 class DynareParserError(ParserError):
 
     def __init__(self, err: PreprocessorException) -> None:
-        self.line = None
-        self.column = None
-        self.details = None
-        super().__init__(str(err))
+        message = str(err)
+
+        # Typical dynare-preprocessor message format:
+        # "syntax error, unexpected TIMES: line 46, col 34"
+        line = None
+        column = None
+        m = re.search(r"line\s+(\d+)\s*,\s*col\s+(\d+)", message, flags=re.IGNORECASE)
+        if m is not None:
+            line = int(m.group(1))
+            column = int(m.group(2))
+
+        super().__init__(message)
+        self.line = line
+        self.column = column
+        self.details = message
 
 
 class SteadyStateError(Exception):

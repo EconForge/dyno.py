@@ -22,7 +22,9 @@ from dyno.language import ProductNormal, Normal
 class DynoModel(AbstractModel):
 
     def _normalize_run_commands(self: Self) -> list[dict[str, Any]]:
-        raw = self.metadata.get("run", [])
+        raw = self.metadata.get("run")
+        if raw is None:
+            raw = self.metadata.get("dynare_commands", [])
 
         if isinstance(raw, str):
             items = [raw]
@@ -96,7 +98,7 @@ class DynoModel(AbstractModel):
                 results.simulation = dr.irfs(type="deviation", T=40)
         else:
             for cmd in commands:
-                name = cmd["command"]
+                name = str(cmd["command"]).lower()
                 options = cmd.get("options", {})
 
                 if name == "steady":
@@ -108,7 +110,7 @@ class DynoModel(AbstractModel):
                     results.model = model
                 elif name in {"solve", "perturb"}:
                     results.solution = model.solve(**options)
-                elif name in {"simul", "simulate"}:
+                elif name in {"simul", "simulate", "stoch_simul"}:
                     if model.is_deterministic:
                         from .solver import deterministic_solve
 
@@ -117,13 +119,23 @@ class DynoModel(AbstractModel):
                     else:
                         from .simul import simulate
 
-                        solve_options = {k: v for k, v in options.items() if k != "T"}
+                        solve_options = {
+                            k: v
+                            for k, v in options.items()
+                            if k not in {"T", "irf", "periods"}
+                        }
                         solution = results.solution
                         if solution is None or not hasattr(solution, "X"):
                             solution = model.solve(**solve_options)
                             results.solution = solution
-                        horizon = int(options.get("T", 40))
-                        results.simulation = simulate(solution, T=horizon)
+                        if name == "stoch_simul":
+                            irf_type = options.get("type", "deviation")
+                            horizon = int(options.get("irf", options.get("periods", 40)))
+                            results.moments = solution.moments()[1]
+                            results.simulation = solution.irfs(type=irf_type, T=horizon)
+                        else:
+                            horizon = int(options.get("T", 40))
+                            results.simulation = simulate(solution, T=horizon)
                 else:
                     raise NotImplementedError(
                         f"Unsupported DynoModel.run command: {name}"

@@ -255,10 +255,18 @@ class RunResults:
 
     # -- Diagnostic helpers --------------------------------------------------
 
-    def add_error(self, message: str, *, line: int | None = None) -> None:
+    def add_error(
+        self,
+        message: str,
+        *,
+        line: int | None = None,
+        column: int | None = None,
+    ) -> None:
         entry: dict[str, Any] = {"type": "error", "message": message}
         if line is not None:
             entry["line"] = line
+        if column is not None:
+            entry["column"] = column
         self.errors.append(entry)
 
     def add_warning(self, message: str, *, line: int | None = None) -> None:
@@ -574,17 +582,7 @@ class RunResults:
         if self.elapsed is None:
             self.finish()
 
-        data: dict[str, Any] = {}
-
-        highlighting = self._highlighting_data
-        if highlighting:
-            data["application/vnd.jupyterlab-dyno.highlighting+json"] = highlighting
-
-        markdown = self._repr_markdown_()
-        if markdown:
-            data["text/markdown"] = markdown
-
-        data["text/plain"] = repr(self)
+        data = self._base_mimebundle()
 
         if include is not None:
             include_set = set(include)
@@ -660,13 +658,14 @@ class RunResults:
         data: list[dict[str, Any]] = []
         for entry in self.errors + self.warnings:
             if "line" in entry:
-                data.append(
-                    {
-                        "line": entry["line"],
-                        "type": entry["type"],
-                        "message": entry["message"],
-                    }
-                )
+                item = {
+                    "line": entry["line"],
+                    "type": entry["type"],
+                    "message": entry["message"],
+                }
+                if "column" in entry:
+                    item["column"] = entry["column"]
+                data.append(item)
         # Emit warnings for equations whose residual exceeds tolerance
         if self.residuals is not None and self.model is not None and hasattr(self.model, "symbolic"):
             try:
@@ -685,43 +684,50 @@ class RunResults:
                 pass
         return data
 
-    def _emit_highlighting(self) -> None:
-        """Emit custom highlighting MIME without forcing a rich report display."""
-        try:
-            from IPython.display import display
-        except ImportError:
-            return
-
-        highlighting = self._highlighting_data
-        if highlighting:
-            display(
-                {"application/vnd.jupyterlab-dyno.highlighting+json": highlighting},
-                raw=True,
-            )
-
-    def jupyter_display(self) -> None:
-        try:
-            from IPython.display import display, Markdown
-        except ImportError:
-            self.console_display()
-            return
-
+    def _base_mimebundle(self) -> dict[str, Any]:
+        """Return the canonical report MIME payloads shared across frontends."""
         if self.elapsed is None:
             self.finish()
 
+        data: dict[str, Any] = {}
         highlighting = self._highlighting_data
         if highlighting:
-            display(
-                {"application/vnd.jupyterlab-dyno.highlighting+json": highlighting},
-                raw=True,
-            )
+            data["application/vnd.jupyterlab-dyno.highlighting+json"] = highlighting
 
-        display(Markdown(self._repr_markdown_()))
+        markdown = self._repr_markdown_()
+        if markdown:
+            data["text/markdown"] = markdown
 
-        if self.figure is not None:
-            display(self.figure)
+        data["text/plain"] = repr(self)
+        return data
 
-        display(Markdown("---"))
+    def jupyter_display(self, *, emit_highlighting: bool = True) -> None:
+        # Disabled intentionally: report rendering/display must be controlled by
+        # the caller interface, and dsge_report now only emits notifications.
+        #
+        # Legacy implementation kept commented for future reference:
+        # try:
+        #     from IPython.display import display, Markdown
+        # except ImportError:
+        #     self.console_display()
+        #     return
+        #
+        # if self.elapsed is None:
+        #     self.finish()
+        #
+        # _send_interface_notifications(
+        #     self,
+        #     include_highlighting=emit_highlighting,
+        # )
+        #
+        # display(Markdown(self._repr_markdown_()))
+        #
+        # if self.figure is not None:
+        #     display(self.figure)
+        #
+        # display(Markdown("---"))
+        _ = emit_highlighting
+        return
 
     def console_display(self) -> None:
         if self.elapsed is None:
@@ -783,6 +789,23 @@ DynareRunResults = RunResults
 DynoRunResults = RunResults
 
 
+def _send_interface_notifications(
+    results: RunResults,
+    *,
+    include_highlighting: bool = True,
+) -> None:
+    """Emit interface-only notifications (custom MIME payloads only)."""
+    try:
+        from IPython.display import display
+    except ImportError:
+        return
+
+    highlighting_key = "application/vnd.jupyterlab-dyno.highlighting+json"
+    highlighting = results._highlighting_data
+    if include_highlighting and highlighting:
+        display({highlighting_key: highlighting}, raw=True)
+
+
 # ---------------------------------------------------------------------------
 # dsge_report — JupyterLab entry point
 # ---------------------------------------------------------------------------
@@ -842,54 +865,70 @@ def dsge_report(
         Path to a model file (used both to load text and to infer the model
         type from the extension).
     display:
-        When ``True``, call :meth:`RunResults.jupyter_display` to push
-        line-highlighting and the markdown report as rich Jupyter outputs
-        before returning the :class:`RunResults` object.
-        When ``False`` (default), return the :class:`RunResults` object
-        without any display side effects.
+        Deprecated and ignored. ``dsge_report`` always returns the
+        :class:`RunResults` object and never triggers report display methods.
     **options:
         Forwarded to the model constructor and run pipeline.
     """
 
+
+
     check_output = options.get("check_output", False)
     output_type = options.get("output_type", "markdown")
-    results = RunResults(source_txt=txt, output_type=output_type)
+    notify_interface = options.get("notify_interface", True)
 
     if check_output:
         d: dict[str, Any] = {}
         try:
-            exec(txt, d, d)  # noqa: S102  — preserved existing behaviour
+            exec(txt or "", d, d)  # noqa: S102  — preserved existing behaviour
         except Exception as e:
+            results = RunResults(source_txt=txt, output_type=output_type)
             results.add_error(str(e))
             return results
         try:
             return d["html"]
         except Exception as e:
+            results = RunResults(source_txt=txt, output_type=output_type)
             results.add_error(str(e))
             return results
 
+    model: AbstractModel | None = None
+    results: RunResults
+
     try:
         model = _create_model(txt, filename, **options)
-        results = model.run(default_pipeline=True)
+        run_output = model.run(default_pipeline=False)
+        if not isinstance(run_output, RunResults):
+            results = RunResults(model=model, source_txt=txt, output_type=output_type)
+            results.add_error(
+                f"Unexpected run() result type: {type(run_output).__name__}"
+            )
+        else:
+            results = run_output
+            if results.model is None:
+                results.model = model
         results.source_txt = txt
         results.output_type = output_type
 
     except SteadyStateError as e:
-        # Steady-state check failed: create partial report with model info and residuals
-        model = _create_model(txt, filename, **options)
+        # Steady-state check failed: return a partial report with model info/residuals.
+        if model is None:
+            model = _create_model(txt, filename, **options)
         results = RunResults(model=model, source_txt=txt, output_type=output_type)
         results.residuals = e.residuals
         results.add_warning(str(e))
         results.finish()
 
     except Exception as e:
-        results.add_error(str(e), line=getattr(e, "line", None))
+        results = RunResults(model=model, source_txt=txt, output_type=output_type)
+        results.add_error(
+            str(e),
+            line=getattr(e, "line", None),
+            column=getattr(e, "column", None),
+        )
         results.errors[-1]["_exception"] = e
-    if display:
-        results.jupyter_display()
-    else:
-        # Preserve historical behavior for custom frontends that consume
-        # highlighting as standalone display data.
-        results._emit_highlighting()
+
+    if notify_interface:
+        _send_interface_notifications(results)
 
     return results

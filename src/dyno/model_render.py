@@ -27,6 +27,15 @@ def model_repr_data(model: Any) -> dict[str, Any]:
 
     has_uninitialized = any(flag for _, flag in endogenous + exogenous + parameters)
 
+    latex_equations: str | None = None
+    if hasattr(model, "latex_equations"):
+        try:
+            rendered = model.latex_equations()
+            if isinstance(rendered, str) and rendered.strip() != "":
+                latex_equations = rendered
+        except Exception:
+            latex_equations = None
+
     return {
         "name": name,
         "equations_count": equations_count,
@@ -34,6 +43,7 @@ def model_repr_data(model: Any) -> dict[str, Any]:
         "exogenous": exogenous,
         "parameters": parameters,
         "has_uninitialized": has_uninitialized,
+        "latex_equations": latex_equations,
     }
 
 
@@ -193,5 +203,9 @@ def render_model_markdown(data: dict[str, Any], filename: str) -> str:
 
     if data["has_uninitialized"]:
         lines.extend(["", "`^` uninitialized (steady-state) value: defaults to `nan`"])
+
+    latex_equations = data.get("latex_equations")
+    if isinstance(latex_equations, str) and latex_equations.strip() != "":
+        lines.extend(["", "## Equations", "", latex_equations])
 
     return "\n".join(lines)

@@ -1,8 +1,9 @@
 from dyno import DynoModel
-from dyno.report import RunResults, dsge_report
+from dyno.report import RunResults, dsge_report, _send_interface_notifications
 import pandas as pd
 import re
 import numpy as np
+from unittest.mock import patch
 
 
 def _strip_ansi(text: str) -> str:
@@ -65,6 +66,22 @@ x[t] = a + y[t-1]
     assert "constants" in html
     assert "<sup>^</sup>" in html
     assert "uninitialized" in html
+
+
+def test_model_markdown_includes_latex_equations_section():
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+"""
+
+    model = DynoModel(filename="rbc_like.dyno", txt=txt)
+
+    md = model._markdown_()
+
+    assert "## Equations" in md
+    assert "$$" in md
 
 
 def test_runresults_markdown_accepts_series_simulation_entries():
@@ -172,6 +189,14 @@ def test_runresults_mimebundle_honors_include_exclude_filters():
     assert "text/markdown" not in no_markdown
 
 
+def test_runresults_mimebundle_uses_same_markdown_renderer():
+    results = RunResults()
+
+    bundle = results._repr_mimebundle_()
+
+    assert bundle.get("text/markdown") == results._repr_markdown_()
+
+
 def test_dsge_report_handles_steady_state_error_gracefully():
     """Test that dsge_report() gracefully handles models with bad steady states.
     
@@ -197,5 +222,57 @@ check;
     
     # Should have a warning or error from the failed check
     assert len(results.warnings) > 0 or len(results.errors) > 0
+
+
+def test_dsge_report_emits_interface_notifications_by_default():
+    txt = """
+x[t] = y[t-1]
+"""
+
+    with patch("dyno.report._send_interface_notifications") as emit_mock:
+        dsge_report(txt, filename="notify_default.dyno", display=False)
+
+    emit_mock.assert_called_once()
+
+
+def test_dsge_report_can_disable_interface_notifications():
+    txt = """
+x[t] = y[t-1]
+"""
+
+    with patch("dyno.report._send_interface_notifications") as emit_mock:
+        dsge_report(
+            txt,
+            filename="notify_disabled.dyno",
+            display=False,
+            notify_interface=False,
+        )
+
+    emit_mock.assert_not_called()
+
+
+def test_dsge_report_does_not_call_jupyter_display_when_display_true():
+    txt = """
+x[t] = y[t-1]
+"""
+
+    with patch("dyno.report.RunResults.jupyter_display") as jupyter_display_mock:
+        dsge_report(txt, filename="display_ignored.dyno", display=True)
+
+    jupyter_display_mock.assert_not_called()
+
+
+def test_send_interface_notifications_does_not_emit_markdown_mime():
+    results = RunResults()
+
+    with patch("IPython.display.display") as display_mock:
+        _send_interface_notifications(results)
+
+    assert not any(
+        call.args
+        and isinstance(call.args[0], dict)
+        and "text/markdown" in call.args[0]
+        for call in display_mock.call_args_list
+    )
 
 
