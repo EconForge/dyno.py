@@ -94,7 +94,7 @@ def test_runresults_html_includes_figure_html():
             assert include_plotlyjs == "cdn"
             return "<div>dummy-figure</div>"
 
-    results = RunResults()
+    results = RunResults(output_type="html")
     results.figure = DummyFigure()
 
     html = results._repr_html_()
@@ -104,7 +104,7 @@ def test_runresults_html_includes_figure_html():
 
 
 def test_runresults_html_groups_residuals_and_eigenvalues_in_check_section():
-    results = RunResults()
+    results = RunResults(output_type="html")
     results.residuals = pd.Series([0.0, 1.25, -0.5])
     results.eigenvalues = pd.Series([0.9, 1.1, 1.4])
 
@@ -120,7 +120,7 @@ def test_runresults_html_groups_residuals_and_eigenvalues_in_check_section():
 
 
 def test_runresults_html_includes_static_svg_for_simulation():
-    results = RunResults()
+    results = RunResults(output_type="html")
     results.simulation = {
         "eps": pd.DataFrame(
             {
@@ -135,6 +135,41 @@ def test_runresults_html_includes_static_svg_for_simulation():
     assert "Simulation" in html
     assert "<svg" in html
     assert "polyline" in html
+
+
+def test_runresults_html_is_opt_in_and_disabled_by_default():
+    results = RunResults()
+    results.simulation = {"eps": pd.DataFrame({"x": [0.0, 0.2, 0.1]})}
+
+    assert results._repr_html_() is None
+
+
+def test_runresults_mimebundle_includes_highlighting_and_markdown():
+    results = RunResults()
+    results.add_error("boom", line=7)
+
+    bundle = results._repr_mimebundle_()
+
+    assert "application/vnd.jupyterlab-dyno.highlighting+json" in bundle
+    assert bundle["application/vnd.jupyterlab-dyno.highlighting+json"] == [
+        {"line": 7, "type": "error", "message": "boom"}
+    ]
+    assert "text/markdown" in bundle
+    assert "text/plain" in bundle
+    # Keep implicit frontend rendering on markdown/plain unless display=True.
+    assert "text/html" not in bundle
+
+
+def test_runresults_mimebundle_honors_include_exclude_filters():
+    results = RunResults()
+    results.add_warning("warn", line=3)
+
+    plain_only = results._repr_mimebundle_(include=["text/plain"])
+    assert plain_only == {"text/plain": repr(results)}
+
+    no_markdown = results._repr_mimebundle_(exclude=["text/markdown"])
+    assert "text/plain" in no_markdown
+    assert "text/markdown" not in no_markdown
 
 
 def test_dsge_report_handles_steady_state_error_gracefully():

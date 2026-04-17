@@ -230,9 +230,12 @@ class RunResults:
         model: AbstractModel | None = None,
         *,
         source_txt: str | None = None,
+        output_type: str = "markdown",
     ) -> None:
         self.model: AbstractModel | None = model
         self.source_txt: str | None = source_txt
+        # Keep backward-compatible rendering policy: HTML is opt-in.
+        self.output_type: str = output_type
 
         # Pipeline outputs
         self.residuals: np.ndarray | None = None
@@ -558,7 +561,45 @@ class RunResults:
 
     # -- Display: HTML (rich console) ----------------------------------------
 
-    def _repr_html_(self) -> str:
+    def _repr_mimebundle_(
+        self,
+        include: list[str] | None = None,
+        exclude: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Return a MIME bundle for notebook-like frontends.
+
+        This keeps the custom Dyno highlighting payload available even when
+        frontends select a rich representation from the returned object.
+        """
+        if self.elapsed is None:
+            self.finish()
+
+        data: dict[str, Any] = {}
+
+        highlighting = self._highlighting_data
+        if highlighting:
+            data["application/vnd.jupyterlab-dyno.highlighting+json"] = highlighting
+
+        markdown = self._repr_markdown_()
+        if markdown:
+            data["text/markdown"] = markdown
+
+        data["text/plain"] = repr(self)
+
+        if include is not None:
+            include_set = set(include)
+            data = {k: v for k, v in data.items() if k in include_set}
+
+        if exclude is not None:
+            exclude_set = set(exclude)
+            data = {k: v for k, v in data.items() if k not in exclude_set}
+
+        return data
+
+    def _repr_html_(self) -> str | None:
+        if self.output_type != "html":
+            return None
+
         parts: list[str] = []
         if self.model is not None and hasattr(self.model, "_repr_html_"):
             parts.append(self.model._repr_html_())
@@ -643,6 +684,20 @@ class RunResults:
             except Exception:
                 pass
         return data
+
+    def _emit_highlighting(self) -> None:
+        """Emit custom highlighting MIME without forcing a rich report display."""
+        try:
+            from IPython.display import display
+        except ImportError:
+            return
+
+        highlighting = self._highlighting_data
+        if highlighting:
+            display(
+                {"application/vnd.jupyterlab-dyno.highlighting+json": highlighting},
+                raw=True,
+            )
 
     def jupyter_display(self) -> None:
         try:
@@ -797,7 +852,8 @@ def dsge_report(
     """
 
     check_output = options.get("check_output", False)
-    results = RunResults(source_txt=txt)
+    output_type = options.get("output_type", "markdown")
+    results = RunResults(source_txt=txt, output_type=output_type)
 
     if check_output:
         d: dict[str, Any] = {}
@@ -816,11 +872,12 @@ def dsge_report(
         model = _create_model(txt, filename, **options)
         results = model.run(default_pipeline=True)
         results.source_txt = txt
+        results.output_type = output_type
 
     except SteadyStateError as e:
         # Steady-state check failed: create partial report with model info and residuals
         model = _create_model(txt, filename, **options)
-        results = RunResults(model=model, source_txt=txt)
+        results = RunResults(model=model, source_txt=txt, output_type=output_type)
         results.residuals = e.residuals
         results.add_warning(str(e))
         results.finish()
@@ -830,5 +887,9 @@ def dsge_report(
         results.errors[-1]["_exception"] = e
     if display:
         results.jupyter_display()
+    else:
+        # Preserve historical behavior for custom frontends that consume
+        # highlighting as standalone display data.
+        results._emit_highlighting()
 
     return results
