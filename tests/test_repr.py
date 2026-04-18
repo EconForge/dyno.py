@@ -203,6 +203,69 @@ def test_runresults_html_includes_static_svg_for_simulation():
     assert "polyline" in html
 
 
+def test_runresults_markdown_includes_conditional_and_unconditional_moments():
+    from dyno.solver import PerturbationSolution, RecursiveDecisionRule
+
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 0.04)
+x[t] = alpha * x[t-1] + e[t]
+"""
+    model = DynoModel(filename="moments_sections.dyno", txt=txt)
+
+    dr = RecursiveDecisionRule(
+        X=np.array([[0.5]]),
+        Y=np.array([[1.0]]),
+        Σ=np.array([[0.04]]),
+        symbols=model.symbols,
+        x0=np.array([0.0]),
+        model=model,
+    )
+
+    results = RunResults(model=model)
+    results.solution = PerturbationSolution(dr, evs=np.array([0.5, 2.0]))
+    results.simulation = {"e": pd.DataFrame({"x": [0.0, 0.1, 0.2]})}
+
+    md = results._repr_markdown_()
+
+    assert md is not None
+    assert "Unconditional Moments" in md
+    assert "Conditional Moments" in md
+
+
+def test_runresults_html_includes_conditional_and_unconditional_moments():
+    from dyno.solver import PerturbationSolution, RecursiveDecisionRule
+
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 0.04)
+x[t] = alpha * x[t-1] + e[t]
+"""
+    model = DynoModel(filename="moments_sections_html.dyno", txt=txt)
+
+    dr = RecursiveDecisionRule(
+        X=np.array([[0.5]]),
+        Y=np.array([[1.0]]),
+        Σ=np.array([[0.04]]),
+        symbols=model.symbols,
+        x0=np.array([0.0]),
+        model=model,
+    )
+
+    results = RunResults(model=model, output_type="html")
+    results.solution = PerturbationSolution(dr, evs=np.array([0.5, 2.0]))
+    results.simulation = {"e": pd.DataFrame({"x": [0.0, 0.1, 0.2]})}
+
+    html = results._repr_html_()
+
+    assert html is not None
+    assert "<h3>Moments</h3>" in html
+    assert "Unconditional Moments" in html
+    assert "Conditional Moments" in html
+
+
 def test_runresults_html_is_opt_in_and_disabled_by_default():
     results = RunResults()
     results.simulation = {"eps": pd.DataFrame({"x": [0.0, 0.2, 0.1]})}

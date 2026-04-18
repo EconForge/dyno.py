@@ -30,6 +30,8 @@ template = tempita.Template(
 {[default eigenvalues=None]}
 {[default residuals=None]}
 {[default moments=None]}
+{[default moments_uncond_df=None]}
+{[default moments_cond_df=None]}
                             
 
 {[if len(parser_errors)>0]}      
@@ -153,7 +155,19 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 
 ## Simulation
 
-{[if moments is not None]}
+{[if moments_uncond_df is not None]}
+:::{dropdown} Unconditional Moments
+{[to_html_table(moments_uncond_df)]}
+:::
+{[endif]}
+
+{[if moments_cond_df is not None]}
+:::{dropdown} Conditional Moments
+{[to_html_table(moments_cond_df)]}
+:::
+{[endif]}
+
+{[if moments is not None and moments_uncond_df is None and moments_cond_df is None]}
 :::{dropdown} Unconditional Moments
 {[to_html_table(moments_df)]}
 :::
@@ -179,7 +193,19 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 
 ## Simulation
 
-{[if moments is not None]}
+{[if moments_uncond_df is not None]}
+:::{dropdown} Unconditional Moments
+{[to_html_table(moments_uncond_df)]}
+:::
+{[endif]}
+
+{[if moments_cond_df is not None]}
+:::{dropdown} Conditional Moments
+{[to_html_table(moments_cond_df)]}
+:::
+{[endif]}
+
+{[if moments is not None and moments_uncond_df is None and moments_cond_df is None]}
 :::{dropdown} Unconditional Moments
 {[to_html_table(moments_df)]}
 :::
@@ -359,7 +385,7 @@ class RunResults:
 
     @staticmethod
     def _moments_to_html(moments: np.ndarray, variable_names: list[str]) -> str:
-        """Render unconditional covariance matrix as an HTML table."""
+        """Render a covariance matrix as an HTML table."""
         import pandas as pd
 
         df = pd.DataFrame(
@@ -368,6 +394,42 @@ class RunResults:
             columns=variable_names,
         )
         return df.to_html()
+
+    def _moments_dataframes(self) -> tuple["pd.DataFrame | None", "pd.DataFrame | None"]:
+        """Return (conditional_df, unconditional_df) when available."""
+        if self.model is None:
+            return None, None
+
+        import pandas as pd
+
+        names = self.model.symbols["endogenous"]
+        conditional_df = None
+        unconditional_df = None
+
+        if self.solution is not None and hasattr(self.solution, "moments"):
+            try:
+                conditional, unconditional = self.solution.moments()
+                conditional_df = pd.DataFrame(
+                    conditional,
+                    index=names,
+                    columns=names,
+                )
+                unconditional_df = pd.DataFrame(
+                    unconditional,
+                    index=names,
+                    columns=names,
+                )
+            except Exception:
+                pass
+
+        if unconditional_df is None and self.moments is not None:
+            unconditional_df = pd.DataFrame(
+                self.moments,
+                index=names,
+                columns=names,
+            )
+
+        return conditional_df, unconditional_df
 
     @staticmethod
     def _simulation_to_html(simulation: Any) -> str:
@@ -565,15 +627,8 @@ class RunResults:
             context["bk_check"] = bk
             context["jacs"] = dr.coefficients_as_df()
 
-        moments_df = None
-        if self.moments is not None and model is not None:
-            import pandas as pd
-
-            moments_df = pd.DataFrame(
-                self.moments,
-                index=model.symbols["endogenous"],
-                columns=model.symbols["endogenous"],
-            )
+        moments_cond_df, moments_uncond_df = self._moments_dataframes()
+        moments_df = moments_uncond_df
 
         d: dict[str, Any] = {
             "model": model,
@@ -584,6 +639,8 @@ class RunResults:
             "eigenvalues": self.eigenvalues,
             "moments": self.moments,
             "moments_df": moments_df,
+            "moments_cond_df": moments_cond_df,
+            "moments_uncond_df": moments_uncond_df,
         }
         d.update(context)
 
@@ -660,13 +717,15 @@ class RunResults:
             parts.append(self.solution._repr_html_())
 
         if self.simulation is not None:
-            if self.moments is not None and self.model is not None:
-                moments_html = self._moments_to_html(
-                    self.moments, self.model.symbols["endogenous"]
-                )
-                if moments_html:
-                    parts.append("<h3>Moments</h3>")
-                    parts.append(moments_html)
+            moments_cond_df, moments_uncond_df = self._moments_dataframes()
+            if moments_cond_df is not None or moments_uncond_df is not None:
+                parts.append("<h3>Moments</h3>")
+                if moments_uncond_df is not None:
+                    parts.append("<h4>Unconditional Moments</h4>")
+                    parts.append(moments_uncond_df.to_html())
+                if moments_cond_df is not None:
+                    parts.append("<h4>Conditional Moments</h4>")
+                    parts.append(moments_cond_df.to_html())
             sim_html = self._simulation_to_html(self.simulation)
             if sim_html:
                 parts.append("<h3>Simulation</h3>")
@@ -951,9 +1010,8 @@ def dsge_report(
     """
 
     check_output = options.get("check_output", False)
-    output_type = options.get("output_type", "markdown")
+    output_type = options.get("output_type", "html")
     mime_bundle_repr = options.get("mime_bundle_repr", None)
-    display_graph = options.get("display_graph", False)
     notify_interface = options.get("notify_interface", True)
 
     if check_output:
@@ -1034,7 +1092,7 @@ def dsge_report(
     if notify_interface:
         _send_interface_notifications(results)
 
-    if bool(display_graph) and str(output_type).lower() == "markdown":
+    if str(output_type).lower() == "markdown":
         results.display()
     else:
         return results
