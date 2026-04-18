@@ -266,11 +266,13 @@ x[t] = alpha * x[t-1] + e[t]
     assert "Conditional Moments" in html
 
 
-def test_runresults_html_is_opt_in_and_disabled_by_default():
+def test_runresults_html_is_enabled_by_default():
     results = RunResults()
     results.simulation = {"eps": pd.DataFrame({"x": [0.0, 0.2, 0.1]})}
 
-    assert results._repr_html_() is None
+    html = results._repr_html_()
+    assert html is not None
+    assert "Simulation" in html
 
 
 def test_runresults_mimebundle_includes_highlighting_and_markdown():
@@ -284,7 +286,7 @@ def test_runresults_mimebundle_includes_highlighting_and_markdown():
         {"line": 7, "type": "error", "message": "boom"}
     ]
     assert "text/markdown" in bundle
-    assert "text/html" not in bundle
+    assert "text/html" in bundle
     assert "text/plain" in bundle
 
 

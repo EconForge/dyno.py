@@ -261,7 +261,7 @@ class RunResults:
     ) -> None:
         self.model: AbstractModel | None = model
         self.source_txt: str | None = source_txt
-        # Keep backward-compatible rendering policy: HTML is opt-in.
+        # Default to HTML rendering for richer notebook output.
         self.output_type: str = output_type
         # MIME bundle policy: None => include all rich reprs; else one of
         # {"markdown", "html", "text"} to include only that representation.
