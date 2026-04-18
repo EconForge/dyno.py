@@ -395,7 +395,9 @@ class RunResults:
         )
         return df.to_html()
 
-    def _moments_dataframes(self) -> tuple["pd.DataFrame | None", "pd.DataFrame | None"]:
+    def _moments_dataframes(
+        self,
+    ) -> tuple["pd.DataFrame | None", "pd.DataFrame | None"]:
         """Return (conditional_df, unconditional_df) when available."""
         if self.model is None:
             return None, None
