@@ -256,7 +256,7 @@ class RunResults:
         model: AbstractModel | None = None,
         *,
         source_txt: str | None = None,
-        output_type: str = "markdown",
+        output_type: str = "html",
         mime_bundle_repr: str | None = None,
     ) -> None:
         self.model: AbstractModel | None = model
