@@ -1,3 +1,6 @@
+from typing import TYPE_CHECKING
+
+
 class ParserError(Exception):
 
     line: int | None
@@ -52,13 +55,15 @@ class LARKParserError(ParserError):
         self.details = details
 
 
-from dynare_preprocessor import PreprocessorException, UnsupportedFeatureException
 import re
+
+if TYPE_CHECKING:
+    from dynare_preprocessor import PreprocessorException
 
 
 class DynareParserError(ParserError):
 
-    def __init__(self, err: PreprocessorException) -> None:
+    def __init__(self, err: "PreprocessorException") -> None:
         message = str(err)
 
         # Typical dynare-preprocessor message format:

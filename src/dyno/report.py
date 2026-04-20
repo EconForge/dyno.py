@@ -848,6 +848,219 @@ class RunResults:
 
     # -- Plain text ----------------------------------------------------------
 
+    @staticmethod
+    def _format_symbol_list(names: list[str], *, max_items: int = 10) -> str:
+        if not names:
+            return "(none)"
+        if len(names) <= max_items:
+            return ", ".join(names)
+        head = ", ".join(names[:max_items])
+        return f"{head}, ... (+{len(names) - max_items} more)"
+
+    @staticmethod
+    def _format_line_prefix(entry: dict[str, Any]) -> str:
+        line = entry.get("line")
+        column = entry.get("column")
+        if line is None:
+            return ""
+        if column is None:
+            return f"line {line}: "
+        return f"line {line}:{column}: "
+
+    def _residuals_summary_lines(self) -> list[str]:
+        if self.residuals is None:
+            return ["Residuals: not computed"]
+
+        residuals = np.asarray(self.residuals, dtype=float).reshape(-1)
+        if residuals.size == 0:
+            return ["Residuals: computed (empty)"]
+
+        abs_res = np.abs(residuals)
+        max_abs = float(abs_res.max())
+        tol = 1e-6
+        failing = np.where(abs_res >= tol)[0]
+
+        lines = [
+            (
+                "Residuals: computed "
+                f"(n={residuals.size}, max|r|={max_abs:.3e}, "
+                f"nonzero@{tol:.0e}={len(failing)})"
+            )
+        ]
+
+        if len(failing) == 0:
+            return lines
+
+        eq_lines: list[int | None] = []
+        if self.model is not None:
+            eq_line_getter = getattr(self.model, "_equation_line_numbers", None)
+            if callable(eq_line_getter):
+                try:
+                    eq_lines = list(eq_line_getter())
+                except Exception:
+                    eq_lines = []
+
+        order = list(np.argsort(abs_res)[::-1][: min(8, residuals.size)])
+        lines.append("  largest residuals:")
+        for idx in order:
+            eq_no = idx + 1
+            src_line = eq_lines[idx] if idx < len(eq_lines) else None
+            line_txt = f", source line {src_line}" if src_line is not None else ""
+            lines.append(
+                f"    - eq {eq_no}: r={residuals[idx]:+.3e} (|r|={abs_res[idx]:.3e}{line_txt})"
+            )
+        return lines
+
+    def _eigenvalues_summary_lines(self) -> list[str]:
+        if self.eigenvalues is None:
+            return ["Eigenvalues: not computed"]
+
+        evs = np.asarray(self.eigenvalues).reshape(-1)
+        if evs.size == 0:
+            return ["Eigenvalues: computed (empty)"]
+
+        mod = np.abs(evs)
+        unstable = int(np.sum(mod > 1.0))
+        unit = int(np.sum(np.isclose(mod, 1.0, atol=1e-8)))
+        lines = [
+            (
+                "Eigenvalues: computed "
+                f"(n={evs.size}, min|lambda|={float(mod.min()):.3e}, "
+                f"max|lambda|={float(mod.max()):.3e}, "
+                f"|lambda|>1: {unstable}, |lambda|≈1: {unit})"
+            )
+        ]
+
+        bk = self.bk_check
+        if bk is True:
+            lines.append("Blanchard-Kahn conditions: met")
+        elif bk is False:
+            lines.append("Blanchard-Kahn conditions: NOT met")
+        else:
+            lines.append("Blanchard-Kahn conditions: not available")
+
+        return lines
+
+    def _simulation_summary_line(self) -> str:
+        if self.simulation is None:
+            return "Simulation: not computed"
+
+        if isinstance(self.simulation, dict):
+            shocks = list(self.simulation.keys())
+            horizon = None
+            for value in self.simulation.values():
+                try:
+                    horizon = len(value)
+                    break
+                except Exception:
+                    continue
+            horizon_txt = f", horizon={horizon}" if horizon is not None else ""
+            shocks_txt = self._format_symbol_list([str(s) for s in shocks], max_items=6)
+            return (
+                "Simulation: computed "
+                f"(IRFs, shocks={len(shocks)}{horizon_txt})\n"
+                f"  shocks: {shocks_txt}"
+            )
+
+        try:
+            shape = getattr(self.simulation, "shape", None)
+            if shape is not None:
+                return f"Simulation: computed (tabular shape={shape})"
+        except Exception:
+            pass
+
+        return f"Simulation: computed ({type(self.simulation).__name__})"
+
+    def _diagnostic_lines(
+        self,
+        *,
+        title: str,
+        entries: list[dict[str, Any]],
+        max_entries: int = 8,
+    ) -> list[str]:
+        if not entries:
+            return [f"{title}: none"]
+
+        lines = [f"{title}: {len(entries)}"]
+        for entry in entries[:max_entries]:
+            prefix = self._format_line_prefix(entry)
+            lines.append(f"  - {prefix}{entry.get('message', '')}")
+        if len(entries) > max_entries:
+            lines.append(f"  - ... {len(entries) - max_entries} more")
+        return lines
+
+    def __str__(self) -> str:
+        if self.elapsed is None:
+            self.finish()
+
+        lines: list[str] = ["RunResults", "=========="]
+
+        if self.model is not None:
+            symbols = getattr(self.model, "symbols", {})
+            variables = list(symbols.get("variables", []))
+            endogenous = list(symbols.get("endogenous", []))
+            exogenous = list(symbols.get("exogenous", []))
+            parameters = list(symbols.get("parameters", []))
+            deterministic = bool(getattr(self.model, "is_deterministic", False))
+
+            lines.extend(
+                [
+                    "Model",
+                    "-----",
+                    f"name: {getattr(self.model, 'name', None)}",
+                    f"filename: {getattr(self.model, 'filename', None)}",
+                    f"deterministic: {deterministic}",
+                    (
+                        "symbols: "
+                        f"variables={len(variables)}, "
+                        f"endogenous={len(endogenous)}, "
+                        f"exogenous={len(exogenous)}, "
+                        f"parameters={len(parameters)}"
+                    ),
+                    f"endogenous: {self._format_symbol_list(endogenous)}",
+                    f"exogenous: {self._format_symbol_list(exogenous)}",
+                    f"parameters: {self._format_symbol_list(parameters)}",
+                    "",
+                ]
+            )
+
+        lines.extend(["Checks", "------"])
+        lines.extend(self._residuals_summary_lines())
+        lines.extend(self._eigenvalues_summary_lines())
+        lines.append("")
+
+        lines.extend(["Outputs", "-------"])
+        lines.append(
+            "Solution: computed" if self.solution is not None else "Solution: not computed"
+        )
+        if self.solution is not None and getattr(self.solution, "decision_rule", None):
+            dr = self.solution.decision_rule
+            x_shape = getattr(getattr(dr, "X", None), "shape", None)
+            y_shape = getattr(getattr(dr, "Y", None), "shape", None)
+            s_shape = getattr(getattr(dr, "Σ", None), "shape", None)
+            lines.append(f"  decision rule matrices: X{x_shape}, Y{y_shape}, Σ{s_shape}")
+        lines.extend(self._simulation_summary_line().split("\n"))
+        if self.figure is not None:
+            lines.append(f"Figure: available ({type(self.figure).__name__})")
+        else:
+            lines.append("Figure: not available")
+        if self.moments is not None:
+            shape = getattr(self.moments, "shape", None)
+            lines.append(f"Moments: available{f' (shape={shape})' if shape else ''}")
+        else:
+            lines.append("Moments: not available")
+        lines.append("")
+
+        lines.extend(["Diagnostics", "-----------"])
+        lines.extend(self._diagnostic_lines(title="Warnings", entries=self.warnings))
+        lines.extend(self._diagnostic_lines(title="Errors", entries=self.errors))
+        lines.append("")
+
+        elapsed = self.elapsed if self.elapsed is not None else 0.0
+        lines.extend(["Timing", "------", f"elapsed: {elapsed:.3f}s"])
+
+        return "\n".join(lines)
+
     def __repr__(self) -> str:
         parts = []
         if self.model is not None:

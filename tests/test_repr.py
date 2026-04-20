@@ -305,6 +305,50 @@ def test_runresults_mimebundle_honors_include_exclude_filters():
     assert "text/markdown" not in no_markdown
 
 
+def test_runresults_str_includes_extensive_sections_and_diagnostics():
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+"""
+    model = DynoModel(filename="str_report.dyno", txt=txt)
+
+    results = RunResults(model=model)
+    results.residuals = np.array([0.0, 2.5e-4])
+    results.eigenvalues = np.array([0.9, 1.2])
+    results.simulation = {"eps": pd.DataFrame({"x": [0.0, 0.2, 0.1]})}
+    results.add_warning("Residual above tolerance", line=12)
+    results.add_error("Failed command", line=20, column=3)
+
+    txt_report = str(results)
+
+    assert "RunResults" in txt_report
+    assert "Model" in txt_report
+    assert "Checks" in txt_report
+    assert "Outputs" in txt_report
+    assert "Diagnostics" in txt_report
+    assert "Timing" in txt_report
+    assert "largest residuals" in txt_report
+    assert "Blanchard-Kahn conditions" in txt_report
+    assert "Warnings: 1" in txt_report
+    assert "Errors: 1" in txt_report
+    assert "line 20:3: Failed command" in txt_report
+
+
+def test_runresults_str_handles_missing_outputs_gracefully():
+    results = RunResults()
+
+    txt_report = str(results)
+
+    assert "Residuals: not computed" in txt_report
+    assert "Eigenvalues: not computed" in txt_report
+    assert "Solution: not computed" in txt_report
+    assert "Simulation: not computed" in txt_report
+    assert "Warnings: none" in txt_report
+    assert "Errors: none" in txt_report
+
+
 def test_runresults_mimebundle_uses_same_markdown_renderer():
     results = RunResults()
 

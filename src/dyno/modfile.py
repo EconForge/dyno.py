@@ -1,4 +1,3 @@
-from dynare_preprocessor import DynareModel as Modfile
 from dyno.model import AbstractModel
 from dyno.language import pad_list, Normal, Deterministic
 import numpy as np
@@ -7,11 +6,27 @@ from typing_extensions import Self
 from typing import Any
 from .typedefs import TVector, TMatrix
 
-from dynare_preprocessor import PreprocessorException, UnsupportedFeatureException
 from .errors import DynareParserError
 
 
 class DynareModel(AbstractModel):
+
+    @staticmethod
+    def _load_dynare_preprocessor():
+        try:
+            from dynare_preprocessor import DynareModel as Modfile
+            from dynare_preprocessor import PreprocessorException
+        except ModuleNotFoundError as e:
+            if e.name == "dynare_preprocessor":
+                raise ModuleNotFoundError(
+                    "DynareModel emulation requires the optional dependency "
+                    "'dynare-preprocessor-pylib'. With pixi, add it via: "
+                    "pixi add --feature dynare dynare-preprocessor-pylib, "
+                    "or use an environment that includes the dynare feature. "
+                    "Note: .mod files can still be imported with DynoModel without this dependency."
+                ) from e
+            raise
+        return Modfile, PreprocessorException
 
     def import_model(self: Self, txt: str, deriv_order=1, params_deriv_order=0) -> None:
         """imports model written in `.mod` format into symbolic attribute using Dynare's preprocessor
@@ -21,6 +36,7 @@ class DynareModel(AbstractModel):
         txt : str
             the model being imported in `.mod` form
         """
+        Modfile, PreprocessorException = self._load_dynare_preprocessor()
         try:
             self.symbolic = Modfile(txt, deriv_order, params_deriv_order)
         except PreprocessorException as e:

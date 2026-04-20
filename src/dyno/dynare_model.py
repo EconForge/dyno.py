@@ -7,13 +7,29 @@ from typing_extensions import Self
 from typing import Any
 from .typedefs import TVector, TMatrix
 
-from dynare_preprocessor import PreprocessorException, UnsupportedFeatureException
 from .errors import DynareParserError, SteadyStateError
 
 
 class DynareModel(AbstractModel):
 
     _check_eigenvalues: bool = True
+
+    @staticmethod
+    def _load_dynare_preprocessor():
+        try:
+            from dynare_preprocessor import DynareModel as Modfile
+            from dynare_preprocessor import PreprocessorException
+        except ModuleNotFoundError as e:
+            if e.name == "dynare_preprocessor":
+                raise ModuleNotFoundError(
+                    "DynareModel emulation requires the optional dependency "
+                    "'dynare-preprocessor-pylib'. With pixi, add it via: "
+                    "pixi add --feature dynare dynare-preprocessor-pylib, "
+                    "or use an environment that includes the dynare feature. "
+                    "Note: .mod files can still be imported with DynoModel without this dependency."
+                ) from e
+            raise
+        return Modfile, PreprocessorException
 
     def _equation_line_numbers(self: Self) -> list[int]:
         """Best-effort mapping from equation index to source line number."""
@@ -173,7 +189,7 @@ class DynareModel(AbstractModel):
             if True, automatically declare parameters that are assigned values
             without being explicitly declared in the parameters section, by default False
         """
-        from dynare_preprocessor import DynareModel as Modfile
+        Modfile, PreprocessorException = self._load_dynare_preprocessor()
 
         self._import_options = {
             "deriv_order": deriv_order,

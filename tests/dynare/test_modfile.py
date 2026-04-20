@@ -39,5 +39,4 @@ def test_modfile_import(filename):
 
     except Exception as e:
         assert f in unsupported
-
-        assert isinstance(e, (modfile.UnsupportedFeatureException, DynareParserError))
+        assert isinstance(e, DynareParserError)

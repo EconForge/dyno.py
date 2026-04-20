@@ -5,7 +5,7 @@ Test to verify the terminal conditions implementation
 import numpy as np
 
 
-def test_jacobian_consistency():
+def _run_jacobian_consistency():
     """Test that different methods of computing the Jacobian give the same result"""
 
     from dyno.dyno_model import DynoModel
@@ -196,7 +196,12 @@ def test_jacobian_consistency():
     return J_sparse, J_dense, J_numerical
 
 
-def test_terminal_conditions():
+def test_jacobian_consistency():
+    """Test that different methods of computing the Jacobian give the same result."""
+    _run_jacobian_consistency()
+
+
+def _run_terminal_conditions():
     """Test that the last three rows have the correct terminal conditions"""
 
     from dyno.dyno_model import DynoModel
@@ -240,17 +245,22 @@ def test_terminal_conditions():
     return res, J
 
 
+def test_terminal_conditions():
+    """Test that the last three rows have the correct terminal conditions."""
+    _run_terminal_conditions()
+
+
 if __name__ == "__main__":
     # Test 1: Jacobian consistency
     print("\n" + "#" * 70)
     print("# TEST 1: Jacobian Consistency")
     print("#" * 70 + "\n")
-    J_sparse, J_dense, J_numerical = test_jacobian_consistency()
+    J_sparse, J_dense, J_numerical = _run_jacobian_consistency()
 
     print("\n\n" + "#" * 70)
     print("# TEST 2: Terminal Conditions")
     print("#" * 70 + "\n")
-    res, J = test_terminal_conditions()
+    res, J = _run_terminal_conditions()
 
     print("\n" + "=" * 60)
     print("Testing terminal condition structure in Jacobian")
