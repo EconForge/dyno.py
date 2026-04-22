@@ -236,6 +236,9 @@ class AssignmentEvaluator(FormulaEvaluator):
         self.metadata = context.get("metadata", {}).copy()
 
         self.equations = []
+        self.equation_metadata = []
+        self.block_metadata_entries = []
+        self._metadata_stack: List[Dict[str, Any]] = [{"tags": []}]
         self.time = None  # None or integer
         self.errors = []
 
@@ -244,6 +247,125 @@ class AssignmentEvaluator(FormulaEvaluator):
 
         self.function_table.update(MATH_FUNCTIONS)
         self.function_table.update({"N": (lambda u, v: Normal(Sigma=[[v]], Μ=[u]))})
+
+    def _normalize_metadata(self, item_list: List[tuple[str, Any]]) -> Dict[str, Any]:
+        tags: List[str] = []
+        kv: Dict[str, Any] = {}
+        for kind, value in item_list:
+            if kind == "tag":
+                if value not in tags:
+                    tags.append(value)
+            elif kind == "kv":
+                key, val = value
+                kv[key] = val
+        if len(tags) > 0:
+            kv["tags"] = tags
+        return kv
+
+    def _merge_metadata(
+        self, base: Dict[str, Any], override: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        merged = dict(base)
+
+        base_tags = list(base.get("tags", []))
+        override_tags = list(override.get("tags", []))
+        tags = list(base_tags)
+        for tag in override_tags:
+            if tag not in tags:
+                tags.append(tag)
+        if len(tags) > 0:
+            merged["tags"] = tags
+        elif "tags" in merged:
+            merged.pop("tags")
+
+        for key, value in override.items():
+            if key == "tags":
+                continue
+            merged[key] = value
+
+        return merged
+
+    def _attach_statement_metadata(
+        self, node: Tree, metadata: Dict[str, Any]
+    ) -> None:
+        try:
+            node.meta.statement_metadata = metadata
+        except Exception:
+            pass
+
+    def _split_metadata_items(self, body: str) -> List[str]:
+        items: List[str] = []
+        current: List[str] = []
+        in_single = False
+        in_double = False
+
+        for char in body:
+            if char == "'" and not in_double:
+                in_single = not in_single
+            elif char == '"' and not in_single:
+                in_double = not in_double
+
+            if char == "," and not in_single and not in_double:
+                item = "".join(current).strip()
+                if len(item) > 0:
+                    items.append(item)
+                current = []
+                continue
+
+            current.append(char)
+
+        tail = "".join(current).strip()
+        if len(tail) > 0:
+            items.append(tail)
+        return items
+
+    def _coerce_metadata_value(self, raw_value: str) -> Any:
+        stripped = raw_value.strip()
+        parsed = yaml.safe_load(stripped)
+        if isinstance(parsed, (int, float, str, bool)):
+            return parsed
+        if parsed is None and stripped in ("", "null", "~"):
+            return parsed
+        if parsed is not None:
+            return str(parsed)
+        return stripped
+
+    def _parse_metadata_token(self, token_value: str) -> Dict[str, Any]:
+        stripped = token_value.strip()
+        if not (stripped.startswith("[") and stripped.endswith("]")):
+            raise DefinitionError("Invalid metadata block format")
+
+        body = stripped[1:-1].strip()
+        if len(body) == 0:
+            return {"tags": []}
+
+        items = self._split_metadata_items(body)
+        normalized_items: List[tuple[str, Any]] = []
+
+        for item in items:
+            if "=" not in item:
+                tag = item.strip()
+                if not tag.isidentifier():
+                    raise DefinitionError(f"Invalid metadata tag: {tag}")
+                normalized_items.append(("tag", tag))
+                continue
+
+            key, value = item.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if len(key) == 0 or len(value) == 0:
+                raise DefinitionError(f"Invalid metadata item: {item}")
+            if not key.isidentifier():
+                raise DefinitionError(f"Invalid metadata key: {key}")
+            normalized_items.append(("kv", (key, self._coerce_metadata_value(value))))
+
+        return self._normalize_metadata(normalized_items)
+
+    def inline_metadata(self, tree):
+        return self._parse_metadata_token(str(tree.children[0]))
+
+    def block_metadata(self, tree):
+        return self._parse_metadata_token(str(tree.children[0]))
 
     def assignment(self, tree):
         """Handle assignments: symbol := value or symbol <- value"""
@@ -352,6 +474,41 @@ class AssignmentEvaluator(FormulaEvaluator):
         return value
 
     # Block handling
+    def annotated_statement(self, tree):
+        statement = tree.children[0]
+        inline_metadata = {"tags": []}
+        if len(tree.children) > 1:
+            inline_metadata = self.visit(tree.children[1])
+
+        inherited_metadata = self._metadata_stack[-1]
+        statement_metadata = self._merge_metadata(inherited_metadata, inline_metadata)
+
+        if statement.data in ("equality", "formula"):
+            self._attach_statement_metadata(statement, statement_metadata)
+            self.equations.append(statement)
+            self.equation_metadata.append(statement_metadata)
+            return statement
+
+        self._attach_statement_metadata(statement, statement_metadata)
+        return self.visit(statement)
+
+    def block(self, tree):
+        for child in tree.children:
+            self.visit(child)
+        return None
+
+    def metadata_block(self, tree):
+        block_metadata = self.visit(tree.children[0])
+        inherited = self._metadata_stack[-1]
+        merged = self._merge_metadata(inherited, block_metadata)
+        self.block_metadata_entries.append(merged)
+        self._metadata_stack.append(merged)
+        try:
+            self.visit(tree.children[1])
+        finally:
+            self._metadata_stack.pop()
+        return None
+
     def assignment_block(self, tree):
         """Handle a block of assignments"""
         results = []
@@ -373,17 +530,10 @@ class AssignmentEvaluator(FormulaEvaluator):
 
     def free_block(self, tree):
         """Handle a mixed block of equations and assignments"""
-        results = []
-        for i, child in enumerate(tree.children):
-            if hasattr(child, "data"):  # Skip newlines
-                if child.data in ("equality", "formula"):
-                    # result = self.visit(child)
-                    # results.append(result)
-                    self.equations.append(child)
-                else:
-                    self.visit(child)
-                # results.append(result)
-        return results
+        for child in tree.children:
+            if hasattr(child, "data"):
+                self.visit(child)
+        return []
 
 
 import math

@@ -103,7 +103,6 @@ class DynoFile(SymbolicModel):
             "values": fe.values,
             "processes": fe.processes,
             "steady_states": fe.steady_states,
-            "metadata": fe.metadata,
         }
         self.context = context
         self.metadata = fe.metadata
@@ -201,12 +200,12 @@ class LModFile(SymbolicModel):
             "processes": processes,
             "steady_states": fe.steady_states
             | {e: 0.0 for e in exo},  # set exogenous steady states to zero
-            "metadata": {
-                "dynare_commands": self._extract_dynare_commands(),
-            },
         }
 
         self.context = context
+        self.metadata = {
+            "dynare_commands": self._extract_dynare_commands(),
+        }
 
     def _extract_dynare_commands(self: Self) -> list[dict[str, Any]]:
         """Extract Dynare command statements from the parsed modfile tree."""

@@ -212,7 +212,6 @@ class DynoModel(AbstractModel):
                 yaml_metadata = {k: v for (k, v) in data.items() if k != "model"}
                 merged_metadata = yaml_metadata | self.symbolic.metadata
                 self.symbolic.metadata = merged_metadata
-                self.symbolic.context["metadata"] = merged_metadata
             elif self.filename.endswith(".dyno"):
                 self.symbolic = DynoFile(content=txt, filename=self.filename)
             else:

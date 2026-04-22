@@ -2,7 +2,14 @@
 
 equation_block: _NEWLINE? (equation) (_NEWLINE equation )* _NEWLINE?
 assignment_block: _NEWLINE? (assignment) (_NEWLINE assignment )* _NEWLINE?
-free_block: _NEWLINE? (equation | assignment | quantified_assignment | metadata_assignment) (_NEWLINE (equation | assignment | quantified_assignment | metadata_assignment) )* _NEWLINE?
+free_block: _NEWLINE? statement (_NEWLINE statement)* _NEWLINE?
+
+?statement: statement_core inline_metadata? -> annotated_statement
+          | block_metadata block            -> metadata_block
+
+?statement_core: equation | assignment | quantified_assignment | metadata_assignment
+
+block: "{" _NEWLINE? statement (_NEWLINE statement)* _NEWLINE? "}"
 
 
 ?equation: equality | formula
@@ -20,6 +27,9 @@ t_double_bound: formula "<=" "t" "<" formula
 
 quantified_assignment: _FORALL "t" ["," t_double_bound] ":" variable _ASSIGN formula
 metadata_assignment: _AT cname ":" metadata_scalar
+
+inline_metadata: INLINE_METADATA
+block_metadata: BLOCK_METADATA
 
 _FORALL.1: ("∀" | "forall")
 _ASSIGN.1: (":=" | "<-")
@@ -79,6 +89,9 @@ NAME: UNICODE_LETTER ("_"|UNICODE_LETTER|DIGIT)*
 %import common.WS_INLINE
 %import common.WS
 %import common.NEWLINE
+
+INLINE_METADATA.3: /[ \t]+\[[^\]\r\n]*\]/
+BLOCK_METADATA.3: /\[[^\]\r\n]*\](?=[ \t]*\{)/
 
 // Start-of-line comments: consume newlines and empty lines that follow
 SOL_COMMENT.10 : /^[ \t]*#[^\r\n]*(\r?\n)*/m
