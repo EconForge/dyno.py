@@ -88,6 +88,49 @@ y[t] = alpha * k[t-1] [production, source=paper]
     assert eq_meta["source"] == "paper"
 
 
+def test_inline_coloncolon_metadata_tags_are_attached_to_equations():
+    txt = """
+alpha := 0.3
+k[~] := 1
+y[t] = alpha * k[t-1] :: production, loglinear
+"""
+
+    symbolic = DynoFile(txt)
+
+    assert len(symbolic.equations) == 1
+    eq_meta = symbolic.equations[0].meta.statement_metadata
+    assert set(eq_meta["tags"]) == {"production", "loglinear"}
+
+
+def test_inline_coloncolon_string_desugars_to_label_property():
+    txt = """
+alpha := 0.3
+k[~] := 1
+y[t] = alpha * k[t-1] :: "Production function"
+"""
+
+    symbolic = DynoFile(txt)
+
+    assert len(symbolic.equations) == 1
+    eq_meta = symbolic.equations[0].meta.statement_metadata
+    assert eq_meta["label"] == "Production function"
+
+
+def test_inline_coloncolon_canonical_list_desugars_to_metadata():
+    txt = """
+alpha := 0.3
+k[~] := 1
+y[t] = alpha * k[t-1] :: [production, block=firms]
+"""
+
+    symbolic = DynoFile(txt)
+
+    assert len(symbolic.equations) == 1
+    eq_meta = symbolic.equations[0].meta.statement_metadata
+    assert set(eq_meta["tags"]) == {"production"}
+    assert eq_meta["block"] == "firms"
+
+
 def test_block_metadata_inherits_and_merges_into_statements():
     txt = """
 alpha := 0.3
@@ -117,6 +160,25 @@ def test_floating_metadata_is_rejected():
     txt = """
 [production]
 y[t] = 1
+"""
+    with pytest.raises(ParserError):
+        DynoFile(txt)
+
+
+def test_floating_coloncolon_metadata_is_rejected():
+    txt = """
+:: production
+y[t] = 1
+"""
+    with pytest.raises(ParserError):
+        DynoFile(txt)
+
+
+def test_coloncolon_prefix_block_metadata_is_rejected():
+    txt = """
+:: [production] {
+    y[t] = 1
+}
 """
     with pytest.raises(ParserError):
         DynoFile(txt)

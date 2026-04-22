@@ -330,7 +330,7 @@ class AssignmentEvaluator(FormulaEvaluator):
             return str(parsed)
         return stripped
 
-    def _parse_metadata_token(self, token_value: str) -> Dict[str, Any]:
+    def _parse_canonical_metadata_token(self, token_value: str) -> Dict[str, Any]:
         stripped = token_value.strip()
         if not (stripped.startswith("[") and stripped.endswith("]")):
             raise DefinitionError("Invalid metadata block format")
@@ -361,11 +361,52 @@ class AssignmentEvaluator(FormulaEvaluator):
 
         return self._normalize_metadata(normalized_items)
 
+    def _parse_inline_metadata_token(self, token_value: str) -> Dict[str, Any]:
+        stripped = token_value.strip()
+
+        if stripped.startswith("["):
+            return self._parse_canonical_metadata_token(stripped)
+
+        if not stripped.startswith("::"):
+            raise DefinitionError("Invalid inline metadata format")
+
+        content = stripped[2:].strip()
+        if len(content) == 0:
+            raise DefinitionError("Invalid :: metadata usage")
+
+        if content.startswith("["):
+            if not content.endswith("]"):
+                raise DefinitionError("Malformed :: metadata list")
+            return self._parse_canonical_metadata_token(content)
+
+        if content[0] in ('"', "'"):
+            if len(content) < 2 or content[-1] != content[0]:
+                raise DefinitionError("Malformed :: metadata string")
+            value = self._coerce_metadata_value(content)
+            if not isinstance(value, str):
+                raise DefinitionError("Invalid :: metadata string")
+            return self._normalize_metadata([("kv", ("label", value))])
+
+        items = self._split_metadata_items(content)
+        if len(items) == 0:
+            raise DefinitionError("Invalid :: metadata usage")
+
+        normalized_items: List[tuple[str, Any]] = []
+        for item in items:
+            candidate = item.strip()
+            if "=" in candidate:
+                raise DefinitionError(":: metadata only accepts tags or quoted string")
+            if not candidate.isidentifier():
+                raise DefinitionError(f"Invalid :: metadata tag: {candidate}")
+            normalized_items.append(("tag", candidate))
+
+        return self._normalize_metadata(normalized_items)
+
     def inline_metadata(self, tree):
-        return self._parse_metadata_token(str(tree.children[0]))
+        return self._parse_inline_metadata_token(str(tree.children[0]))
 
     def block_metadata(self, tree):
-        return self._parse_metadata_token(str(tree.children[0]))
+        return self._parse_canonical_metadata_token(str(tree.children[0]))
 
     def assignment(self, tree):
         """Handle assignments: symbol := value or symbol <- value"""

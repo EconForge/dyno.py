@@ -90,7 +90,7 @@ NAME: UNICODE_LETTER ("_"|UNICODE_LETTER|DIGIT)*
 %import common.WS
 %import common.NEWLINE
 
-INLINE_METADATA.3: /[ \t]+\[[^\]\r\n]*\]/
+INLINE_METADATA.3: /[ \t]+(?:\[[^\]\r\n]*\]|::[ \t]*[^\r\n#]+)/
 BLOCK_METADATA.3: /\[[^\]\r\n]*\](?=[ \t]*\{)/
 
 // Start-of-line comments: consume newlines and empty lines that follow

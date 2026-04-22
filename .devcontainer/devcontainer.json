@@ -1,0 +1,23 @@
+{
+  "name": "dyno.py",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "remoteEnv": {
+    "PATH": "/home/codespace/.pixi/bin:${containerEnv:PATH}"
+  },
+  "postCreateCommand": "bash -lc 'if ! command -v pixi >/dev/null 2>&1; then curl -fsSL https://pixi.sh/install.sh | bash; fi && export PATH=\"$HOME/.pixi/bin:$PATH\" && pixi install -e dev'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "jjjermiah.pixi-vscode"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.pixi/envs/dev/bin/python",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": [
+          "tests"
+        ]
+      }
+    }
+  }
+}
