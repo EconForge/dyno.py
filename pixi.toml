@@ -120,7 +120,10 @@ python = ">=3.13.0,<3.14"
 # [feature.experimental.dependencies]
 # sympy = "*"
 # python-symengine = "*"
-# jax = "*"
+
+[feature.experimental.pypi-dependencies]
+jax = ">=0.4.38,<0.5"
+
 
 [environments]
 test = ["test"]
@@ -129,5 +132,6 @@ solara = ["gui"]
 dev = ["test", "lint", "jupyter", "docs"]
 dynare = ["dynare", "dynare-task"]
 dev-dynare = ["test", "lint", "jupyter", "docs", "dynare"]
+dev-experimental = ["test", "lint", "jupyter", "docs", "experimental"]
 py312 = ["test", "lint", "py312"]
 py313 = ["test", "lint", "py313"]
