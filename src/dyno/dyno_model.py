@@ -253,9 +253,38 @@ class DynoModel(AbstractModel):
 
         return [str_expression(eq) for eq in self.symbolic.equations]
 
+    def equations_with_tags(self: Self) -> list[tuple[int, str, list[str]]]:
+        """Return equations paired with their metadata tags.
+
+        Each entry is ``(index, equation_text, tags)`` where ``index`` is 1-based.
+        """
+        rows: list[tuple[int, str, list[str]]] = []
+        for i, (eq, meta) in enumerate(self.symbolic.iter_equations_with_metadata(), start=1):
+            try:
+                eq_text = str_expression(eq)
+            except Exception:
+                eq_text = str(eq)
+            tags: list[str] = []
+            if isinstance(meta, dict):
+                raw_tags = meta.get("tags", [])
+                if isinstance(raw_tags, list):
+                    tags = [str(t) for t in raw_tags]
+                for k, v in meta.items():
+                    if k != "tags":
+                        tags.append(f"{k}={v}")
+            rows.append((i, eq_text, tags))
+        return rows
+
+    def print_equations_with_tags(self: Self) -> None:
+        """Print all equations with their tags."""
+        for i, eq_text, tags in self.equations_with_tags():
+            tags_txt = ", ".join(tags) if tags else "-"
+            print(f"{i:>3}. {eq_text}  [tags: {tags_txt}]")
+
     def latex_equations(self):
 
         return self.symbolic.latex_equations()
+
 
     def compute_residuals(self, y2, y1, y0, e):
 

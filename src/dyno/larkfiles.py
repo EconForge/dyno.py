@@ -66,6 +66,14 @@ class SymbolicModel:
         residuals = [fe.visit(eq) for eq in self.equations]
         return residuals
 
+    def iter_equations_with_metadata(self):
+        """Yield pairs of (equation_tree, metadata_dict) for all equations."""
+        for eq in self.equations:
+            meta = getattr(getattr(eq, "meta", None), "statement_metadata", {})
+            if meta is None:
+                meta = {}
+            yield eq, meta
+
 
 class DynoFile(SymbolicModel):
     """Class for .dyno files"""

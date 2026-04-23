@@ -1,35 +1,79 @@
-?start: formula
+?start: free_block
+
 
 equation_block: _NEWLINE? (equation) (_NEWLINE equation )* _NEWLINE?
 assignment_block: _NEWLINE? (assignment) (_NEWLINE assignment )* _NEWLINE?
-free_block: _NEWLINE? statement (_NEWLINE statement)* _NEWLINE?
 
-?statement: statement_core inline_metadata? -> annotated_statement
-          | block_metadata block            -> metadata_block
+# Allow top-level metadata assignments (e.g., @name: Demo)
+free_block: _NEWLINE? free_stmt (_NEWLINE free_stmt)* _NEWLINE?
 
-?statement_core: equation | assignment | quantified_assignment | metadata_assignment
+?free_stmt: model_metadata | annotated_statement | annotated_block
 
-block: "{" _NEWLINE? statement (_NEWLINE statement)* _NEWLINE? "}"
+# Top-level model metadata: @key: value
+model_metadata: _AT NAME ":" METADATA_SCALAR
 
 
-?equation: equality | formula
+# annotated_statement is ALWAYS present (never transparent).
+# Metadata is attached via :: content or bracketed [key=val] inline.
+annotated_statement: statement_core statement_metadata?
+
+# annotated_block: [tag] { … }  or  [tag] :: { … }
+annotated_block: block_tag _COLONCOLON? block
+
+?statement_core: equation | assignment | quantified_assignment
+
+# block allows both annotated statements and nested annotated blocks
+block: "{" _NEWLINE? block_item (_NEWLINE block_item)* _NEWLINE? "}"
+
+?block_item: annotated_statement | annotated_block
+
+
+?equation: equality | bare_formula
 
 equality: formula "=" formula
+
+# Stand-alone formula used as a residual equation (zero-form)
+bare_formula: formula
 
 assignment: symbol _ASSIGN formula
 
 COMPARISON:  ("<="|"<"|">"|">=")
-// t_inequality: "t" COMPARISON formula -> t_bound
 t_double_bound: formula "<=" "t" "<" formula
-// t_inequalities: (t_inequality) ("," t_inequality)* -> t_bounds
-
-// predicate: [quantifier "," t_condition] (equality | inequality)
 
 quantified_assignment: _FORALL "t" ["," t_double_bound] ":" variable _ASSIGN formula
-metadata_assignment: _AT cname ":" metadata_scalar
 
-inline_metadata: INLINE_METADATA
-block_metadata: BLOCK_METADATA
+
+# ── Metadata annotation ───────────────────────────────────────────────────────
+#
+# Statement annotation (same line as the statement):
+#   :: <content>        content is a quoted string, bare identifier, or [key=val]
+#   [key=val, tag]      bracket notation (no :: required)
+#
+# Block annotation (precedes a { block }):
+#   [tag] { … }         bracket tag (no ::)
+#   [tag] :: { … }      bracket tag with explicit :: separator
+#
+# Note: :: [tag] { } is NOT valid — :: only follows a statement or a block tag.
+
+# Inline statement annotation — :: or bracket on the same line as a statement
+statement_metadata: _COLONCOLON METADATA_BODY   // :: <text or [...]>
+                  | INLINE_BRACKET              // [tag] inline (space-prefixed)
+
+# Block tag — bracket notation for annotated_block prefix (no leading space)
+block_tag: BLOCK_TAG
+
+# :: separator (filtered — not included in the tree)
+_COLONCOLON: /[ \t]*::/
+
+# Content after ::  —  either a bracketed list or free text (no newline/comment/brace)
+METADATA_BODY.3: /[ \t]*(?:\[[^\]\r\n]*\]|[^\r\n#{][^\r\n#]*)/
+
+# Inline bracket annotation:  <whitespace>[tag, key=val]
+INLINE_BRACKET.3: /[ \t]+\[[^\]\r\n]*\]/
+
+# Block tag prefix:  [tag, key=val]  at the start of a line (no expression before it)
+BLOCK_TAG.3: /^[ \t]*\[[^\]\r\n]*\]/m
+
 
 _FORALL.1: ("∀" | "forall")
 _ASSIGN.1: (":=" | "<-")
@@ -60,7 +104,6 @@ constant: cname -> constant
 
 value: cname  "[" time "]" -> value
 
-
 variable: cname  "[" time_index time_shift  "]" -> variable
 
 !time_index: ("t"|"~") -> index
@@ -89,9 +132,6 @@ NAME: UNICODE_LETTER ("_"|UNICODE_LETTER|DIGIT)*
 %import common.WS_INLINE
 %import common.WS
 %import common.NEWLINE
-
-INLINE_METADATA.3: /[ \t]+(?:\[[^\]\r\n]*\]|::[ \t]*[^\r\n#]+)/
-BLOCK_METADATA.3: /\[[^\]\r\n]*\](?=[ \t]*\{)/
 
 // Start-of-line comments: consume newlines and empty lines that follow
 SOL_COMMENT.10 : /^[ \t]*#[^\r\n]*(\r?\n)*/m

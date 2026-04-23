@@ -1,16 +1,62 @@
-from dyno import DynoModel, examples_path
+# from dyno import DynoModel, examples_path
+
+# import time
+
+# start = time.time()
+# report = DynoModel(examples_path("neo.dyno")).run()
+# end = time.time()
+
+# print(f"Execution time: {end - start} seconds")
+
+# start = time.time()
+
+# report = DynoModel(examples_path("neo.dyno.yaml")).run()
+# end = time.time()
+
+# print(f"Execution time: {end - start} seconds")
+
+# from dyno import DynoModel, examples_path
+
+# neoclassical model
+
+txt = """
+α <- 0.387 
+β <- 0.96 :: "Time Discount"
+γ <- 4.0
+δ <- 0.1
+ρ <- 0.9
+
+
+z[~] <- 0.0
+k[~] <- ((1/β-(1-δ))/α)**(1/(α-1))
+y[~] <- k[~]^α
+i[~] <- δ*k[~]
+c[~] <- y[~] - i[~]
+
+
+[model]:: {
+
+    z[t] = ρ*z[t-1] + e_z[t] + e_y[t]
+    y[t] = exp(z[t])*k[t-1]^α
+    k[t] = k[t-1]*(1-δ) + i[t]
+    c[t] = exp(z[t])*k[t-1]^α - i[t]
+    β*(c[t+1]/c[t])^(-γ)*(1-δ+α*y[t+1]/k[t]) = 1
+
+}
+
+e_z[t] <- N(0, 0.002^2)
+e_y[t] <- N(0, 0.001^2)
+
+@run: steady
+@run: check
+@run: solve
+@run: simul: {T: 20}
+"""
 
 import time
 
-start = time.time()
-report = DynoModel(examples_path("neo.dyno")).run()
-end = time.time()
+from dyno import DynoModel, examples_path
 
-print(f"Execution time: {end - start} seconds")
+model = DynoModel(txt=txt)
 
-start = time.time()
-
-report = DynoModel(examples_path("neo.dyno.yaml")).run()
-end = time.time()
-
-print(f"Execution time: {end - start} seconds")
+print(model.metadata)

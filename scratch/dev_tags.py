@@ -11,16 +11,26 @@ x[t] = x[t-1] + e[t]  :: "Productivity"
 
 [transition] {
 
-y[t] = y[t-1] + e[t]  :: Production
-z[t] = z[t-1] + e[t]  :: Inventory
+	y[t] = y[t-1] + e[t]  :: Production
+	z[t] = z[t-1] + e[t]  :: Inventory
 
 }
 
-# e[t] <- N(0,1)
 
-e[0] <- 0.0
-e[1] <- 0.1
-e[2] <- 0.0
+[arbitrage, plop, discount="beta"] :: {
+
+x[t] = x[t-1] + x[t]  :: "That is my name"
+y[t] = y[t-1] + e[t]  :: Production
+z[t] = z[t-1] + e[t]  :: Inventory
+z[t] = z[t-1] + e[t]  :: [label="Inventory"]
+
+}
+
+e[t] <- N(0,1) :: "Exogenous Shock"
+
+# e[0] <- 0.0
+# e[1] <- 0.1
+# e[2] <- 0.0
 
 
 @name: Demo
@@ -31,41 +41,32 @@ model.print_equations_with_tags()
 print("\n--- Normalized metadata by statement type ---")
 
 
+## iterate on all statements
+
+print(model.metadata)
+
+for eq, meta in model.symbolic.iter_equations_with_metadata():
+	if 'transition' in meta.get('tags', []) :
+		print(eq, meta)
+
+exit()
+
+
+
+
+
+
+
 def statement_kind(node: Tree) -> str:
 	data = str(node.data)
-	if data in {"equality", "formula"}:
+	if data in {"equality", "bare_formula", "formula"}:
 		return "equation"
 	if data == "assignment":
 		return "assignment"
-	if data == "metadata_assignment":
-		return "metadata_assignment"
-	if data == "metadata_block":
-		return "metadata_block"
+	if data == "quantified_assignment":
+		return "quantified_assignment"
 	return data
 
-
-def extract_inline_raw(annotated: Tree) -> str | None:
-	if len(annotated.children) < 2:
-		return None
-	inline_meta = annotated.children[1]
-	if not isinstance(inline_meta, Tree) or len(inline_meta.children) == 0:
-		return None
-	first = inline_meta.children[0]
-	if isinstance(first, Token):
-		return str(first)
-	return None
-
-
-def extract_block_raw(metadata_block: Tree) -> str | None:
-	if len(metadata_block.children) == 0:
-		return None
-	block_meta = metadata_block.children[0]
-	if not isinstance(block_meta, Tree) or len(block_meta.children) == 0:
-		return None
-	first = block_meta.children[0]
-	if isinstance(first, Token):
-		return str(first)
-	return None
 
 
 def visit_statements(node: Tree, depth: int = 0):
@@ -78,40 +79,35 @@ def visit_statements(node: Tree, depth: int = 0):
 		return
 
 	if data == "annotated_statement":
-		if len(node.children) == 0:
-			return
-		core = node.children[0]
-		if isinstance(core, Tree):
-			yield (depth, core, extract_inline_raw(node))
+		stmt = node.children[0]  # statement_core — always present
+		meta_node = node.children[1] if len(node.children) > 1 else None
+		yield (depth, stmt, meta_node)
 		return
 
-	if data == "metadata_block":
-		yield (depth, node, None)
-		if len(node.children) > 1 and isinstance(node.children[1], Tree):
-			inner_block = node.children[1]
-			yield from visit_statements(inner_block, depth + 1)
+	if data == "annotated_block":
+		block_tag = node.children[0]  # block_tag node
+		block = node.children[1]
+		yield (depth, block, block_tag)
+		for child in block.children:
+			if isinstance(child, Tree):
+				yield from visit_statements(child, depth + 1)
 		return
 
-	# Fallback for any direct statement-like node
-	yield (depth, node, None)
+	# model_metadata (@key: value) — skip silently
+	if data == "model_metadata":
+		return
 
 
-for i, (depth, stmt, inline_raw) in enumerate(visit_statements(model.symbolic.tree), start=1):
+for i, (depth, stmt, meta_node) in enumerate(visit_statements(model.symbolic.tree), start=1):
 	indent = "  " * depth
 	kind = statement_kind(stmt)
 
-	if kind == "metadata_block":
-		raw = extract_block_raw(stmt)
-		print(f"{i:>2}. {indent}kind={kind:<20} raw={raw}")
-		continue
-
 	meta = getattr(stmt.meta, "statement_metadata", {})
-	if inline_raw is None:
-		print(f"{i:>2}. {indent}kind={kind:<20} meta={meta}")
+	raw = str(meta_node.children[0]) if meta_node is not None else None
+	if raw is None:
+		print(f"{i:>2}. {indent}kind={kind:<25} meta={meta}")
 	else:
-		print(
-			f"{i:>2}. {indent}kind={kind:<20} meta={meta}  raw_inline={inline_raw}"
-		)
+		print(f"{i:>2}. {indent}kind={kind:<25} meta={meta}  raw={raw}")
 
 
 print("\n--- Equations and attached metadata ---")

@@ -113,7 +113,8 @@ y[t] = alpha * k[t-1] :: "Production function"
 
     assert len(symbolic.equations) == 1
     eq_meta = symbolic.equations[0].meta.statement_metadata
-    assert set(eq_meta["tags"]) == {"Production function"}
+    assert eq_meta.get("label") == "Production function"
+    assert "tags" not in eq_meta
 
 
 def test_inline_coloncolon_canonical_list_desugars_to_metadata():

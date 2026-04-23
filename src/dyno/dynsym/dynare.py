@@ -184,10 +184,38 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
         else:
             raise ValueError(f"Undefined function: {func_name}")
 
+    def properties(self, tree):
+        meta = {}
+        for pair_tree in tree.children:
+            key, val = self.visit(pair_tree)
+            if key == "name":
+                meta["label"] = val
+            elif key == "tags":
+                meta["tags"] = meta.get("tags", []) + val
+            else:
+                meta[key] = val
+        return meta
+
+    def pair(self, tree):
+        if len(tree.children) == 1:
+            return "tags", [str(tree.children[0])]
+        key = str(tree.children[0])
+        val = str(tree.children[1])
+        return key, val
+
     def lequation(self, tree):
-        self.equations.append(tree.children[1])
-        # val =  self.visit(tree.children[1])
-        # return val
+        properties_tree = tree.children[0]
+        equation_tree = tree.children[1]
+        
+        meta = {}
+        if properties_tree is not None:
+            meta.update(self.visit(properties_tree))
+            
+        self._attach_statement_metadata(equation_tree, meta)
+        
+        self.equations.append(equation_tree)
+        if hasattr(self, 'equation_metadata'):
+            self.equation_metadata.append(meta)
 
     def equality(self, tree):
 
