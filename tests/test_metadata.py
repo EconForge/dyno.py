@@ -102,7 +102,7 @@ y[t] = alpha * k[t-1] :: production, loglinear
     assert set(eq_meta["tags"]) == {"production", "loglinear"}
 
 
-def test_inline_coloncolon_string_desugars_to_label_property():
+def test_inline_coloncolon_string_desugars_to_tag():
     txt = """
 alpha := 0.3
 k[~] := 1
@@ -113,7 +113,7 @@ y[t] = alpha * k[t-1] :: "Production function"
 
     assert len(symbolic.equations) == 1
     eq_meta = symbolic.equations[0].meta.statement_metadata
-    assert eq_meta["label"] == "Production function"
+    assert set(eq_meta["tags"]) == {"Production function"}
 
 
 def test_inline_coloncolon_canonical_list_desugars_to_metadata():

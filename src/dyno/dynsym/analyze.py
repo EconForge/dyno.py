@@ -385,7 +385,9 @@ class AssignmentEvaluator(FormulaEvaluator):
             value = self._coerce_metadata_value(content)
             if not isinstance(value, str):
                 raise DefinitionError("Invalid :: metadata string")
-            return self._normalize_metadata([("kv", ("label", value))])
+            # Keep :: "..." aligned with other tag syntaxes by treating the
+            # parsed string as an opaque tag value.
+            return self._normalize_metadata([("tag", value)])
 
         items = self._split_metadata_items(content)
         if len(items) == 0:
