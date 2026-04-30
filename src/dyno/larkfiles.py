@@ -32,21 +32,6 @@ class SymbolicModel:
         self.evaluator = None
         self.metadata = {}
 
-    # @property
-    # def context(self):
-    #     return self.__context__
-
-    # def get_context(self: Self) -> Dict[str, Any]:
-
-    #     ev = self.evaluator
-    #     context = {
-    #         "constants": ev.constants,
-    #         "variables": ev.variables,
-    #         "values": ev.values,
-    #         "processes": self.processes,
-    #         "steady_states": ev.steady_states,
-    #     }
-    #     return context
 
     def latex_equations(self):
 
