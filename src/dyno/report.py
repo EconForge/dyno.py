@@ -77,7 +77,9 @@ Steady state values
 :::
 
 :::{dropdown} Equations                    
-{[if hasattr(model,'latex_equations')]}
+{[if hasattr(model, 'symbolic') and hasattr(model.symbolic, 'equations_table_markdown')]}
+{[ model.symbolic.equations_table_markdown() ]}
+{[elif hasattr(model,'latex_equations')]}
 {[ model.latex_equations() ]}
 {[endif]}
 :::     

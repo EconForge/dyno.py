@@ -1,4 +1,4 @@
-from dyno.experimental.model import DynoModel
+from dyno import DynoModel
 from lark import Tree, Token
 
 txt = """

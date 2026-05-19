@@ -37,9 +37,83 @@ class SymbolicModel:
 
         from dyno.dynsym.latex import latex
 
-        eqs_str = [latex(eq) for eq in self.equations]
-        latex_str = str.join("\n", ["$${}$$".format(eq) for eq in eqs_str])
-        return latex_str
+        def _latex_text_escape(text: str) -> str:
+            return (
+                text.replace("\\", r"\textbackslash{}")
+                .replace("{", r"\{")
+                .replace("}", r"\}")
+                .replace("_", r"\_")
+                .replace("%", r"\%")
+                .replace("$", r"\$")
+                .replace("&", r"\&")
+                .replace("#", r"\#")
+                .replace("^", r"\^")
+                .replace("~", r"\~{}")
+            )
+
+        def _split_equality(eq_latex: str) -> tuple[str, str | None]:
+            parts = eq_latex.split(" = ", 1)
+            if len(parts) == 2:
+                return parts[0], parts[1]
+            return eq_latex, None
+
+        lines: list[str] = []
+        for i, eq in enumerate(self.equations, start=1):
+            eq_latex = latex(eq)
+            meta = getattr(getattr(eq, "meta", None), "statement_metadata", {})
+            label_cell = r"\text{}"
+            if isinstance(meta, dict) and "label" in meta:
+                label = str(meta["label"])
+                label = _latex_text_escape(label)
+                label_cell = r"\text{" + label + r"}"
+
+            lhs, rhs = _split_equality(eq_latex)
+            if rhs is None:
+                equation_part = f"{lhs}"
+            else:
+                equation_part = f"{lhs} = {rhs}"
+            
+            # Use displaystyle with explicit spacing, no numbering in LaTeX
+            lines.append(f"$$\\displaystyle {label_cell} \\quad {equation_part}$$")
+
+        return "\n".join(lines)
+
+    def equations_table_markdown(self):
+
+        """Return equations formatted in a LaTeX align* environment."""
+        from dyno.dynsym.latex import latex
+
+        def _latex_text_escape(text: str) -> str:
+            return (
+                text.replace("\\", r"\textbackslash{}")
+                .replace("{", r"\{")
+                .replace("}", r"\}")
+                .replace("_", r"\_")
+                .replace("%", r"\%")
+                .replace("$", r"\$")
+                .replace("&", r"\&")
+                .replace("#", r"\#")
+                .replace("^", r"\^")
+                .replace("~", r"\~{}")
+            )
+
+        lines: list[str] = []
+        lines.append(r"\begin{align*}")
+
+        for i, eq in enumerate(self.equations, start=1):
+            eq_latex = latex(eq)
+            meta = getattr(getattr(eq, "meta", None), "statement_metadata", {})
+            label_text = r"\text{}"
+            if isinstance(meta, dict) and "label" in meta:
+                label_text = str(meta["label"])
+                label_text = _latex_text_escape(label_text)
+                label_text = r"\text{" + label_text + "}"
+
+            # Three aligned columns: label, equation, and manual equation number.
+            lines.append(f"{label_text} && {eq_latex} && ({i}) \\")
+
+        lines.append(r"\end{align*}")
+        return "$$\n" + "\n".join(lines) + "\n$$"
 
     def eval_residuals(self, context: dict | None = None) -> list:
 

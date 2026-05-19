@@ -101,7 +101,45 @@ x[t] = alpha * x[t-1] + e[t]
     md = model._markdown_()
 
     assert "## Equations" in md
-    assert "$$" in md
+    assert r"\begin{align*}" in md
+    assert r"\text{}" in md
+    assert "(1)" in md
+
+
+def test_model_markdown_equations_include_label_metadata_when_present():
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t] :: \"Productivity law\"
+"""
+
+    model = DynoModel(filename="labeled_equation.dyno", txt=txt)
+
+    md = model._markdown_()
+
+    assert "## Equations" in md
+    assert "Productivity law" in md
+    assert "(" in md and ")" in md
+    assert "label:" not in md
+
+
+def test_model_markdown_equations_use_sequential_tags():
+    txt = """
+alpha := 0.9
+beta := 0.8
+x[~] := 0
+y[~] := 0
+x[t] = alpha * x[t-1]
+y[t] = beta * y[t-1]
+"""
+
+    model = DynoModel(filename="two_equations.dyno", txt=txt)
+
+    md = model._markdown_()
+
+    assert "(1)" in md
+    assert "(2)" in md
 
 
 def test_runresults_markdown_accepts_series_simulation_entries():

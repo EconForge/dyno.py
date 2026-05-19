@@ -120,6 +120,57 @@ class AbstractModel(ABC):
     def is_deterministic(self) -> bool:
         return self.processes is None
 
+    def equations_with_tags(self: Self) -> list[tuple[int, str, list[str]]]:
+        """Return equations paired with metadata tags and key/value annotations."""
+
+        symbolic = getattr(self, "symbolic", None)
+        if symbolic is None:
+            return []
+
+        pairs: list[tuple[Any, Any]]
+        iterator = getattr(symbolic, "iter_equations_with_metadata", None)
+        if callable(iterator):
+            pairs = list(iterator())
+        else:
+            equations = list(getattr(symbolic, "equations", []))
+            pairs = []
+            for eq in equations:
+                meta = getattr(eq, "meta", None)
+                statement_metadata = (
+                    getattr(meta, "statement_metadata", {}) if meta is not None else {}
+                )
+                pairs.append((eq, statement_metadata))
+
+        rows: list[tuple[int, str, list[str]]] = []
+        for i, (eq, meta) in enumerate(pairs, start=1):
+            eq_text = str(eq)
+            try:
+                from dyno.dynsym.grammar import str_expression
+
+                eq_text = str_expression(eq)
+            except Exception:
+                pass
+
+            tags: list[str] = []
+            if isinstance(meta, dict):
+                raw_tags = meta.get("tags", [])
+                if isinstance(raw_tags, list):
+                    tags = [str(t) for t in raw_tags]
+                for k, v in meta.items():
+                    if k != "tags":
+                        tags.append(f"{k}={v}")
+
+            rows.append((i, eq_text, tags))
+
+        return rows
+
+    def print_equations_with_tags(self: Self) -> None:
+        """Print all equations with their tags."""
+
+        for i, eq_text, tags in self.equations_with_tags():
+            tags_txt = ", ".join(tags) if tags else "-"
+            print(f"{i:>3}. {eq_text}  [tags: {tags_txt}]")
+
     @abstractmethod
     def import_model(self: Self, txt: str, **kwargs: Any) -> None:
         """Set `symbolic` attribute from model text description."""
