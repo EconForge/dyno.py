@@ -1,0 +1,19 @@
+# neoclassical model for deterministic Ramsey prototype
+# This removes the household Euler equation so the planner FOC can close the system.
+
+α <- 0.387
+β <- 0.96
+γ <- 4.0
+δ <- 0.1
+ρ <- 0.9
+
+z[~] <- 0.0
+k[~] <- ((1/β-(1-δ))/α)**(1/(α-1))
+y[~] <- k[~]^α
+i[~] <- δ*k[~]
+c[~] <- y[~] - i[~]
+
+z[t] = ρ*z[t-1]
+y[t] = exp(z[t])*k[t-1]^α
+k[t] = k[t-1]*(1-δ) + i[t]
+c[t] = y[t] - i[t]
