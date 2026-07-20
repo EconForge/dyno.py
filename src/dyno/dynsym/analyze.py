@@ -345,6 +345,12 @@ class AssignmentEvaluator(FormulaEvaluator):
         for item in items:
             if "=" not in item:
                 tag = item.strip()
+                if tag and tag[0] in ('"', "'"):
+                    value = self._coerce_metadata_value(tag)
+                    if not isinstance(value, str):
+                        raise DefinitionError(f"Invalid metadata tag: {tag}")
+                    normalized_items.append(("tag", value))
+                    continue
                 if not tag.isidentifier():
                     raise DefinitionError(f"Invalid metadata tag: {tag}")
                 normalized_items.append(("tag", tag))
@@ -501,9 +507,7 @@ class AssignmentEvaluator(FormulaEvaluator):
         assert bounds.data == "t_double_bound"
         lower = self.visit(bounds.children[0])
         upper = self.visit(bounds.children[1])
-        try:
-            assert isinstance(lower, int) and isinstance(upper, int) and lower < upper
-        except:
+        if not (isinstance(lower, int) and isinstance(upper, int) and lower < upper):
             raise ValueError(
                 f"Invalid bounds in quantified assignment: {lower}, {upper}"
             )

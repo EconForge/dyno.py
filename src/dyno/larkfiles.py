@@ -1,4 +1,5 @@
 import math
+from dataclasses import dataclass
 from lark import Tree, Token
 from dyno.dynsym.grammar import parser, str_expression
 from dyno.dynsym.analyze import (
@@ -11,6 +12,19 @@ import numpy as np
 from typing import List, Dict, Any
 from dyno.errors import LARKParserError, ParserError
 from lark.exceptions import UnexpectedInput
+
+
+@dataclass(frozen=True)
+class EquationMatch:
+    equation: Tree
+    metadata: Dict[str, Any]
+
+    @property
+    def text(self) -> str:
+        return str_expression(self.equation)
+
+    def __str__(self) -> str:
+        return self.text
 
 
 class SymbolicModel:
@@ -132,6 +146,15 @@ class SymbolicModel:
             if meta is None:
                 meta = {}
             yield eq, meta
+
+    def filter_equations(self, predicate):
+        """Return equation entries whose metadata-aware wrapper matches predicate."""
+        matches: list[EquationMatch] = []
+        for eq, meta in self.iter_equations_with_metadata():
+            entry = EquationMatch(equation=eq, metadata=dict(meta))
+            if predicate(entry):
+                matches.append(entry)
+        return matches
 
 
 class DynoFile(SymbolicModel):

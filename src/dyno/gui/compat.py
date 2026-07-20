@@ -27,7 +27,7 @@ def fix_solara():
 
     try:
         del sys.modules["solara.server"]
-    except:
+    except KeyError:
         pass
 
     def _using_solara_server():

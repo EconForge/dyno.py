@@ -155,7 +155,7 @@ class Printer(Interpreter):
         # between modfile lark and dyno lark
         try:
             funname = tree.children[0].children[0].value
-        except:
+        except (AttributeError, IndexError):
             # print(tree.pretty())
             funname = str(tree.children[0].children[0])
 

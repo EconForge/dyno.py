@@ -85,6 +85,10 @@ class SteadyStateError(Exception):
 
     def __init__(self, residuals) -> None:
         self.residuals = residuals
-        message = f"Steady state values don't satisfy model equations. <ax residual is {max(abs(r) for r in residuals)}"
+        message = f"Steady state values don't satisfy model equations. Max residual is {max(abs(r) for r in residuals)}"
         self.details = f"Residuals: {residuals}"
         super().__init__(message)
+
+
+class BlanchardKahnError(Exception):
+    """Raised when Blanchard-Kahn eigenvalue conditions are not satisfied."""

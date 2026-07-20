@@ -24,7 +24,7 @@ e[t] <- N(0, 0.002)
 u[t] <- N(0, 0.002)
 
 # Dynamic equations
-c[t]*theta*h[t]^(1+psi) = (1-alpha)*y[t]
+c[t]*theta*h[t]^(1+psi) = (1-alpha)*y[t] :: "Labor Supply"
 k[t] = beta*(((exp(b[t])*c[t])/(exp(b[t+1])*c[t+1]))*(exp(b[t+1])*alpha*y[t+1]+(1-delta)*k[t]))
 y[t] = exp(a[t])*(k[t-1]^alpha)*(h[t]^(1-alpha))
 k[t] = exp(b[t])*(y[t]-c[t])+(1-delta)*k[t-1]

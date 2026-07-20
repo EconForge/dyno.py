@@ -117,6 +117,20 @@ y[t] = alpha * k[t-1] :: "Production function"
     assert "tags" not in eq_meta
 
 
+def test_inline_coloncolon_bracketed_quoted_string_becomes_tag():
+    txt = """
+alpha := 0.3
+k[~] := 1
+y[t] = alpha * k[t-1] :: ["transition"]
+"""
+
+    symbolic = DynoFile(txt)
+
+    assert len(symbolic.equations) == 1
+    eq_meta = symbolic.equations[0].meta.statement_metadata
+    assert eq_meta["tags"] == ["transition"]
+
+
 def test_inline_coloncolon_canonical_list_desugars_to_metadata():
     txt = """
 alpha := 0.3
@@ -206,6 +220,18 @@ z[t] = y[t]
     assert "z[t] = y[t]" in out
     assert "[tags: production]" in out
     assert "[tags: -]" in out
+
+
+def test_filter_equations_by_label():
+    model = DynoModel("examples/rbc.dyno")
+
+    matches = model.symbolic.filter_equations(
+        lambda eq: eq.metadata.get("label") == "Labor Supply"
+    )
+
+    assert len(matches) == 1
+    assert matches[0].metadata["label"] == "Labor Supply"
+    assert "theta" in matches[0].text
 
 
 def test_unclosed_metadata_bracket_is_rejected():

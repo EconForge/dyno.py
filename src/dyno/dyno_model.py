@@ -1,5 +1,6 @@
 from dyno.model import AbstractModel
 import copy
+import os
 import warnings
 import yaml
 import math
@@ -175,7 +176,7 @@ class DynoModel(AbstractModel):
 
     def __init__(
         self: Self,
-        filename: str | None = None,
+        filename: str | os.PathLike[str] | None = None,
         txt: str | None = None,
         yaml: str | None = None,
         **kwargs,

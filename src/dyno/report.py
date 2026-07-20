@@ -1251,5 +1251,5 @@ def dsge_report(
 
     if bool(display_graph) and str(output_type).lower() == "markdown":
         results.display()
-    else:
-        return results
+
+    return results

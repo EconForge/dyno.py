@@ -21,7 +21,7 @@ def dyno_gui(filename, parchoice={}):
 
     txt = open(filename).read()
 
-    from dyno.modfile import DynareModel
+    from dyno.dynare_model import DynareModel
 
     model = DynareModel(txt=txt)
     dr0 = model.solve()

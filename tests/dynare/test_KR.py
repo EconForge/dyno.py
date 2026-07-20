@@ -4,7 +4,7 @@ def test_solve_KR2000_STAT():
     # Test KR2000_STAT.mod
     ############################################################################
 
-    from dyno.modfile import DynareModel
+    from dyno.dynare_model import DynareModel
 
     model = DynareModel("examples/modfiles/model_KR2000_STAT.mod")
     dr = model.solve()

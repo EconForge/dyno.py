@@ -5,6 +5,7 @@ import numpy as np
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
 from .typedefs import TVector, TMatrix, Solver
+from .errors import BlanchardKahnError
 
 _log = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ __all__ = [
     "RecursiveDecisionRule",
     "PerturbationSolution",
     "NoConvergence",
+    "BlanchardKahnError",
     "solve",
     "solve_ti",
     "solve_qz",
@@ -167,7 +169,7 @@ class PerturbationSolution:
 
 
 def solve(
-    A: TMatrix, B: TMatrix, C: TMatrix, method: Solver = "qz", options={}
+    A: TMatrix, B: TMatrix, C: TMatrix, method: Solver = "qz", options: dict | None = None
 ) -> tuple[TMatrix, TVector | None]:
     """Solves AX² + BX + C = 0 for X using the chosen method
 
@@ -195,6 +197,8 @@ def solve(
     ValueError :
         when a matrix containing a NaN is obtained
     """
+
+    options = options or {}
 
     if method == "ti":
         sol, evs = solve_ti(A, B, C, **options)
@@ -306,11 +310,11 @@ def solve_qz(
     l1 = evs[n - 1]
     l2 = evs[n]
     if l1 <= l2 < 1:
-        raise Exception(
+        raise BlanchardKahnError(
             f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. Too many stable solutions."
         )
     if 1 < l1 <= l2:
-        raise Exception(
+        raise BlanchardKahnError(
             f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. No stable solution."
         )
 
