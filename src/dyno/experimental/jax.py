@@ -14,7 +14,7 @@ def build_residual_function(model: DynoModel) -> Callable:
     """
     import jax
     import jax.numpy as jnp
-    from dyno.dynsym.analyze import EquationsEvaluator
+    from dyno.dynspec.analyze import EquationsEvaluator
 
     endogenous = model.symbols["endogenous"]
     exogenous = model.symbols["exogenous"]

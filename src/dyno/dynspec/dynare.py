@@ -2,9 +2,8 @@ import os
 from lark import Token, Lark
 import numpy as np
 from typing_extensions import Self
-from ..typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
 import math
-from dyno.language import Normal
+from .language import Normal
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -20,7 +19,7 @@ from lark.visitors import Transformer
 from lark import Tree, Lark
 from lark.visitors import Transformer, v_args
 
-from dyno.dynsym.analyze import (
+from .analyze import (
     FormulaEvaluator,
     AssignmentEvaluator,
     EquationsEvaluator,
@@ -302,7 +301,7 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 
 #     def latex_equations(self):
 
-#         from dyno.dynsym.latex import latex
+#         from dyno.dynspec.latex import latex
 
 #         eqs_str = [latex(eq) for eq in self.evaluator.equations]
 #         latex_str = str.join("\n", ["$${}$$".format(eq) for eq in eqs_str])
@@ -322,7 +321,7 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 #     def compute_derivatives(self, y2, y1, y0, e):
 
 #         import numpy as np
-#         from dyno.dynsym.autodiff import DNumber as DN
+#         from dyno.dynspec.autodiff import DNumber as DN
 
 #         fe = self.evaluator
 #         endogenous = self.symbols["endogenous"]
@@ -382,7 +381,7 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 #         if not diff:
 #             return np.array(self.residuals)
 
-#         from dyno.dynsym.analyze import DN
+#         from dyno.dynspec.analyze import DN
 
 #         assert len(calibration) == 0, "calibration not supported yet"
 
@@ -464,7 +463,7 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 
 #     def deterministic_residuals_with_jacobian(model, v, sparsify=False):
 
-#         from dyno.dynsym.autodiff import DNumber
+#         from dyno.dynspec.autodiff import DNumber
 
 #         flat = v.ndim == 1
 

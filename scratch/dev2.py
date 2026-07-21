@@ -1,8 +1,8 @@
-from dynsym.analyze import FormulaEvaluator
-from dynsym.grammar import parser
+from dyno.dynspec.analyze import FormulaEvaluator
+from dyno.dynspec.grammar import parser
 
 # from rich import print, inspect
-from dynsym.grammar import str_expression
+from dyno.dynspec.grammar import str_expression
 
 fe = FormulaEvaluator()
 
@@ -37,7 +37,7 @@ def import_model(filename):
         e = [fe.steady_states[name] for name in (exogenous)]
         return y, e
 
-    from dynsym.analyze import DN
+    from dyno.dynspec.analyze import DN
 
     def compute_derivatives(y2, y1, y0, e):
 

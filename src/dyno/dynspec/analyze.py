@@ -5,6 +5,7 @@ import math
 import yaml
 from typing import Dict, Any, Callable, Union, List
 from .autodiff import DNumber as DN
+from .language import Normal
 import math
 
 
@@ -19,9 +20,6 @@ class DefinitionError(Exception):
 
         meta = self.tree.meta
         return f"({meta.line}, {meta.column}): {self.msg}"
-
-
-from dyno.language import Normal
 
 function_table_0 = {
     "exp": math.exp,

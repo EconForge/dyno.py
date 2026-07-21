@@ -3,8 +3,8 @@ from typing import Dict, List, Tuple, Any
 import sympy as sp
 
 from dyno.dyno_model import DynoModel
-from dyno.dynsym.grammar import stringify_variable
-from dyno.dynsym.analyze import EquationsEvaluator, function_table_0
+from dyno.dynspec.grammar import stringify_variable
+from dyno.dynspec.analyze import EquationsEvaluator, function_table_0
 
 
 def canonical_index(indices: Tuple[int, ...]) -> Tuple[int, ...]:

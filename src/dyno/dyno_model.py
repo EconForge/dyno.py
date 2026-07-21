@@ -6,8 +6,8 @@ import yaml
 import math
 from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
 
-from dyno.dynsym.grammar import parser, str_expression
-from dyno.dynsym.analyze import FormulaEvaluator
+from dyno.dynspec.grammar import parser, str_expression
+from dyno.dynspec.analyze import FormulaEvaluator
 from typing import Any
 from typing_extensions import Self
 
@@ -276,7 +276,7 @@ class DynoModel(AbstractModel):
         for i, name in enumerate(exogenous):
             cc["variables"][name] = {0: 0.0}
 
-        from dyno.dynsym.analyze import EquationsEvaluator
+        from dyno.dynspec.analyze import EquationsEvaluator
 
         E = EquationsEvaluator(cc)
 
@@ -290,7 +290,7 @@ class DynoModel(AbstractModel):
         self, y2, y1, y0, e
     ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix, TMatrix]:
 
-        from dyno.dynsym.autodiff import DNumber as DN
+        from dyno.dynspec.autodiff import DNumber as DN
 
         endogenous = self.symbols["endogenous"]
         exogenous = self.symbols["exogenous"]
@@ -307,7 +307,7 @@ class DynoModel(AbstractModel):
         for i, name in enumerate(exogenous):
             cc["variables"][name] = {0: DN(e[i], {(name, 0): 1})}
 
-        from dyno.dynsym.analyze import EquationsEvaluator
+        from dyno.dynspec.analyze import EquationsEvaluator
 
         E = EquationsEvaluator(cc)
         results = [E.visit(eq) for eq in self.symbolic.equations]
@@ -354,7 +354,7 @@ class DynoModel(AbstractModel):
         for i, name in enumerate(model.symbols["variables"]):
             cc["variables"][name] = {-1: v_b[:, i], 0: v[:, i], 1: v_f[:, i]}
 
-        from dyno.dynsym.analyze import EquationsEvaluator
+        from dyno.dynspec.analyze import EquationsEvaluator
 
         E = EquationsEvaluator(cc)
 
@@ -399,7 +399,7 @@ class DynoModel(AbstractModel):
 
     def deterministic_residuals_with_jacobian(model, v, sparsify=False):
 
-        from dyno.dynsym.autodiff import DNumber
+        from dyno.dynspec.autodiff import DNumber
 
         flat = v.ndim == 1
 
@@ -419,7 +419,7 @@ class DynoModel(AbstractModel):
                 1: DNumber(v_f[:, i], {(name, 1): 1.0}),
             }
 
-        from dyno.dynsym.analyze import EquationsEvaluator
+        from dyno.dynspec.analyze import EquationsEvaluator
 
         E = EquationsEvaluator(context)
 

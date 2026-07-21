@@ -85,7 +85,7 @@ print("Model solving time: ", t3 - t2)
 
 from IPython.display import Math, display
 
-from dyno.dynsym.latex import latex
+from dyno.dynspec.latex import latex
 
 for eq in model.symbolic.equations:
     display(Math(latex(eq)))

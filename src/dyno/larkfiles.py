@@ -1,8 +1,8 @@
 import math
 from dataclasses import dataclass
 from lark import Tree, Token
-from dyno.dynsym.grammar import parser, str_expression
-from dyno.dynsym.analyze import (
+from dyno.dynspec.grammar import parser, str_expression
+from dyno.dynspec.analyze import (
     FormulaEvaluator,
     AssignmentEvaluator,
     EquationsEvaluator,
@@ -49,7 +49,7 @@ class SymbolicModel:
 
     def latex_equations(self):
 
-        from dyno.dynsym.latex import latex
+        from dyno.dynspec.latex import latex
 
         def _latex_text_escape(text: str) -> str:
             return (
@@ -95,7 +95,7 @@ class SymbolicModel:
     def equations_table_markdown(self):
 
         """Return equations formatted in a LaTeX align* environment."""
-        from dyno.dynsym.latex import latex
+        from dyno.dynspec.latex import latex
 
         def _latex_text_escape(text: str) -> str:
             return (
@@ -201,7 +201,7 @@ class DynoFile(SymbolicModel):
         self.residuals = self.eval_residuals()
 
 
-from dyno.dynsym.dynare import (
+from dyno.dynspec.dynare import (
     ModFileTransformer,
     modfile_grammar,
     InterpretModfile,

@@ -339,7 +339,7 @@ def latex(expr: Any) -> str:
 
     # assume a source string: import the project parser to build a tree
     try:
-        from dyno.dynsym.grammar import parser
+        from .grammar import parser
     except Exception:
         # best-effort: if parser is not importable, raise a clear error
         raise RuntimeError("Cannot import project parser to parse source string")

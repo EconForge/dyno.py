@@ -145,7 +145,7 @@ class AbstractModel(ABC):
         for i, (eq, meta) in enumerate(pairs, start=1):
             eq_text = str(eq)
             try:
-                from dyno.dynsym.grammar import str_expression
+                from dyno.dynspec.grammar import str_expression
 
                 eq_text = str_expression(eq)
             except Exception:
