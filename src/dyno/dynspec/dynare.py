@@ -2,9 +2,8 @@ import os
 from lark import Token, Lark
 import numpy as np
 from typing_extensions import Self
-from ..typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
 import math
-from dyno.language import Normal
+from .language import Normal
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -20,7 +19,7 @@ from lark.visitors import Transformer
 from lark import Tree, Lark
 from lark.visitors import Transformer, v_args
 
-from dyno.dynsym.analyze import (
+from .analyze import (
     FormulaEvaluator,
     AssignmentEvaluator,
     EquationsEvaluator,
@@ -184,10 +183,38 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
         else:
             raise ValueError(f"Undefined function: {func_name}")
 
+    def properties(self, tree):
+        meta = {}
+        for pair_tree in tree.children:
+            key, val = self.visit(pair_tree)
+            if key == "name":
+                meta["label"] = val
+            elif key == "tags":
+                meta["tags"] = meta.get("tags", []) + val
+            else:
+                meta[key] = val
+        return meta
+
+    def pair(self, tree):
+        if len(tree.children) == 1:
+            return "tags", [str(tree.children[0])]
+        key = str(tree.children[0])
+        val = str(tree.children[1])
+        return key, val
+
     def lequation(self, tree):
-        self.equations.append(tree.children[1])
-        # val =  self.visit(tree.children[1])
-        # return val
+        properties_tree = tree.children[0]
+        equation_tree = tree.children[1]
+        
+        meta = {}
+        if properties_tree is not None:
+            meta.update(self.visit(properties_tree))
+            
+        self._attach_statement_metadata(equation_tree, meta)
+        
+        self.equations.append(equation_tree)
+        if hasattr(self, 'equation_metadata'):
+            self.equation_metadata.append(meta)
 
     def equality(self, tree):
 
@@ -274,7 +301,7 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 
 #     def latex_equations(self):
 
-#         from dyno.dynsym.latex import latex
+#         from dyno.dynspec.latex import latex
 
 #         eqs_str = [latex(eq) for eq in self.evaluator.equations]
 #         latex_str = str.join("\n", ["$${}$$".format(eq) for eq in eqs_str])
@@ -294,7 +321,7 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 #     def compute_derivatives(self, y2, y1, y0, e):
 
 #         import numpy as np
-#         from dyno.dynsym.autodiff import DNumber as DN
+#         from dyno.dynspec.autodiff import DNumber as DN
 
 #         fe = self.evaluator
 #         endogenous = self.symbols["endogenous"]
@@ -354,7 +381,7 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 #         if not diff:
 #             return np.array(self.residuals)
 
-#         from dyno.dynsym.analyze import DN
+#         from dyno.dynspec.analyze import DN
 
 #         assert len(calibration) == 0, "calibration not supported yet"
 
@@ -436,7 +463,7 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 
 #     def deterministic_residuals_with_jacobian(model, v, sparsify=False):
 
-#         from dyno.dynsym.autodiff import DNumber
+#         from dyno.dynspec.autodiff import DNumber
 
 #         flat = v.ndim == 1
 

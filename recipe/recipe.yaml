@@ -6,8 +6,8 @@ build:
   noarch: python
   script: {{ PYTHON }} -m pip install . --no-deps -vv
   always_include_files:
-  - dyno/dynsym/modfile_grammar.lark
-  - dyno/dynsym/grammar.lark
+  - dyno/dynspec/modfile_grammar.lark
+  - dyno/dynspec/grammar.lark
 
 source:
   path: ../

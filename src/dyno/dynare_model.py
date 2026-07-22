@@ -7,13 +7,29 @@ from typing_extensions import Self
 from typing import Any
 from .typedefs import TVector, TMatrix
 
-from dynare_preprocessor import PreprocessorException, UnsupportedFeatureException
 from .errors import DynareParserError, SteadyStateError
 
 
 class DynareModel(AbstractModel):
 
     _check_eigenvalues: bool = True
+
+    @staticmethod
+    def _load_dynare_preprocessor():
+        try:
+            from dynare_preprocessor import DynareModel as Modfile
+            from dynare_preprocessor import PreprocessorException
+        except ModuleNotFoundError as e:
+            if e.name == "dynare_preprocessor":
+                raise ModuleNotFoundError(
+                    "DynareModel emulation requires the optional dependency "
+                    "'dynare-preprocessor-pylib'. With pixi, add it via: "
+                    "pixi add --feature dynare dynare-preprocessor-pylib, "
+                    "or use an environment that includes the dynare feature. "
+                    "Note: .mod files can still be imported with DynoModel without this dependency."
+                ) from e
+            raise
+        return Modfile, PreprocessorException
 
     def _equation_line_numbers(self: Self) -> list[int]:
         """Best-effort mapping from equation index to source line number."""
@@ -50,7 +66,8 @@ class DynareModel(AbstractModel):
     def _rebuild(self: Self) -> Self:
         txt = getattr(self, "_original_txt", None)
         if txt is None:
-            txt = open(self.filename, "rt", encoding="utf-8").read()
+            with open(self.filename, "rt", encoding="utf-8") as f:
+                txt = f.read()
 
         options = getattr(self, "_import_options", {})
         model = self.__class__(filename=self.filename, txt=txt, **options)
@@ -155,9 +172,7 @@ class DynareModel(AbstractModel):
     def import_model(
         self: Self,
         txt: str,
-        deriv_order=1,
-        params_deriv_order=0,
-        allow_undeclared_params=False,
+        **kwargs: Any,
     ) -> None:
         """imports model written in `.mod` format into symbolic attribute using Dynare's preprocessor
 
@@ -173,7 +188,11 @@ class DynareModel(AbstractModel):
             if True, automatically declare parameters that are assigned values
             without being explicitly declared in the parameters section, by default False
         """
-        from dynare_preprocessor import DynareModel as Modfile
+        Modfile, PreprocessorException = self._load_dynare_preprocessor()
+
+        deriv_order: int = kwargs.get("deriv_order", 1)
+        params_deriv_order: int = kwargs.get("params_deriv_order", 0)
+        allow_undeclared_params: bool = kwargs.get("allow_undeclared_params", False)
 
         self._import_options = {
             "deriv_order": deriv_order,

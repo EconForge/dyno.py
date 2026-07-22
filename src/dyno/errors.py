@@ -1,3 +1,6 @@
+from typing import TYPE_CHECKING
+
+
 class ParserError(Exception):
 
     line: int | None
@@ -52,13 +55,15 @@ class LARKParserError(ParserError):
         self.details = details
 
 
-from dynare_preprocessor import PreprocessorException, UnsupportedFeatureException
 import re
+
+if TYPE_CHECKING:
+    from dynare_preprocessor import PreprocessorException
 
 
 class DynareParserError(ParserError):
 
-    def __init__(self, err: PreprocessorException) -> None:
+    def __init__(self, err: "PreprocessorException") -> None:
         message = str(err)
 
         # Typical dynare-preprocessor message format:
@@ -80,6 +85,10 @@ class SteadyStateError(Exception):
 
     def __init__(self, residuals) -> None:
         self.residuals = residuals
-        message = f"Steady state values don't satisfy model equations. <ax residual is {max(abs(r) for r in residuals)}"
+        message = f"Steady state values don't satisfy model equations. Max residual is {max(abs(r) for r in residuals)}"
         self.details = f"Residuals: {residuals}"
         super().__init__(message)
+
+
+class BlanchardKahnError(Exception):
+    """Raised when Blanchard-Kahn eigenvalue conditions are not satisfied."""

@@ -1,6 +1,17 @@
 from dyno.modfile import DynareModel
 from dyno import examples_path
 
+class SymTensor:
+    "All dimensions are symmetric, except the first one"
+
+    def __init__(self, data, shape):
+
+        self.data = data
+        self.shape = shape
+
+    @property
+    def ndims(self):
+        return len(self.shape)
 
 def do_it():
 
@@ -59,14 +70,3 @@ tt = [SymTensor(r, (n,) + (3 * n + m,) * i) for i, r in enumerate(nres)]
 print("Reindexing time:", t2 - t1)
 
 
-class SymTensor:
-    "All dimensions are symmetric, except the first one"
-
-    def __init__(self, data, shape):
-
-        self.data = data
-        self.shape = shape
-
-    @property
-    def ndims(self):
-        return len(self.shape)

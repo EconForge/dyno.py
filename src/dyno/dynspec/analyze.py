@@ -5,6 +5,7 @@ import math
 import yaml
 from typing import Dict, Any, Callable, Union, List
 from .autodiff import DNumber as DN
+from .language import Normal
 import math
 
 
@@ -19,9 +20,6 @@ class DefinitionError(Exception):
 
         meta = self.tree.meta
         return f"({meta.line}, {meta.column}): {self.msg}"
-
-
-from dyno.language import Normal
 
 function_table_0 = {
     "exp": math.exp,
@@ -236,6 +234,9 @@ class AssignmentEvaluator(FormulaEvaluator):
         self.metadata = context.get("metadata", {}).copy()
 
         self.equations = []
+        self.equation_metadata = []
+        self.block_metadata_entries = []
+        self._metadata_stack: List[Dict[str, Any]] = [{"tags": []}]
         self.time = None  # None or integer
         self.errors = []
 
@@ -244,6 +245,214 @@ class AssignmentEvaluator(FormulaEvaluator):
 
         self.function_table.update(MATH_FUNCTIONS)
         self.function_table.update({"N": (lambda u, v: Normal(Sigma=[[v]], Μ=[u]))})
+
+    def _normalize_metadata(self, item_list: List[tuple[str, Any]]) -> Dict[str, Any]:
+        tags: List[str] = []
+        kv: Dict[str, Any] = {}
+        for kind, value in item_list:
+            if kind == "tag":
+                if value not in tags:
+                    tags.append(value)
+            elif kind == "kv":
+                key, val = value
+                kv[key] = val
+        if len(tags) > 0:
+            kv["tags"] = tags
+        return kv
+
+    def _merge_metadata(
+        self, base: Dict[str, Any], override: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        merged = dict(base)
+
+        base_tags = list(base.get("tags", []))
+        override_tags = list(override.get("tags", []))
+        tags = list(base_tags)
+        for tag in override_tags:
+            if tag not in tags:
+                tags.append(tag)
+        if len(tags) > 0:
+            merged["tags"] = tags
+        elif "tags" in merged:
+            merged.pop("tags")
+
+        for key, value in override.items():
+            if key == "tags":
+                continue
+            merged[key] = value
+
+        return merged
+
+    def _attach_statement_metadata(
+        self, node: Tree, metadata: Dict[str, Any]
+    ) -> None:
+        try:
+            node.meta.statement_metadata = metadata
+        except Exception:
+            pass
+
+    def _split_metadata_items(self, body: str) -> List[str]:
+        items: List[str] = []
+        current: List[str] = []
+        in_single = False
+        in_double = False
+
+        for char in body:
+            if char == "'" and not in_double:
+                in_single = not in_single
+            elif char == '"' and not in_single:
+                in_double = not in_double
+
+            if char == "," and not in_single and not in_double:
+                item = "".join(current).strip()
+                if len(item) > 0:
+                    items.append(item)
+                current = []
+                continue
+
+            current.append(char)
+
+        tail = "".join(current).strip()
+        if len(tail) > 0:
+            items.append(tail)
+        return items
+
+    def _coerce_metadata_value(self, raw_value: str) -> Any:
+        stripped = raw_value.strip()
+        parsed = yaml.safe_load(stripped)
+        if isinstance(parsed, (int, float, str, bool)):
+            return parsed
+        if parsed is None and stripped in ("", "null", "~"):
+            return parsed
+        if parsed is not None:
+            return str(parsed)
+        return stripped
+
+    def _parse_canonical_metadata_token(self, token_value: str) -> Dict[str, Any]:
+        stripped = token_value.strip()
+        if not (stripped.startswith("[") and stripped.endswith("]")):
+            raise DefinitionError("Invalid metadata block format")
+
+        body = stripped[1:-1].strip()
+        if len(body) == 0:
+            return {"tags": []}
+
+        items = self._split_metadata_items(body)
+        normalized_items: List[tuple[str, Any]] = []
+
+        for item in items:
+            if "=" not in item:
+                tag = item.strip()
+                if tag and tag[0] in ('"', "'"):
+                    value = self._coerce_metadata_value(tag)
+                    if not isinstance(value, str):
+                        raise DefinitionError(f"Invalid metadata tag: {tag}")
+                    normalized_items.append(("tag", value))
+                    continue
+                if not tag.isidentifier():
+                    raise DefinitionError(f"Invalid metadata tag: {tag}")
+                normalized_items.append(("tag", tag))
+                continue
+
+            key, value = item.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if len(key) == 0 or len(value) == 0:
+                raise DefinitionError(f"Invalid metadata item: {item}")
+            if not key.isidentifier():
+                raise DefinitionError(f"Invalid metadata key: {key}")
+            normalized_items.append(("kv", (key, self._coerce_metadata_value(value))))
+
+        return self._normalize_metadata(normalized_items)
+
+    def _parse_inline_metadata_token(self, token_value: str) -> Dict[str, Any]:
+        stripped = token_value.strip()
+
+        if stripped.startswith("["):
+            return self._parse_canonical_metadata_token(stripped)
+
+        if not stripped.startswith("::"):
+            raise DefinitionError("Invalid inline metadata format")
+
+        content = stripped[2:].strip()
+        if len(content) == 0:
+            raise DefinitionError("Invalid :: metadata usage")
+
+        if content.startswith("["):
+            if not content.endswith("]"):
+                raise DefinitionError("Malformed :: metadata list")
+            return self._parse_canonical_metadata_token(content)
+
+        if content[0] in ('"', "'"):
+            if len(content) < 2 or content[-1] != content[0]:
+                raise DefinitionError("Malformed :: metadata string")
+            value = self._coerce_metadata_value(content)
+            if not isinstance(value, str):
+                raise DefinitionError("Invalid :: metadata string")
+            # Keep :: "..." aligned with other tag syntaxes by treating the
+            # parsed string as an opaque tag value.
+            return self._normalize_metadata([("tag", value)])
+
+        items = self._split_metadata_items(content)
+        if len(items) == 0:
+            raise DefinitionError("Invalid :: metadata usage")
+
+        normalized_items: List[tuple[str, Any]] = []
+        for item in items:
+            candidate = item.strip()
+            if "=" in candidate:
+                raise DefinitionError(":: metadata only accepts tags or quoted string")
+            if not candidate.isidentifier():
+                raise DefinitionError(f"Invalid :: metadata tag: {candidate}")
+            normalized_items.append(("tag", candidate))
+
+        return self._normalize_metadata(normalized_items)
+
+    def statement_metadata(self, tree):
+        """Unified handler for statement_metadata nodes.
+
+        The grammar now makes :: an explicit (filtered) terminal, so the token
+        value is always just the *content* — never prefixed with ::.
+
+        Three token types arrive here:
+          METADATA_BODY  — content that followed :: (free text or [bracket])
+          INLINE_BRACKET — space-prefixed [tag, key=val] (no ::)
+          BLOCK_TAG      — [tag, key=val] without leading space (block prefix)
+        """
+        raw = str(tree.children[0]).strip()
+        if raw.startswith("["):
+            return self._parse_canonical_metadata_token(raw)
+        # Bare text that came after :: — treat as tag(s) / kv pairs
+        return self._parse_inline_content(raw)
+
+    def _parse_inline_content(self, content: str) -> "Dict[str, Any]":
+        """Parse the text content that appears after :: (no :: prefix expected)."""
+        if content.startswith("["):
+            return self._parse_canonical_metadata_token(content)
+
+        if not content:
+            raise DefinitionError("Empty :: metadata")
+
+        if content[0] in ('"', "'"):
+            if len(content) < 2 or content[-1] != content[0]:
+                raise DefinitionError("Malformed :: metadata string")
+            value = self._coerce_metadata_value(content)
+            if not isinstance(value, str):
+                raise DefinitionError("Invalid :: metadata string")
+            return self._normalize_metadata([("kv", ("label", value))])
+
+        items = self._split_metadata_items(content)
+        if not items:
+            raise DefinitionError("Invalid :: metadata usage")
+        normalized: "List[tuple[str, Any]]" = []
+        for item in items:
+            candidate = item.strip()
+            if "=" in candidate:
+                raise DefinitionError(":: metadata only accepts tags or quoted string")
+            if not candidate.isidentifier():
+                raise DefinitionError(f"Invalid :: metadata tag: {candidate}")
+            normalized.append(("tag", candidate))
+        return self._normalize_metadata(normalized)
 
     def assignment(self, tree):
         """Handle assignments: symbol := value or symbol <- value"""
@@ -296,9 +505,7 @@ class AssignmentEvaluator(FormulaEvaluator):
         assert bounds.data == "t_double_bound"
         lower = self.visit(bounds.children[0])
         upper = self.visit(bounds.children[1])
-        try:
-            assert isinstance(lower, int) and isinstance(upper, int) and lower < upper
-        except:
+        if not (isinstance(lower, int) and isinstance(upper, int) and lower < upper):
             raise ValueError(
                 f"Invalid bounds in quantified assignment: {lower}, {upper}"
             )
@@ -337,21 +544,66 @@ class AssignmentEvaluator(FormulaEvaluator):
         except yaml.YAMLError:
             return raw_value
 
-    def metadata_assignment(self, tree):
-        key = str(tree.children[0].children[0])
-        value = self.visit(tree.children[1])
+    # Block handling
+    def annotated_statement(self, tree):
+        statement = tree.children[0]
+        meta = {"tags": []}
+        if len(tree.children) > 1:
+            meta = self.visit(tree.children[1])  # statement_metadata node
+
+        inherited = self._metadata_stack[-1]
+        merged = self._merge_metadata(inherited, meta)
+
+        if statement.data in ("equality", "bare_formula", "formula"):
+            self._attach_statement_metadata(statement, merged)
+            self.equations.append(statement)
+            self.equation_metadata.append(merged)
+            return statement
+
+        self._attach_statement_metadata(statement, merged)
+        return self.visit(statement)
+
+    def block(self, tree):
+        for child in tree.children:
+            self.visit(child)
+        return None
+
+    def block_tag(self, tree):
+        """Handle block_tag nodes — always a BLOCK_TAG bracketed token."""
+        raw = str(tree.children[0]).strip()
+        return self._parse_canonical_metadata_token(raw)
+
+    def annotated_block(self, tree):
+        block_meta = self.visit(tree.children[0])  # block_tag node
+        inherited = self._metadata_stack[-1]
+        merged = self._merge_metadata(inherited, block_meta)
+        self.block_metadata_entries.append(merged)
+        self._metadata_stack.append(merged)
+        try:
+            self.visit(tree.children[1])  # block node
+        finally:
+            self._metadata_stack.pop()
+        return None
+
+    def model_metadata(self, tree):
+        """Handle top-level @key: value declarations."""
+        key = str(tree.children[0])   # NAME token
+        raw = str(tree.children[1])   # METADATA_SCALAR token
+        try:
+            import yaml
+            value = yaml.safe_load(raw.strip())
+        except Exception:
+            value = raw.strip()
         if key == "run" and key in self.metadata:
             current = self.metadata[key]
             if isinstance(current, list):
                 current.append(value)
-                self.metadata[key] = current
             else:
                 self.metadata[key] = [current, value]
         else:
             self.metadata[key] = value
         return value
 
-    # Block handling
     def assignment_block(self, tree):
         """Handle a block of assignments"""
         results = []
@@ -373,17 +625,10 @@ class AssignmentEvaluator(FormulaEvaluator):
 
     def free_block(self, tree):
         """Handle a mixed block of equations and assignments"""
-        results = []
-        for i, child in enumerate(tree.children):
-            if hasattr(child, "data"):  # Skip newlines
-                if child.data in ("equality", "formula"):
-                    # result = self.visit(child)
-                    # results.append(result)
-                    self.equations.append(child)
-                else:
-                    self.visit(child)
-                # results.append(result)
-        return results
+        for child in tree.children:
+            if hasattr(child, "data"):
+                self.visit(child)
+        return []
 
 
 import math

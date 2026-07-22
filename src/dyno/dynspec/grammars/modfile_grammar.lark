@@ -50,6 +50,9 @@ lequation: ["[" properties "]"] equation
 
 properties: (pair ",")* pair
 pair:  NAME "=" "'" UNQUOTED_STRING "'"
+    |  NAME "=" "\"" UNQUOTED_STRING "\""
+    |  NAME "=" NAME
+    |  NAME
 
 ?equation: equality | formula
 

@@ -1,7 +1,8 @@
 import math
+from dataclasses import dataclass
 from lark import Tree, Token
-from dyno.dynsym.grammar import parser, str_expression
-from dyno.dynsym.analyze import (
+from dyno.dynspec.grammar import parser, str_expression
+from dyno.dynspec.analyze import (
     FormulaEvaluator,
     AssignmentEvaluator,
     EquationsEvaluator,
@@ -11,6 +12,19 @@ import numpy as np
 from typing import List, Dict, Any
 from dyno.errors import LARKParserError, ParserError
 from lark.exceptions import UnexpectedInput
+
+
+@dataclass(frozen=True)
+class EquationMatch:
+    equation: Tree
+    metadata: Dict[str, Any]
+
+    @property
+    def text(self) -> str:
+        return str_expression(self.equation)
+
+    def __str__(self) -> str:
+        return self.text
 
 
 class SymbolicModel:
@@ -32,29 +46,85 @@ class SymbolicModel:
         self.evaluator = None
         self.metadata = {}
 
-    # @property
-    # def context(self):
-    #     return self.__context__
-
-    # def get_context(self: Self) -> Dict[str, Any]:
-
-    #     ev = self.evaluator
-    #     context = {
-    #         "constants": ev.constants,
-    #         "variables": ev.variables,
-    #         "values": ev.values,
-    #         "processes": self.processes,
-    #         "steady_states": ev.steady_states,
-    #     }
-    #     return context
 
     def latex_equations(self):
 
-        from dyno.dynsym.latex import latex
+        from dyno.dynspec.latex import latex
 
-        eqs_str = [latex(eq) for eq in self.equations]
-        latex_str = str.join("\n", ["$${}$$".format(eq) for eq in eqs_str])
-        return latex_str
+        def _latex_text_escape(text: str) -> str:
+            return (
+                text.replace("\\", r"\textbackslash{}")
+                .replace("{", r"\{")
+                .replace("}", r"\}")
+                .replace("_", r"\_")
+                .replace("%", r"\%")
+                .replace("$", r"\$")
+                .replace("&", r"\&")
+                .replace("#", r"\#")
+                .replace("^", r"\^")
+                .replace("~", r"\~{}")
+            )
+
+        def _split_equality(eq_latex: str) -> tuple[str, str | None]:
+            parts = eq_latex.split(" = ", 1)
+            if len(parts) == 2:
+                return parts[0], parts[1]
+            return eq_latex, None
+
+        lines: list[str] = []
+        for i, eq in enumerate(self.equations, start=1):
+            eq_latex = latex(eq)
+            meta = getattr(getattr(eq, "meta", None), "statement_metadata", {})
+            label_cell = r"\text{}"
+            if isinstance(meta, dict) and "label" in meta:
+                label = str(meta["label"])
+                label = _latex_text_escape(label)
+                label_cell = r"\text{" + label + r"}"
+
+            lhs, rhs = _split_equality(eq_latex)
+            if rhs is None:
+                equation_part = f"{lhs}"
+            else:
+                equation_part = f"{lhs} = {rhs}"
+            
+            # Use displaystyle with explicit spacing, no numbering in LaTeX
+            lines.append(f"$$\\displaystyle {label_cell} \\quad {equation_part}$$")
+
+        return "\n".join(lines)
+
+    def equations_table_markdown(self):
+
+        """Return equations formatted as separate display-math blocks."""
+        from dyno.dynspec.latex import latex
+
+        def _latex_text_escape(text: str) -> str:
+            return (
+                text.replace("\\", r"\textbackslash{}")
+                .replace("{", r"\{")
+                .replace("}", r"\}")
+                .replace("_", r"\_")
+                .replace("%", r"\%")
+                .replace("$", r"\$")
+                .replace("&", r"\&")
+                .replace("#", r"\#")
+                .replace("^", r"\^")
+                .replace("~", r"\~{}")
+            )
+
+        lines: list[str] = []
+
+        for i, eq in enumerate(self.equations, start=1):
+            eq_latex = latex(eq)
+            meta = getattr(getattr(eq, "meta", None), "statement_metadata", {})
+            label_text = r"\text{}"
+            if isinstance(meta, dict) and "label" in meta:
+                label_text = str(meta["label"])
+                label_text = _latex_text_escape(label_text)
+                label_text = r"\text{" + label_text + "}"
+
+            lines.append(f"$$\\displaystyle {label_text} \\quad {eq_latex} \\quad ({i})$$")
+
+        return "\n\n".join(lines)
 
     def eval_residuals(self, context: dict | None = None) -> list:
 
@@ -65,6 +135,23 @@ class SymbolicModel:
         fe.steady_state = True
         residuals = [fe.visit(eq) for eq in self.equations]
         return residuals
+
+    def iter_equations_with_metadata(self):
+        """Yield pairs of (equation_tree, metadata_dict) for all equations."""
+        for eq in self.equations:
+            meta = getattr(getattr(eq, "meta", None), "statement_metadata", {})
+            if meta is None:
+                meta = {}
+            yield eq, meta
+
+    def filter_equations(self, predicate):
+        """Return equation entries whose metadata-aware wrapper matches predicate."""
+        matches: list[EquationMatch] = []
+        for eq, meta in self.iter_equations_with_metadata():
+            entry = EquationMatch(equation=eq, metadata=dict(meta))
+            if predicate(entry):
+                matches.append(entry)
+        return matches
 
 
 class DynoFile(SymbolicModel):
@@ -103,7 +190,6 @@ class DynoFile(SymbolicModel):
             "values": fe.values,
             "processes": fe.processes,
             "steady_states": fe.steady_states,
-            "metadata": fe.metadata,
         }
         self.context = context
         self.metadata = fe.metadata
@@ -112,7 +198,7 @@ class DynoFile(SymbolicModel):
         self.residuals = self.eval_residuals()
 
 
-from dyno.dynsym.dynare import (
+from dyno.dynspec.dynare import (
     ModFileTransformer,
     modfile_grammar,
     InterpretModfile,
@@ -201,12 +287,12 @@ class LModFile(SymbolicModel):
             "processes": processes,
             "steady_states": fe.steady_states
             | {e: 0.0 for e in exo},  # set exogenous steady states to zero
-            "metadata": {
-                "dynare_commands": self._extract_dynare_commands(),
-            },
         }
 
         self.context = context
+        self.metadata = {
+            "dynare_commands": self._extract_dynare_commands(),
+        }
 
     def _extract_dynare_commands(self: Self) -> list[dict[str, Any]]:
         """Extract Dynare command statements from the parsed modfile tree."""
