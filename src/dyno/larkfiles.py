@@ -94,7 +94,7 @@ class SymbolicModel:
 
     def equations_table_markdown(self):
 
-        """Return equations formatted in a LaTeX align* environment."""
+        """Return equations formatted as separate display-math blocks."""
         from dyno.dynspec.latex import latex
 
         def _latex_text_escape(text: str) -> str:
@@ -112,7 +112,6 @@ class SymbolicModel:
             )
 
         lines: list[str] = []
-        lines.append(r"\begin{align*}")
 
         for i, eq in enumerate(self.equations, start=1):
             eq_latex = latex(eq)
@@ -123,11 +122,9 @@ class SymbolicModel:
                 label_text = _latex_text_escape(label_text)
                 label_text = r"\text{" + label_text + "}"
 
-            # Three aligned columns: label, equation, and manual equation number.
-            lines.append(f"{label_text} && {eq_latex} && ({i}) \\")
+            lines.append(f"$$\\displaystyle {label_text} \\quad {eq_latex} \\quad ({i})$$")
 
-        lines.append(r"\end{align*}")
-        return "$$\n" + "\n".join(lines) + "\n$$"
+        return "\n\n".join(lines)
 
     def eval_residuals(self, context: dict | None = None) -> list:
 

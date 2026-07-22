@@ -101,8 +101,7 @@ x[t] = alpha * x[t-1] + e[t]
     md = model._markdown_()
 
     assert "## Equations" in md
-    assert r"\begin{align*}" in md
-    assert r"\text{}" in md
+    assert r"$$\displaystyle \text{}" in md
     assert "(1)" in md
 
 
@@ -138,8 +137,31 @@ y[t] = beta * y[t-1]
 
     md = model._markdown_()
 
+    assert md.count("$$\\displaystyle") == 2
+    assert "$$\n$$" not in md
     assert "(1)" in md
     assert "(2)" in md
+
+
+def test_model_markdown_renders_each_equation_in_its_own_display_block():
+    txt = """
+alpha := 0.9
+beta := 0.8
+x[~] := 0
+y[~] := 0
+x[t] = alpha * x[t-1]
+y[t] = beta * y[t-1]
+"""
+
+    model = DynoModel(filename="equation_blocks.dyno", txt=txt)
+
+    md = model._markdown_()
+
+    equation_block_lines = [line for line in md.splitlines() if line.startswith("$$\\displaystyle")]
+
+    assert len(equation_block_lines) == 2
+    assert equation_block_lines[0].endswith("(1)$$")
+    assert equation_block_lines[1].endswith("(2)$$")
 
 
 def test_runresults_markdown_accepts_series_simulation_entries():
