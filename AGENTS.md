@@ -2,6 +2,27 @@
 
 This file provides instructions and context for AI coding agents working on this repository.
 
+## Multi-Agent Compatibility
+
+This repository is used with multiple agents (Claude, GPT-based agents, and Gemini).
+To keep behavior consistent across tools:
+
+- Treat this file as the canonical source of agent instructions.
+- Prefer deterministic, task-based commands over ad-hoc shell commands.
+- Keep changes minimal and localized; avoid broad refactors unless requested.
+- Validate changes with the command matrix below before finishing.
+
+## Command Matrix (Deterministic)
+
+Run all commands through Pixi in the `dev` environment unless a specific environment is needed.
+
+- Tests (core): `pixi run -e dev test`
+- Tests (coverage): `pixi run -e dev cov`
+- Type check: `pixi run -e dev typecheck`
+- Format: `pixi run -e dev black`
+- Docs preview: `pixi run -e dev docs`
+- Optional dynare tests: `pixi run -e dev-dynare test-dynare`
+
 ## Development Environment & Tooling
 
 We use the `pixi` package manager for this project for both development and production environments. 

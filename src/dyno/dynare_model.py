@@ -104,7 +104,14 @@ class DynareModel(AbstractModel):
     def run(self: Self, default_pipeline: bool = False) -> "RunResults":
         from .report import RunResults
 
-        commands = self.metadata.get("dynare_commands", self.metadata.get("run", []))
+        # Prefer commands extracted from transformed preprocessor statements.
+        # This path preserves source order and properly excludes commented-out
+        # commands (e.g. `// stoch_simul;`).
+        context_commands = self.context.get("metadata", {}).get("dynare_commands", [])
+        metadata_commands = self.metadata.get(
+            "dynare_commands", self.metadata.get("run", [])
+        )
+        commands = context_commands if context_commands else metadata_commands
         model = self
         results = RunResults(model=model)
 

@@ -1187,7 +1187,9 @@ def _create_model(
         raise ValueError("Either `txt` or `filename` must be provided.")
 
     if filename.endswith(".mod"):
-        preprocessor = options.get("modfile-preprocessor", "dynare")
+        preprocessor = options.get(
+            "modfile-preprocessor", options.get("modfile_preprocessor", "dynare")
+        )
         if preprocessor == "dynare":
             from dyno.dynare_model import DynareModel
 

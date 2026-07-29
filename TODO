@@ -1,2 +1,4 @@
 make dynare_preprocessor optional
 - gracefully fail when absent
+
+create PR template for AI-assisted changes (deferred)
