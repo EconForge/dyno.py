@@ -45,34 +45,40 @@ quantified_assignment: _FORALL "t" ["," t_double_bound] ":" variable _ASSIGN for
 
 # ── Metadata annotation ───────────────────────────────────────────────────────
 #
-# Statement annotation (same line as the statement):
-#   :: <content>        content is a quoted string, bare identifier, or [key=val]
-#   [key=val, tag]      bracket notation (no :: required)
+# One bracket grammar in every position; an entry is a bare tag, a
+# quoted tag, or key=value.
 #
-# Block annotation (precedes a { block }):
-#   [tag] { … }         bracket tag (no ::)
-#   [tag] :: { … }      bracket tag with explicit :: separator
-#
-# Note: :: [tag] { } is NOT valid — :: only follows a statement or a block tag.
+# Statement forms:  :: [entries]  |  :: free text  |  [entries] inline
+# Block forms:      [entries] { … }  |  [entries] :: { … }
+# (:: [entries] { … } is not valid: :: never precedes a block tag.)
 
-# Inline statement annotation — :: or bracket on the same line as a statement
-statement_metadata: _COLONCOLON METADATA_BODY   // :: <text or [...]>
-                  | INLINE_BRACKET              // [tag] inline (space-prefixed)
+statement_metadata: _COLONCOLON_LB annotation "]"   // :: [entries]
+                  | _COLONCOLON META_TEXT           // :: free text
+                  | _INLINE_LB annotation "]"       // [entries] inline
 
-# Block tag — bracket notation for annotated_block prefix (no leading space)
-block_tag: BLOCK_TAG
+# Block tag: the bracket prefixing an annotated_block (no leading space)
+block_tag: _SOL_LB annotation "]"
 
-# :: separator (filtered — not included in the tree)
+# Bracket interior: comma-separated entries
+annotation: (entry ("," entry)*)?
+?entry: kv | strtag | baretag
+kv: cname "=" kval
+?kval: cname | NUMBER | ASTRING
+baretag: cname
+strtag: ASTRING
+
+# :: separator (filtered out of the tree)
 _COLONCOLON: /[ \t]*::/
 
-# Content after ::  —  either a bracketed list or free text (no newline/comment/brace)
-METADATA_BODY.3: /[ \t]*(?:\[[^\]\r\n]*\]|[^\r\n#{][^\r\n#]*)/
+# The three anchors, unchanged; each match now ends at the opening [
+_SOL_LB.3: /^[ \t]*\[/m
+_INLINE_LB.3: /[ \t]+\[/
+_COLONCOLON_LB.4: /[ \t]*::[ \t]*\[/
 
-# Inline bracket annotation:  <whitespace>[tag, key=val]
-INLINE_BRACKET.3: /[ \t]+\[[^\]\r\n]*\]/
+# Free text after :: (never begins with [)
+META_TEXT.3: /[ \t]*[^\r\n#{\[][^\r\n#]*/
 
-# Block tag prefix:  [tag, key=val]  at the start of a line (no expression before it)
-BLOCK_TAG.3: /^[ \t]*\[[^\]\r\n]*\]/m
+ASTRING: /"[^"\r\n]*"|'[^'\r\n]*'/
 
 
 _FORALL.1: ("∀" | "forall")
