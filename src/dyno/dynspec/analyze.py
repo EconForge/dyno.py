@@ -328,6 +328,9 @@ class AssignmentEvaluator(FormulaEvaluator):
             return str(parsed)
         return stripped
 
+    # NOTE: no longer called for parsed brackets. Remaining references:
+    # the unused function below, and an unreachable branch of
+    # _parse_inline_content (META_TEXT never begins with "[").
     def _parse_canonical_metadata_token(self, token_value: str) -> Dict[str, Any]:
         stripped = token_value.strip()
         if not (stripped.startswith("[") and stripped.endswith("]")):
@@ -365,6 +368,10 @@ class AssignmentEvaluator(FormulaEvaluator):
 
         return self._normalize_metadata(normalized_items)
 
+    # NOTE: unused; nothing in the package calls it. If called, it would
+    # read a quoted string after :: as a tag, whereas
+    # _parse_inline_content reads it as a label. Kept to keep this
+    # change minimal; removable separately.
     def _parse_inline_metadata_token(self, token_value: str) -> Dict[str, Any]:
         stripped = token_value.strip()
 
@@ -408,22 +415,56 @@ class AssignmentEvaluator(FormulaEvaluator):
 
         return self._normalize_metadata(normalized_items)
 
-    def statement_metadata(self, tree):
-        """Unified handler for statement_metadata nodes.
+    def _annotation_to_metadata(self, ann_tree) -> "Dict[str, Any]":
+        """Convert a parsed annotation node to a metadata dict.
 
-        The grammar now makes :: an explicit (filtered) terminal, so the token
-        value is always just the *content* — never prefixed with ::.
-
-        Three token types arrive here:
-          METADATA_BODY  — content that followed :: (free text or [bracket])
-          INLINE_BRACKET — space-prefixed [tag, key=val] (no ::)
-          BLOCK_TAG      — [tag, key=val] without leading space (block prefix)
+        The grammar has already separated the entries (kv, baretag,
+        strtag), so no string splitting is needed. The dictionaries
+        are unchanged: a quoted string in bracket position is a tag,
+        and kv values receive the same YAML coercion as before.
         """
-        raw = str(tree.children[0]).strip()
-        if raw.startswith("["):
-            return self._parse_canonical_metadata_token(raw)
-        # Bare text that came after :: — treat as tag(s) / kv pairs
-        return self._parse_inline_content(raw)
+        normalized_items: "List[tuple[str, Any]]" = []
+        for entry in ann_tree.children:
+            if entry is None:
+                continue
+            if entry.data == "kv":
+                key = str(entry.children[0].children[0])
+                valnode = entry.children[1]
+                if isinstance(valnode, Tree):  # cname -> name
+                    value_text = str(valnode.children[0])
+                else:  # NUMBER or quoted-string token
+                    value_text = str(valnode)
+                normalized_items.append(
+                    ("kv", (key, self._coerce_metadata_value(value_text)))
+                )
+            elif entry.data == "baretag":
+                normalized_items.append(
+                    ("tag", str(entry.children[0].children[0]))
+                )
+            else:  # strtag: a quoted string in a bracket is a tag
+                value = self._coerce_metadata_value(str(entry.children[0]))
+                if not isinstance(value, str):
+                    raise DefinitionError(
+                        f"Invalid metadata tag: {entry.children[0]}"
+                    )
+                normalized_items.append(("tag", value))
+        if not normalized_items:
+            return {"tags": []}
+        return self._normalize_metadata(normalized_items)
+
+    def statement_metadata(self, tree):
+        """Handler for statement_metadata nodes.
+
+        The node's single child is either an annotation subtree (a
+        parsed [entries] bracket, after :: or inline) or a META_TEXT
+        token (free text after ::; a bracket never produces this
+        token).
+        """
+        child = tree.children[0]
+        if isinstance(child, Tree):
+            return self._annotation_to_metadata(child)
+        # Bare text that came after :: — treat as tag(s) / quoted label
+        return self._parse_inline_content(str(child).strip())
 
     def _parse_inline_content(self, content: str) -> "Dict[str, Any]":
         """Parse the text content that appears after :: (no :: prefix expected)."""
@@ -569,9 +610,8 @@ class AssignmentEvaluator(FormulaEvaluator):
         return None
 
     def block_tag(self, tree):
-        """Handle block_tag nodes — always a BLOCK_TAG bracketed token."""
-        raw = str(tree.children[0]).strip()
-        return self._parse_canonical_metadata_token(raw)
+        """Handler for block_tag nodes: a parsed annotation bracket."""
+        return self._annotation_to_metadata(tree.children[0])
 
     def annotated_block(self, tree):
         block_meta = self.visit(tree.children[0])  # block_tag node
