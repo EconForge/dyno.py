@@ -45,6 +45,7 @@ class FormulaEvaluator(Interpreter):
         context: Dict[str, Any] = {},
         function_table: Dict[str, Callable] = function_table_0,
         unknown_as_nan=True,
+        raise_on_nan=False,
     ):
         """
         Initialize the evaluator.
@@ -53,11 +54,14 @@ class FormulaEvaluator(Interpreter):
             symbol_table: Dictionary mapping symbol names to their values
             function_table: Dictionary mapping function names to callable functions
             steady_state: If True, evaluates variables at their steady state (only the name of the symbol is taken into account)
+            raise_on_nan: If True, raise a DefinitionError as soon as any node evaluates to NaN,
+                pinpointing the offending subtree instead of letting NaN propagate silently.
         """
         super().__init__()
 
         self.function_table = function_table or {}
         self.unknown_as_nan = unknown_as_nan
+        self.raise_on_nan = raise_on_nan
 
         self.constants = context.get("constants", {})
         self.processes = context.get("processes", {})
@@ -74,6 +78,26 @@ class FormulaEvaluator(Interpreter):
 
         self.function_table.update(MATH_FUNCTIONS)
         self.function_table.update({"N": (lambda u, v: Normal(Sigma=[[v]], Μ=[u]))})
+
+    def _undefined(self, message: str, tree):
+        """Report an undefined value: raise if `unknown_as_nan` is False, else return NaN."""
+        if not self.unknown_as_nan:
+            raise DefinitionError(message, tree=tree)
+        self.errors.append(DefinitionError(message, tree=tree))
+        return math.nan
+
+    def visit(self, tree):
+        """Visit a node, optionally raising as soon as its result is NaN.
+
+        Centralizing the check here (rather than in every node evaluator) means it
+        applies uniformly and reports the innermost subtree where the NaN first appears.
+        """
+        result = super().visit(tree)
+        if self.raise_on_nan and isinstance(result, float) and math.isnan(result):
+            raise DefinitionError(
+                f"NaN encountered while evaluating `{tree.data}`", tree=tree
+            )
+        return result
 
     # Arithmetic operations
     def add(self, tree):
@@ -131,12 +155,7 @@ class FormulaEvaluator(Interpreter):
         if name in self.constants:
             return self.constants[name]
         else:
-            if self.unknown_as_nan:
-                return math.nan
-            else:
-                raise ValueError(
-                    f"({tree.meta.line},{tree.meta.column}): Undefined value: {name}"
-                )
+            return self._undefined(f"Undefined value: {name}", tree)
 
     def value(self, tree):
         """Handle values with specific time: name[time]"""
@@ -145,20 +164,16 @@ class FormulaEvaluator(Interpreter):
 
         # Create a key for the symbol table
         if self.steady_state:
-            return self.steady_states.get(name, math.nan)
+            if name not in self.steady_states:
+                return self._undefined(f"Undefined steady state for value {name}[~]", tree)
+            return self.steady_states[name]
         else:
             if name not in self.values:
-                self.errors.append(
-                    DefinitionError(f"Undefined value {name}[~]", tree=tree)
-                )
-                return math.nan
+                return self._undefined(f"Undefined value {name}[~]", tree)
             else:
                 vvs = self.values[name]
                 if time not in vvs:
-                    self.errors.append(
-                        DefinitionError(f"Undefined value {name}[{time}]", tree=tree)
-                    )
-                    return math.nan
+                    return self._undefined(f"Undefined value {name}[{time}]", tree)
                 else:
                     return vvs[time]
 
@@ -174,19 +189,21 @@ class FormulaEvaluator(Interpreter):
 
         if self.time is not None:
             time = self.time + shift
-            key = f"{name}[{time}]"
-            return self.values[name].get(time, math.nan)
+            vvs = self.values.get(name, {})
+            if time not in vvs:
+                return self._undefined(f"Undefined value {name}[{time}]", tree)
+            return vvs[time]
         elif self.steady_state or (index == "~"):
             # from rich import print
             if name not in self.steady_states:
-                self.errors.append(
-                    DefinitionError(
-                        f"Undefined steady state for variable {name}[~]", tree=tree
-                    )
+                return self._undefined(
+                    f"Undefined steady state for variable {name}[~]", tree
                 )
-            return self.steady_states.get(name, math.nan)
+            return self.steady_states[name]
         else:
-            return self.variables[name].get(shift, math.nan)
+            if shift not in self.variables[name]:
+                return self._undefined(f"Undefined variable {name}[{shift}]", tree)
+            return self.variables[name][shift]
 
     # Function calls
     def call(self, tree):
@@ -199,6 +216,10 @@ class FormulaEvaluator(Interpreter):
         else:
             raise ValueError(f"Undefined function: {func_name}")
 
+    def bare_formula(self, tree):
+        """Handle a standalone formula equation (implicitly `formula = 0`)"""
+        return self.visit(tree.children[0])
+
 
 class AssignmentEvaluator(FormulaEvaluator):
 
@@ -208,6 +229,7 @@ class AssignmentEvaluator(FormulaEvaluator):
         symbol_table: Dict[str, Any] = {},
         function_table: Dict[str, Callable] = {},
         unknown_as_nan=True,
+        raise_on_nan=False,
         calibration: Dict[str, Any] = {},
     ):
         """
@@ -218,11 +240,13 @@ class AssignmentEvaluator(FormulaEvaluator):
             function_table: Dictionary mapping function names to callable functions
             steady_state: If True, evaluates variables at their steady state (only the name of the symbol is taken into account)
             calibration: Values that override constants defined in the model
+            raise_on_nan: If True, raise a DefinitionError as soon as any node evaluates to NaN.
         """
         super().__init__()
 
         self.function_table = function_table or {}
         self.unknown_as_nan = unknown_as_nan
+        self.raise_on_nan = raise_on_nan
 
         self.__calibration__ = calibration.copy()
 
@@ -650,6 +674,8 @@ class EquationsEvaluator(FormulaEvaluator):
         steady_state=False,
         diff=False,
         unknown_as_nan=True,
+        raise_on_nan=False,
+        assign=False,
     ):
         """
         Initialize the evaluator.
@@ -658,6 +684,10 @@ class EquationsEvaluator(FormulaEvaluator):
             symbol_table: Dictionary mapping symbol names to their values
             function_table: Dictionary mapping function names to callable functions
             steady_state: If True, evaluates variables at their steady state (only the name of the symbol is taken into account)
+            assign: If True, an equality `x[t] = <rhs>` stores the evaluated right-hand
+                side as the current value of `x[t]` instead of returning a residual, so
+                that subsequent equations can refer to the updated value.
+            raise_on_nan: If True, raise a DefinitionError as soon as any node evaluates to NaN.
         """
         super().__init__()
         # self.symbol_table = symbol_table or {}
@@ -666,6 +696,8 @@ class EquationsEvaluator(FormulaEvaluator):
         self.steady_state = steady_state
         self.diff = diff
         self.unknown_as_nan = unknown_as_nan
+        self.raise_on_nan = raise_on_nan
+        self.assign = assign
 
         self.constants = context.get("constants", {})
         self.processes = context.get("processes", {})
@@ -684,11 +716,40 @@ class EquationsEvaluator(FormulaEvaluator):
         self.function_table.update(MATH_FUNCTIONS)
         # self.function_table.update({"N": (lambda u, v: Normal(Sigma=[[v]], Μ=[u]))})
 
+    def evaluate(self, equations):
+        """Evaluate a sequence of equation trees in order, returning their results.
+
+        When `assign=True`, each equality's right-hand side is evaluated using the
+        values assigned by previously evaluated equations in this same call.
+        """
+        return [self.visit(eq) for eq in equations]
+
+    def _assign_variable(self, var_tree, value):
+        """Store `value` as the current value of the variable referenced by var_tree."""
+        if not (hasattr(var_tree, "data") and var_tree.data == "variable"):
+            raise DefinitionError(
+                "Left-hand side of an assignment must be a variable", tree=var_tree
+            )
+        name = str(var_tree.children[0].children[0])
+        shift = int(var_tree.children[2].children[0])
+        if self.time is not None:
+            self.values.setdefault(name, {})[self.time + shift] = value
+        else:
+            self.variables.setdefault(name, {})[shift] = value
+
     # Equations and assignments
     def equality(self, tree):
-        """Handle equations: left = right. Returns the difference (should be 0 for equality)"""
-        left = self.visit(tree.children[0])
+        """Handle equations: left = right.
+
+        Returns the residual (right - left) by default. If `assign` is set, the
+        right-hand side is instead stored as the value of the left-hand side
+        variable and returned as-is.
+        """
         right = self.visit(tree.children[1])
+        if self.assign:
+            self._assign_variable(tree.children[0], right)
+            return right
+        left = self.visit(tree.children[0])
         return right - left  # Return difference for equation solving
 
 

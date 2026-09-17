@@ -21,6 +21,7 @@ from .model_render import (
 )
 
 if TYPE_CHECKING:
+    from .larkfiles import SymbolicModel
     from .solver import PerturbationSolution
 from .typedefs import IRFType, Solver, TVector, TMatrix, ModelContext
 
@@ -34,7 +35,7 @@ class AbstractModel(ABC):
     symbols: dict[str, list[str]]
     processes: ProductNormal | None
     paths: dict[str, dict[int, float]] | None
-    symbolic: Any
+    symbolic: SymbolicModel
     __steady_state__: dict[str, float] | None
 
     def __init__(

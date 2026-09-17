@@ -12,6 +12,7 @@ from .errors import DynareParserError, SteadyStateError
 
 class DynareModel(AbstractModel):
 
+    symbolic: Any
     _check_eigenvalues: bool = True
 
     @staticmethod
