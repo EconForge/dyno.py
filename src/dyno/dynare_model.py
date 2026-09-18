@@ -15,6 +15,21 @@ class DynareModel(AbstractModel):
     symbolic: Any
     _check_eigenvalues: bool = True
 
+    @property
+    def metadata(self: Self) -> dict[str, Any]:
+        """Metadata is stored on `context` since the compiled `symbolic` object cannot hold arbitrary attributes."""
+        context = getattr(self, "context", None)
+        if context is None:
+            return {}
+        return context.get("metadata", {})
+
+    @metadata.setter
+    def metadata(self: Self, value: dict[str, Any]) -> None:
+        context = getattr(self, "context", None)
+        if context is None:
+            raise AttributeError("Cannot set metadata before context is initialized")
+        context["metadata"] = value
+
     @staticmethod
     def _load_dynare_preprocessor():
         try:

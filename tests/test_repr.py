@@ -496,7 +496,7 @@ beta := 2.0
 x[~] := 1.0
 x[t] = alpha*x[t-1] + beta
 
-check;
+@run: check
 """
     # Call dsge_report with a model that has an explicit check command
     # The check command will fail because the steady state is inconsistent

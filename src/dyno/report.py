@@ -1312,4 +1312,4 @@ def dsge_report(
     if str(output_type).lower() == "markdown":
         results.display()
 
-    # return results
+    return results

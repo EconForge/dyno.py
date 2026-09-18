@@ -1,7 +1,7 @@
 [workspace]
 authors = ["Pablo Winant <pablo.winant@gmail.com>","Ousema Bouaneni <ousema.bouaneni@polytechnique.edu>"]
 description = "Macroeconomic model solver"
-channels = ["conda-forge"]
+channels = ["https://prefix.dev/econforge","conda-forge"]
 
 preview = ["pixi-build"]
 #platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"] # this doesn's work with jax
@@ -34,7 +34,7 @@ lark = ">=1.3.1,<2"
 pyyaml = ">=6.0.3,<7"
 
 [feature.dynare.target.linux.dependencies]
-dynare-preprocessor-pylib = ">=0.0.0.dev1,<0.0.0.dev2"
+dynare-preprocessor-pylib = "0.0.1.dev0"
 
 [feature.dynare-task.tasks]
 dynare = "python -c \"from dyno.cli import dynare_cmd; dynare_cmd()\""
