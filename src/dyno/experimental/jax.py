@@ -1,13 +1,14 @@
 from typing import Callable, Any
 from dyno.dyno_model import DynoModel
 
+
 def build_residual_function(model: DynoModel) -> Callable:
     """
     Build a pure JAX-compatible residual function for the given DynoModel.
 
     Args:
         model: A DynoModel instance.
-        
+
     Returns:
         res_fn: A pure Python function `res_fn(y_plus, y_curr, y_minus, e_curr)`
                 that returns the residuals of the model's equations.
@@ -46,13 +47,15 @@ def build_residual_function(model: DynoModel) -> Callable:
 
         # Update the function table with JAX functions after initialization
         # so it overrides autodiff.MATH_FUNCTIONS
-        evaluator.function_table.update({
-            "log": jnp.log,
-            "exp": jnp.exp,
-            "sqrt": jnp.sqrt,
-            "abs": jnp.abs,
-            "pow": jnp.pow,
-        })
+        evaluator.function_table.update(
+            {
+                "log": jnp.log,
+                "exp": jnp.exp,
+                "sqrt": jnp.sqrt,
+                "abs": jnp.abs,
+                "pow": jnp.pow,
+            }
+        )
 
         res = [evaluator.visit(eq) for eq in equations]
         return jnp.array(res)
@@ -66,7 +69,7 @@ def build_residual_with_jacs_function(model: DynoModel) -> Callable:
 
     Args:
         model: A DynoModel instance.
-        
+
     Returns:
         res_with_jacs_fn: A function `fn(y_plus, y_curr, y_minus, e_curr)` returning
                           `(residuals, A, B, C, D)` where:
@@ -76,6 +79,7 @@ def build_residual_with_jacs_function(model: DynoModel) -> Callable:
                           D is the Jacobian with respect to e_curr
     """
     import jax
+
     res_fn = build_residual_function(model)
 
     def eval_equations_with_jacs(y_plus, y_curr, y_minus, e_curr):

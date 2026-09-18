@@ -169,7 +169,11 @@ class PerturbationSolution:
 
 
 def solve(
-    A: TMatrix, B: TMatrix, C: TMatrix, method: Solver = "qz", options: dict | None = None
+    A: TMatrix,
+    B: TMatrix,
+    C: TMatrix,
+    method: Solver = "qz",
+    options: dict | None = None,
 ) -> tuple[TMatrix, TVector | None]:
     """Solves AX² + BX + C = 0 for X using the chosen method
 

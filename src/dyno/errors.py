@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 
@@ -63,17 +65,37 @@ if TYPE_CHECKING:
 
 class DynareParserError(ParserError):
 
-    def __init__(self, err: "PreprocessorException") -> None:
+    def __init__(self, err: "PreprocessorException" | Exception | str) -> None:
         message = str(err)
 
-        # Typical dynare-preprocessor message format:
+        line: int | None = getattr(err, "line", None)
+        if line is None:
+            line = getattr(err, "begin_line", None)
+
+        column: int | None = getattr(err, "column", None)
+        if column is None:
+            column = getattr(err, "begin_column", None)
+
+        loc = getattr(err, "location", None)
+        if loc is not None:
+            if line is None:
+                line = getattr(loc, "line", getattr(loc, "begin_line", None))
+            if column is None:
+                column = getattr(loc, "column", getattr(loc, "begin_column", None))
+
+        # Typical dynare-preprocessor message formats:
         # "syntax error, unexpected TIMES: line 46, col 34"
-        line = None
-        column = None
-        m = re.search(r"line\s+(\d+)\s*,\s*col\s+(\d+)", message, flags=re.IGNORECASE)
-        if m is not None:
-            line = int(m.group(1))
-            column = int(m.group(2))
+        # "ERROR: in_memory.mod: line 3, cols 1-6: y is not a parameter"
+        # "ERROR: in_memory.mod: lines 3-5, cols 1-6: syntax error"
+        if line is None:
+            m_line = re.search(r"\blines?\s+(\d+)", message, flags=re.IGNORECASE)
+            if m_line is not None:
+                line = int(m_line.group(1))
+
+        if column is None:
+            m_col = re.search(r"\bcols?\s+(\d+)", message, flags=re.IGNORECASE)
+            if m_col is not None:
+                column = int(m_col.group(1))
 
         super().__init__(message)
         self.line = line

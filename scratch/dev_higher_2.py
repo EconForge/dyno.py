@@ -4,10 +4,8 @@ import time
 
 model = DynoModel(examples_path("modfiles", "RBC.mod"))
 
-from dyno.experimental.higher import (
-    HigherOrderDerivatives,
-    sparse_coo_to_dense
-)
+from dyno.experimental.higher import HigherOrderDerivatives, sparse_coo_to_dense
+
 
 # Optional helper to print summaries (migrated to local or just simple print)
 def print_sparse_summary(sparse_coo_dict, name="Sparse tensor"):

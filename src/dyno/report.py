@@ -3,6 +3,7 @@ from __future__ import annotations
 import html
 import time
 import os
+import re
 import numpy as np
 import tempita
 
@@ -294,6 +295,15 @@ class RunResults:
         line: int | None = None,
         column: int | None = None,
     ) -> None:
+        if line is None:
+            m_line = re.search(r"\blines?\s+(\d+)", message, flags=re.IGNORECASE)
+            if m_line is not None:
+                line = int(m_line.group(1))
+        if column is None:
+            m_col = re.search(r"\bcols?\s+(\d+)", message, flags=re.IGNORECASE)
+            if m_col is not None:
+                column = int(m_col.group(1))
+
         entry: dict[str, Any] = {"type": "error", "message": message}
         if line is not None:
             entry["line"] = line
@@ -601,7 +611,11 @@ class RunResults:
             for e in exception_errors
             if not isinstance(e.get("_exception"), ParserError)
         ]
-        error_lines = [str(e.line) for e in parser_errors if hasattr(e, "line")]
+        error_lines = [
+            str(e.line)
+            for e in parser_errors
+            if hasattr(e, "line") and e.line is not None
+        ]
 
         context: dict[str, Any] = {
             "traceback": tb_mod,
@@ -1094,14 +1108,18 @@ class RunResults:
 
         lines.extend(["Outputs", "-------"])
         lines.append(
-            "Solution: computed" if self.solution is not None else "Solution: not computed"
+            "Solution: computed"
+            if self.solution is not None
+            else "Solution: not computed"
         )
         if self.solution is not None and getattr(self.solution, "decision_rule", None):
             dr = self.solution.decision_rule
             x_shape = getattr(getattr(dr, "X", None), "shape", None)
             y_shape = getattr(getattr(dr, "Y", None), "shape", None)
             s_shape = getattr(getattr(dr, "Σ", None), "shape", None)
-            lines.append(f"  decision rule matrices: X{x_shape}, Y{y_shape}, Σ{s_shape}")
+            lines.append(
+                f"  decision rule matrices: X{x_shape}, Y{y_shape}, Σ{s_shape}"
+            )
         lines.extend(self._simulation_summary_line().split("\n"))
         if self.figure is not None:
             lines.append(f"Figure: available ({type(self.figure).__name__})")
@@ -1187,7 +1205,12 @@ def _create_model(
         raise ValueError("Either `txt` or `filename` must be provided.")
 
     if filename.endswith(".mod"):
-        preprocessor = options.get("modfile-preprocessor", "dynare")
+        preprocessor = (
+            options.get("modfile-preprocessor")
+            or options.get("modfile_preprocessor")
+            or options.get("preprocessor")
+            or "dynare"
+        )
         if preprocessor == "dynare":
             from dyno.dynare_model import DynareModel
 
@@ -1230,6 +1253,7 @@ def dsge_report(
     output_type = options.get("output_type", "html")
     mime_bundle_repr = options.get("mime_bundle_repr", None)
     notify_interface = options.get("notify_interface", True)
+    results: RunResults
 
     if check_output:
         d: dict[str, Any] = {}
@@ -1255,7 +1279,6 @@ def dsge_report(
             return results
 
     model: AbstractModel | None = None
-    results: RunResults
 
     try:
         model = _create_model(txt, filename, **options)
@@ -1299,10 +1322,28 @@ def dsge_report(
             output_type=output_type,
             mime_bundle_repr=mime_bundle_repr,
         )
+        line = getattr(e, "line", None)
+        if line is None:
+            line = getattr(e, "begin_line", None)
+        column = getattr(e, "column", None)
+        if column is None:
+            column = getattr(e, "begin_column", None)
+        loc = getattr(e, "location", None)
+        if loc is not None:
+            if line is None:
+                line = getattr(loc, "line", getattr(loc, "begin_line", None))
+            if column is None:
+                column = getattr(loc, "column", getattr(loc, "begin_column", None))
+        if line is None and getattr(e, "__cause__", None) is not None:
+            cause = e.__cause__
+            line = getattr(cause, "line", getattr(cause, "begin_line", None))
+            if column is None:
+                column = getattr(cause, "column", getattr(cause, "begin_column", None))
+
         results.add_error(
             str(e),
-            line=getattr(e, "line", None),
-            column=getattr(e, "column", None),
+            line=line,
+            column=column,
         )
         results.errors[-1]["_exception"] = e
 

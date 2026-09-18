@@ -205,15 +205,15 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
     def lequation(self, tree):
         properties_tree = tree.children[0]
         equation_tree = tree.children[1]
-        
+
         meta = {}
         if properties_tree is not None:
             meta.update(self.visit(properties_tree))
-            
+
         self._attach_statement_metadata(equation_tree, meta)
-        
+
         self.equations.append(equation_tree)
-        if hasattr(self, 'equation_metadata'):
+        if hasattr(self, "equation_metadata"):
             self.equation_metadata.append(meta)
 
     def equality(self, tree):

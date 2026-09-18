@@ -21,6 +21,7 @@ class DefinitionError(Exception):
         meta = self.tree.meta
         return f"({meta.line}, {meta.column}): {self.msg}"
 
+
 function_table_0 = {
     "exp": math.exp,
     "log": math.log,
@@ -165,7 +166,9 @@ class FormulaEvaluator(Interpreter):
         # Create a key for the symbol table
         if self.steady_state:
             if name not in self.steady_states:
-                return self._undefined(f"Undefined steady state for value {name}[~]", tree)
+                return self._undefined(
+                    f"Undefined steady state for value {name}[~]", tree
+                )
             return self.steady_states[name]
         else:
             if name not in self.values:
@@ -307,9 +310,7 @@ class AssignmentEvaluator(FormulaEvaluator):
 
         return merged
 
-    def _attach_statement_metadata(
-        self, node: Tree, metadata: Dict[str, Any]
-    ) -> None:
+    def _attach_statement_metadata(self, node: Tree, metadata: Dict[str, Any]) -> None:
         try:
             node.meta.statement_metadata = metadata
         except Exception:
@@ -611,10 +612,11 @@ class AssignmentEvaluator(FormulaEvaluator):
 
     def model_metadata(self, tree):
         """Handle top-level @key: value declarations."""
-        key = str(tree.children[0])   # NAME token
-        raw = str(tree.children[1])   # METADATA_SCALAR token
+        key = str(tree.children[0])  # NAME token
+        raw = str(tree.children[1])  # METADATA_SCALAR token
         try:
             import yaml
+
             value = yaml.safe_load(raw.strip())
         except Exception:
             value = raw.strip()

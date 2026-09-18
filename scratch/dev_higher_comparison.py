@@ -40,7 +40,7 @@ def get_dynare_derivatives(mod_path):
             ind2 = tuple([ind[0]] + var_indices)
             d[ind2] = d.get(ind2, 0.0) + v
         nres.append(d)
-        
+
     return nres
 
 
@@ -72,40 +72,48 @@ def compare_dictionaries(name, dynare_dict, sympy_dict, tol=1e-8):
         # ediff = {k: -v.subs(values_dict) for k, v in diff.items()}
         # Notice the negative sign! I will apply it here.
         val_s = -sympy_dict.get(k, 0.0) if k in sympy_dict else 0.0
-        
+
         if abs(val_d) < tol and abs(val_s) < tol:
             continue
-            
+
         if k not in dynare_dict:
             missing_in_dynare += 1
         if k not in sympy_dict:
             missing_in_sympy += 1
-            
+
         err = abs(val_d - val_s)
         if err > tol:
             diff_count += 1
             max_err = max(max_err, err)
             if diff_count <= 5:
-                print(f"Mismatch at {k}: Dynare = {val_d}, Sympy = {val_s}, diff = {err}")
+                print(
+                    f"Mismatch at {k}: Dynare = {val_d}, Sympy = {val_s}, diff = {err}"
+                )
 
-    print(f"Total entries (Dynare > tol): {len([k for k, v in dynare_dict.items() if abs(v) > tol])}")
-    print(f"Total entries (Sympy > tol): {len([k for k, v in sympy_dict.items() if abs(v) > tol])}")
+    print(
+        f"Total entries (Dynare > tol): {len([k for k, v in dynare_dict.items() if abs(v) > tol])}"
+    )
+    print(
+        f"Total entries (Sympy > tol): {len([k for k, v in sympy_dict.items() if abs(v) > tol])}"
+    )
     if diff_count == 0:
         print("✅ Match! No significant differences found.")
     else:
         print(f"❌ Found {diff_count} differences (tol={tol}). Max error: {max_err}")
-        if missing_in_dynare: print(f"Missing in Dynare: {missing_in_dynare}")
-        if missing_in_sympy: print(f"Missing in Sympy: {missing_in_sympy}")
+        if missing_in_dynare:
+            print(f"Missing in Dynare: {missing_in_dynare}")
+        if missing_in_sympy:
+            print(f"Missing in Sympy: {missing_in_sympy}")
 
 
 if __name__ == "__main__":
     mod_path = examples_path("modfiles", "RBC.mod")
-    
+
     t1 = time.time()
     dynare_res = get_dynare_derivatives(mod_path)
     t2 = time.time()
     print(f"Dynare computation time: {t2 - t1:.4f}s")
-    
+
     t3 = time.time()
     sympy_res = get_sympy_derivatives(mod_path)
     t4 = time.time()
@@ -115,11 +123,11 @@ if __name__ == "__main__":
     # dynare_res[1] is Jacobian
     # dynare_res[2] is Hessian
     # dynare_res[3] is 3rd derivatives
-    
+
     # sympy_res[0] is Jacobian
     # sympy_res[1] is Hessian
     # sympy_res[2] is 3rd derivatives
-    
+
     compare_dictionaries("Jacobian", dynare_res[1], sympy_res[0])
     if len(dynare_res) > 2 and len(sympy_res) > 1:
         compare_dictionaries("Hessian", dynare_res[2], sympy_res[1])

@@ -46,7 +46,6 @@ class SymbolicModel:
         self.evaluator = None
         self.metadata = {}
 
-
     def latex_equations(self):
 
         from dyno.dynspec.latex import latex
@@ -86,14 +85,13 @@ class SymbolicModel:
                 equation_part = f"{lhs}"
             else:
                 equation_part = f"{lhs} = {rhs}"
-            
+
             # Use displaystyle with explicit spacing, no numbering in LaTeX
             lines.append(f"$$\\displaystyle {label_cell} \\quad {equation_part}$$")
 
         return "\n".join(lines)
 
     def equations_table_markdown(self):
-
         """Return equations formatted as separate display-math blocks."""
         from dyno.dynspec.latex import latex
 
@@ -122,7 +120,9 @@ class SymbolicModel:
                 label_text = _latex_text_escape(label_text)
                 label_text = r"\text{" + label_text + "}"
 
-            lines.append(f"$$\\displaystyle {label_text} \\quad {eq_latex} \\quad ({i})$$")
+            lines.append(
+                f"$$\\displaystyle {label_text} \\quad {eq_latex} \\quad ({i})$$"
+            )
 
         return "\n\n".join(lines)
 

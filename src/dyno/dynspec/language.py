@@ -4,7 +4,6 @@ from inspect import signature
 import numpy as np
 from scipy.stats import multivariate_normal
 
-
 _ASCII_TO_GREEK = {
     "Sigma": "Σ",
     "Mu": "Μ",

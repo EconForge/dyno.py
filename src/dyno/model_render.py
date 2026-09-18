@@ -37,7 +37,9 @@ def model_repr_data(model: Any) -> dict[str, Any]:
         except Exception:
             latex_equations = None
 
-    if hasattr(model, "symbolic") and hasattr(model.symbolic, "equations_table_markdown"):
+    if hasattr(model, "symbolic") and hasattr(
+        model.symbolic, "equations_table_markdown"
+    ):
         try:
             table_rendered = model.symbolic.equations_table_markdown()
             if isinstance(table_rendered, str) and table_rendered.strip() != "":

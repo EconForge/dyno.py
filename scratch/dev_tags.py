@@ -46,72 +46,68 @@ print("\n--- Normalized metadata by statement type ---")
 print(model.metadata)
 
 for eq, meta in model.symbolic.iter_equations_with_metadata():
-	if 'transition' in meta.get('tags', []) :
-		print(eq, meta)
+    if "transition" in meta.get("tags", []):
+        print(eq, meta)
 
 exit()
 
 
-
-
-
-
-
 def statement_kind(node: Tree) -> str:
-	data = str(node.data)
-	if data in {"equality", "bare_formula", "formula"}:
-		return "equation"
-	if data == "assignment":
-		return "assignment"
-	if data == "quantified_assignment":
-		return "quantified_assignment"
-	return data
-
+    data = str(node.data)
+    if data in {"equality", "bare_formula", "formula"}:
+        return "equation"
+    if data == "assignment":
+        return "assignment"
+    if data == "quantified_assignment":
+        return "quantified_assignment"
+    return data
 
 
 def visit_statements(node: Tree, depth: int = 0):
-	data = str(node.data)
+    data = str(node.data)
 
-	if data in {"free_block", "block"}:
-		for child in node.children:
-			if isinstance(child, Tree):
-				yield from visit_statements(child, depth)
-		return
+    if data in {"free_block", "block"}:
+        for child in node.children:
+            if isinstance(child, Tree):
+                yield from visit_statements(child, depth)
+        return
 
-	if data == "annotated_statement":
-		stmt = node.children[0]  # statement_core — always present
-		meta_node = node.children[1] if len(node.children) > 1 else None
-		yield (depth, stmt, meta_node)
-		return
+    if data == "annotated_statement":
+        stmt = node.children[0]  # statement_core — always present
+        meta_node = node.children[1] if len(node.children) > 1 else None
+        yield (depth, stmt, meta_node)
+        return
 
-	if data == "annotated_block":
-		block_tag = node.children[0]  # block_tag node
-		block = node.children[1]
-		yield (depth, block, block_tag)
-		for child in block.children:
-			if isinstance(child, Tree):
-				yield from visit_statements(child, depth + 1)
-		return
+    if data == "annotated_block":
+        block_tag = node.children[0]  # block_tag node
+        block = node.children[1]
+        yield (depth, block, block_tag)
+        for child in block.children:
+            if isinstance(child, Tree):
+                yield from visit_statements(child, depth + 1)
+        return
 
-	# model_metadata (@key: value) — skip silently
-	if data == "model_metadata":
-		return
+    # model_metadata (@key: value) — skip silently
+    if data == "model_metadata":
+        return
 
 
-for i, (depth, stmt, meta_node) in enumerate(visit_statements(model.symbolic.tree), start=1):
-	indent = "  " * depth
-	kind = statement_kind(stmt)
+for i, (depth, stmt, meta_node) in enumerate(
+    visit_statements(model.symbolic.tree), start=1
+):
+    indent = "  " * depth
+    kind = statement_kind(stmt)
 
-	meta = getattr(stmt.meta, "statement_metadata", {})
-	raw = str(meta_node.children[0]) if meta_node is not None else None
-	if raw is None:
-		print(f"{i:>2}. {indent}kind={kind:<25} meta={meta}")
-	else:
-		print(f"{i:>2}. {indent}kind={kind:<25} meta={meta}  raw={raw}")
+    meta = getattr(stmt.meta, "statement_metadata", {})
+    raw = str(meta_node.children[0]) if meta_node is not None else None
+    if raw is None:
+        print(f"{i:>2}. {indent}kind={kind:<25} meta={meta}")
+    else:
+        print(f"{i:>2}. {indent}kind={kind:<25} meta={meta}  raw={raw}")
 
 
 print("\n--- Equations and attached metadata ---")
 for i, eq in enumerate(model.symbolic.equations, start=1):
-	meta = getattr(eq.meta, "statement_metadata", {})
-	tags = meta.get("tags", [])
-	print(i, tags, meta)
+    meta = getattr(eq.meta, "statement_metadata", {})
+    tags = meta.get("tags", [])
+    print(i, tags, meta)

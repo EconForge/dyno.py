@@ -5,10 +5,14 @@ model = DynoModel(examples_path("modfiles", "RBC.mod"))
 r0, A0, B0, C0, D0 = model.jacobians  # for comparison purpose
 
 import jax
+
 jax.config.update("jax_enable_x64", True)
 from jax import numpy as jnp
 
-from dyno.experimental.jax import build_residual_function, build_residual_with_jacs_function
+from dyno.experimental.jax import (
+    build_residual_function,
+    build_residual_with_jacs_function,
+)
 
 y_, e_ = model.__steady_state_vectors__
 
@@ -74,4 +78,3 @@ print("Elapsed (vectorized and jitted with jacs): ", t2 - t1)
 print(jnp.abs(v_A[50, :, :] - A0).max())
 print(jnp.abs(v_B[50, :, :] - B0).max())
 print(jnp.abs(v_C[50, :, :] - C0).max())
-

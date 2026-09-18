@@ -89,5 +89,3 @@ check;
     assert isinstance(results, RunResults)
     assert results.residuals is not None
     assert results.eigenvalues == getattr(results.model, "_eigenvalues", None)
-
-

@@ -258,7 +258,6 @@ class DynoModel(AbstractModel):
 
         return self.symbolic.latex_equations()
 
-
     def compute_residuals(self, y2, y1, y0, e):
 
         endogenous = self.symbols["endogenous"]

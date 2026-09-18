@@ -114,7 +114,9 @@ class AbstractModel(ABC):
     def metadata(self, value: dict[str, Any]) -> None:
         symbolic = getattr(self, "symbolic", None)
         if symbolic is None:
-            raise AttributeError("Cannot set metadata before symbolic model is initialized")
+            raise AttributeError(
+                "Cannot set metadata before symbolic model is initialized"
+            )
         symbolic.metadata = value
 
     @property

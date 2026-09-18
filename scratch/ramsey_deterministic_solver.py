@@ -11,7 +11,6 @@ from scipy.sparse.linalg import spsolve
 
 from dyno import DynoModel
 
-
 ObjectiveCallback = Callable[[int, dict[str, np.ndarray], DynoModel], float]
 TerminalCallback = Callable[[np.ndarray, int, DynoModel, int], tuple[float, np.ndarray]]
 
@@ -214,17 +213,19 @@ def _ramsey_residuals_with_jacobian(
         row_i = t * p + closure_row
         J.rows[row_i] = []
         J.data[row_i] = []
-        for j in range(p):
-            val = grad[j]
-            if val != 0.0:
-                J[row_i, t * p + j] = val
+        for s in range(T + 1):
+            for j in range(p):
+                val = grad[s, j]
+                if val != 0.0:
+                    J[row_i, s * p + j] = val
+
+    if instrument_name != "k":
+        raise NotImplementedError(
+            "Current prototype derives the Ramsey closure for the capital path, so instrument_name must be 'k'"
+        )
 
     terminal_residual, terminal_grad, _ = _terminal_condition(
         options.terminal_mode,
-                if instrument_name != "k":
-                    raise NotImplementedError(
-                        "Current prototype derives the Ramsey closure for the capital path, so instrument_name must be 'k'"
-                    )
         v,
         model,
         instrument_i,
@@ -242,11 +243,10 @@ def _ramsey_residuals_with_jacobian(
 
 
 def run_ramsey_prototype(
-                    for s in range(T + 1):
-                        for j in range(p):
-                            val = grad[s, j]
-                            if val != 0.0:
-                                J[row_i, s * p + j] = val
+    model_path: str | Path,
+    objective_callback: ObjectiveCallback,
+    instrument_name: str,
+    T: int = 100,
     options: RamseyOptions | None = None,
 ) -> RamseySolveResult:
     options = options or RamseyOptions()
@@ -291,11 +291,15 @@ def run_ramsey_prototype(
     max_residual = float(np.max(np.abs(res_final)))
     converged = bool(max_residual <= options.tol)
 
-    df = pd.DataFrame({name: w[:, i] for i, name in enumerate(model.symbols["variables"])})
+    df = pd.DataFrame(
+        {name: w[:, i] for i, name in enumerate(model.symbols["variables"])}
+    )
     df.index = pd.RangeIndex(T + 1, name="t")
     df.reset_index(inplace=True)
 
-    terminal_label = "custom" if callable(options.terminal_mode) else str(options.terminal_mode)
+    terminal_label = (
+        "custom" if callable(options.terminal_mode) else str(options.terminal_mode)
+    )
     return RamseySolveResult(
         path=df,
         iterations=nit,
@@ -311,7 +315,9 @@ def _demo_objective(t: int, path: dict[str, np.ndarray], _model: DynoModel) -> f
 
 
 def _run_demo() -> None:
-    model_file = Path(__file__).resolve().parents[1] / "examples" / "neoclassical_ramsey.dyno"
+    model_file = (
+        Path(__file__).resolve().parents[1] / "examples" / "neoclassical_ramsey.dyno"
+    )
     options = RamseyOptions(terminal_mode="steady_state_terminal", verbose=True)
     result = run_ramsey_prototype(
         model_file,

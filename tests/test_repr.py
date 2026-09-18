@@ -157,7 +157,9 @@ y[t] = beta * y[t-1]
 
     md = model._markdown_()
 
-    equation_block_lines = [line for line in md.splitlines() if line.startswith("$$\\displaystyle")]
+    equation_block_lines = [
+        line for line in md.splitlines() if line.startswith("$$\\displaystyle")
+    ]
 
     assert len(equation_block_lines) == 2
     assert equation_block_lines[0].endswith("(1)$$")
@@ -621,3 +623,68 @@ def test_runresults_display_text_mode_emits_plain_text():
         and call.kwargs.get("raw") is True
         for call in display_mock.call_args_list
     )
+
+
+def test_runresults_add_error_extracts_line_from_message_when_missing():
+    results = RunResults()
+    results.add_error("ERROR: in_memory.mod: line 5, cols 1-6: y is not a parameter")
+
+    assert len(results.errors) == 1
+    assert results.errors[0]["line"] == 5
+    assert results.errors[0]["column"] == 1
+    assert results._highlighting_data == [
+        {
+            "line": 5,
+            "type": "error",
+            "message": "ERROR: in_memory.mod: line 5, cols 1-6: y is not a parameter",
+            "column": 1,
+        }
+    ]
+
+
+def test_dsge_report_emits_highlighting_on_preprocessor_error():
+    from dyno.errors import DynareParserError
+
+    class _DummyDynareError(Exception):
+        pass
+
+    txt = "var y\nmodel;\ny = 1;\nend;"
+    display_mock = Mock()
+
+    with _patch_fake_ipython(display_mock):
+        with patch("dyno.report._create_model") as create_mock:
+            create_mock.side_effect = DynareParserError(
+                _DummyDynareError(
+                    "ERROR: in_memory.mod: line 3, cols 1-6: y is not a parameter"
+                )
+            )
+            res = dsge_report(txt, filename="test.mod")
+
+    highlight_calls = [
+        call.args[0]
+        for call in display_mock.call_args_list
+        if call.args
+        and isinstance(call.args[0], dict)
+        and "application/vnd.jupyterlab-dyno.highlighting+json" in call.args[0]
+    ]
+    assert len(highlight_calls) == 1
+    assert highlight_calls[0]["application/vnd.jupyterlab-dyno.highlighting+json"] == [
+        {
+            "line": 3,
+            "type": "error",
+            "message": "ERROR: in_memory.mod: line 3, cols 1-6: y is not a parameter",
+            "column": 1,
+        }
+    ]
+
+
+def test_dsge_report_supports_preprocessor_option_variations():
+    with patch("dyno.report._create_model") as create_mock:
+        create_mock.return_value = Mock(run=Mock(return_value=RunResults()))
+        dsge_report(
+            "var y;",
+            filename="test.mod",
+            modfile_preprocessor="dynare",
+            notify_interface=False,
+        )
+        assert create_mock.call_args[1].get("modfile_preprocessor") == "dynare"
