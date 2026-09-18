@@ -1,7 +1,20 @@
 [project]
 name = "dyno"
-version = "0.1.9"
+version = "0.1.10"
 requires-python = ">= 3.12,<3.14"
+dependencies = [
+    "altair>=6.0.0,<7",
+    "lark>=1.3.1,<2",
+    "numpy>=2.4.2,<3",
+    "pandas>=3.0.0,<4",
+    "plotly>=6.5.2,<7",
+    "pyyaml>=6.0,<7",
+    "rich>=14.3.2,<15",
+    "scipy>=1.17.0,<2",
+    "sympy>=1.14.0,<2",
+    "tempita>=0.6.0,<0.7",
+    "typing_extensions>=4.15.0,<5",
+]
 
 [build-system]
 build-backend = "hatchling.build"
