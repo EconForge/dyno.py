@@ -41,6 +41,7 @@ dynare = "python -c \"from dyno.cli import dynare_cmd; dynare_cmd()\""
 
 [package.build]
 backend = { name = "pixi-build-python", version = ">=0.4.0" }
+build-number = 1
 
 [package.build.config]
 noarch = true
@@ -52,6 +53,7 @@ python = "<3.14,>=3.12"
 [package.run-dependencies]
 python = "<3.14,>=3.12"
 rich = ">=14.3.2,<15"
+interegular = ">=0.3.3,<0.4"
 sympy = ">=1.14.0,<2"
 altair = ">=6.0.0,<7"
 tempita = ">=0.6.0,<0.7"
