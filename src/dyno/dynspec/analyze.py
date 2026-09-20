@@ -47,6 +47,7 @@ class FormulaEvaluator(Interpreter):
         function_table: Dict[str, Callable] = function_table_0,
         unknown_as_nan=True,
         raise_on_nan=False,
+        steady_state: bool = False,
     ):
         """
         Initialize the evaluator.
@@ -63,6 +64,7 @@ class FormulaEvaluator(Interpreter):
         self.function_table = function_table or {}
         self.unknown_as_nan = unknown_as_nan
         self.raise_on_nan = raise_on_nan
+        self.steady_state = steady_state
 
         self.constants = context.get("constants", {})
         self.processes = context.get("processes", {})
