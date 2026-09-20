@@ -411,8 +411,8 @@ class AbstractModel(ABC):
 
         for key, value in self.context.get("values", {}).items():
             i = self.symbols["variables"].index(key)
-            v0[:, i] = 0.0
             for a, b in value.items():
-                v0[a, i] = b
+                if a <= T:
+                    v0[a, i] = b
 
         return v0

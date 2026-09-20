@@ -520,9 +520,23 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
     return [x, it]
 
 
-def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=False, **args):
+def deterministic_solve(
+    model,
+    x0=None,
+    T=None,
+    method="hybr",
+    verbose=False,
+    continuation="stationary",
+    growth_rate=None,
+    growth_type="geometric",
+    **args,
+):
 
     import pandas
+
+    continuation = args.pop("terminal_condition", continuation)
+    growth_rate = args.pop("growth_rate", growth_rate)
+    growth_type = args.pop("growth_type", growth_type)
 
     if x0 is None:
         v0 = model.deterministic_guess(T=T)
@@ -530,20 +544,18 @@ def deterministic_solve(model, x0=None, T=None, method="hybr", verbose=False, **
         v0 = np.array(x0)
 
     T = v0.shape[0] - 1
-    u0 = (np.array(v0).ravel(),)
-
-    # res = scipy.optimize.root(
-    #     lambda u: model.deterministic_residuals(u, jac=True),
-    #     u0,
-    #     method=method,
-    #     jac=True,
-    # )
-    # w0 = res.x.reshape(v0.shape)
 
     u0 = np.array(v0).ravel()
 
     res, nit = newton(
-        lambda u: model.deterministic_residuals_with_jacobian(u, sparsify=True),
+        lambda u: model.deterministic_residuals_with_jacobian(
+            u,
+            sparsify=True,
+            continuation=continuation,
+            growth_rate=growth_rate,
+            growth_type=growth_type,
+            **args,
+        ),
         u0,
         jactype="sparse",
         verbose=verbose,

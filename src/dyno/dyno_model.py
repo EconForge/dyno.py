@@ -333,10 +333,26 @@ class DynoModel(AbstractModel):
 
         return r, A, B, C, D
 
-    def deterministic_residuals(model, v, jac=False, **kwargs):
+    def deterministic_residuals(
+        model,
+        v,
+        jac=False,
+        continuation="stationary",
+        growth_rate=None,
+        growth_type="geometric",
+        **kwargs,
+    ):
+
+        continuation = kwargs.get("terminal_condition", continuation)
 
         if jac:
-            return model.deterministic_residuals_with_jacobian(v, **kwargs)
+            return model.deterministic_residuals_with_jacobian(
+                v,
+                continuation=continuation,
+                growth_rate=growth_rate,
+                growth_type=growth_type,
+                **kwargs,
+            )
 
         flat = v.ndim == 1
 
@@ -345,9 +361,26 @@ class DynoModel(AbstractModel):
 
         v = v.reshape((T + 1, p))
 
-        # For t = 0 to T-3: standard forward/backward indexing
-        v_f = np.concatenate([v[1:, :], v[-1, :][None, :]], axis=0)
+        # For t = 0 to T: forward/backward indexing
         v_b = np.concatenate([v[0, :][None, :], v[:-1, :]], axis=0)
+
+        y, e = model.__steady_state_vectors__
+        ss = np.concatenate([y, e])
+
+        v_prev = v[-2, :] if T >= 1 else v[-1, :]
+        v_curr = v[-1, :]
+
+        v_next, _, _ = _compute_terminal_continuation(
+            continuation,
+            v_prev,
+            v_curr,
+            ss,
+            model.symbols["variables"],
+            growth_rate=growth_rate,
+            growth_type=growth_type,
+        )
+
+        v_f = np.concatenate([v[1:, :], v_next[None, :]], axis=0)
 
         cc = copy.deepcopy(model.symbolic.context)
         for i, name in enumerate(model.symbols["variables"]):
@@ -362,16 +395,12 @@ class DynoModel(AbstractModel):
         # number of variables not pinned down by dynamic equations
         n_exo = len(model.symbols["variables"]) - len(results)
 
-        # the following works if there is one and exactly one exogenous variable
-        # assert n_exo == 1
-
-        y, e = model.__steady_state_vectors__
-        a = np.concatenate([y, e])
-        v1 = a[None, :].repeat(T + 1, axis=0)
-        for key, value in model.context["values"].items():
+        v1 = ss[None, :].repeat(T + 1, axis=0)
+        for key, value in model.symbolic.context["values"].items():
             i = model.symbols["variables"].index(key)
             for a, b in value.items():
-                v1[a, i] = b
+                if a <= T:
+                    v1[a, i] = b
 
         v1_exo = v1[:, -n_exo:].copy()
         diff_exo = v[:, -n_exo:] - v1_exo
@@ -380,9 +409,8 @@ class DynoModel(AbstractModel):
 
         res[0, :] = v[0, :] - v1[0, :]  # initial condition
 
-        # Override last row with explicit terminal condition
-        if T >= 1:
-            # t = T: f(v_T, v_T, v_T)
+        if continuation in ("static", "steady_static") and T >= 1:
+            # Legacy static terminal condition: f(v_T, v_T, v_T)
             cc_T = copy.deepcopy(model.symbolic.context)
             for i, name in enumerate(model.symbols["variables"]):
                 cc_T["variables"][name] = {-1: v[T, i], 0: v[T, i], 1: v[T, i]}
@@ -396,9 +424,19 @@ class DynoModel(AbstractModel):
         else:
             return res
 
-    def deterministic_residuals_with_jacobian(model, v, sparsify=False):
+    def deterministic_residuals_with_jacobian(
+        model,
+        v,
+        sparsify=False,
+        continuation="stationary",
+        growth_rate=None,
+        growth_type="geometric",
+        **kwargs,
+    ):
 
         from dyno.dynspec.autodiff import DNumber
+
+        continuation = kwargs.get("terminal_condition", continuation)
 
         flat = v.ndim == 1
 
@@ -407,8 +445,25 @@ class DynoModel(AbstractModel):
 
         v = v.reshape((T + 1, p))
 
-        v_f = np.concatenate([v[1:, :], v[-1, :][None, :]], axis=0)
         v_b = np.concatenate([v[0, :][None, :], v[:-1, :]], axis=0)
+
+        y, e = model.__steady_state_vectors__
+        ss = np.concatenate([y, e])
+
+        v_prev = v[-2, :] if T >= 1 else v[-1, :]
+        v_curr = v[-1, :]
+
+        v_next, alpha_prev, alpha_curr = _compute_terminal_continuation(
+            continuation,
+            v_prev,
+            v_curr,
+            ss,
+            model.symbols["variables"],
+            growth_rate=growth_rate,
+            growth_type=growth_type,
+        )
+
+        v_f = np.concatenate([v[1:, :], v_next[None, :]], axis=0)
 
         context = copy.deepcopy(model.symbolic.context)
         for i, name in enumerate(model.symbols["variables"]):
@@ -426,16 +481,12 @@ class DynoModel(AbstractModel):
 
         n_exo = len(model.symbols["variables"]) - len(results)
 
-        y, e = model.__steady_state_vectors__
-
-        # get exo values
-        # works if the is one and exactly one exogenous variable?
-        # does it?
-        v1 = np.concatenate([y, e])[None, :].repeat(T + 1, axis=0)
+        v1 = ss[None, :].repeat(T + 1, axis=0)
         for key, value in model.symbolic.context["values"].items():
             i = model.symbols["variables"].index(key)
             for a, b in value.items():
-                v1[a, i] = b
+                if a <= T:
+                    v1[a, i] = b
 
         exo = v1[:, -n_exo:].copy()
 
@@ -445,13 +496,11 @@ class DynoModel(AbstractModel):
 
         N = v.shape[0]
 
-        p = len(model.symbols["variables"])
         q = len(model.equations)
 
-        D = np.zeros((N, q, p, 3))  # would be easier with 4d struct
+        D = np.zeros((N, q, p, 3))
 
         for i_q in range(q):
-
             for k, deriv in results[i_q].derivatives.items():
                 s, t = k  # symbol, time
                 i_var = model.symbols["variables"].index(s)
@@ -463,13 +512,9 @@ class DynoModel(AbstractModel):
         for i in range(q, p):
             DD[:, i, i, 1] = 1.0
 
-        # Override last two rows with explicit terminal conditions
-        # Override last row with explicit terminal condition
-        # NOTE: Terminal condition uses all time indices pointing to v_T
-        terminal_derivatives = {}  # Maps (row, col_block) -> derivative matrix [p x p]
+        terminal_derivatives = {}
 
-        if T >= 1:
-            # t = T: f(v_T, v_T, v_T)
+        if continuation in ("static", "steady_static") and T >= 1:
             context_T = copy.deepcopy(model.symbolic.context)
             for i, name in enumerate(model.symbols["variables"]):
                 context_T["variables"][name] = {
@@ -482,36 +527,47 @@ class DynoModel(AbstractModel):
             res[T, :q] = [e.value for e in results_T]
             res[T, q:] = v[T, -n_exo:] - exo[T, :]
 
-            # Store derivatives explicitly
             deriv_T_T = np.zeros((p, p))
             for i_q in range(q):
                 for k, deriv in results_T[i_q].derivatives.items():
-                    s, t = k  # symbol, time
+                    s, t = k
                     i_var = model.symbols["variables"].index(s)
-                    # All time indices map to v_T
                     deriv_T_T[i_q, i_var] += deriv
             for i in range(q, p):
                 deriv_T_T[i, i] = 1.0
             terminal_derivatives[(T, T)] = deriv_T_T
 
-            # Clear DD[T] since we're handling it specially
             DD[T, :, :, :] = 0.0
 
         if not flat:
             return res, DD
         else:
             if sparsify:
-                J = _build_sparse_jacobian(N, p, DD, terminal_derivatives)
+                J = _build_sparse_jacobian(
+                    N, p, DD, terminal_derivatives, alpha_prev, alpha_curr
+                )
             else:
-                J = _build_dense_jacobian(N, p, DD, terminal_derivatives)
+                J = _build_dense_jacobian(
+                    N, p, DD, terminal_derivatives, alpha_prev, alpha_curr
+                )
 
             return res.ravel(), J
 
 
 def _build_sparse_jacobian(
-    N: int, p: int, DD: np.ndarray, terminal_derivatives: dict
+    N: int,
+    p: int,
+    DD: np.ndarray,
+    terminal_derivatives: dict,
+    alpha_prev: np.ndarray = None,
+    alpha_curr: np.ndarray = None,
 ) -> "scipy.sparse.csr_matrix":
     import scipy.sparse
+
+    if alpha_prev is None:
+        alpha_prev = np.zeros(p)
+    if alpha_curr is None:
+        alpha_curr = np.ones(p)
 
     # Build sparse matrix directly using COO format with vectorized operations
     # Pre-allocate lists with estimated size
@@ -562,9 +618,9 @@ def _build_sparse_jacobian(
             data_vals[idx : idx + nnz2] = DD[n, :, :, 2][mask2]
             idx += nnz2
 
-    # Special handling for last three blocks (T-2, T-1, T)
+    # Special handling for last two blocks (T-1, T) when N >= 3
     if N >= 3:
-        # Block n=N-2 (t=T-2): has standard structure with 3 blocks
+        # Block n=N-2 (t=T-1): has standard structure with 3 blocks
         n = N - 2
         base_row = p * n
 
@@ -595,44 +651,50 @@ def _build_sparse_jacobian(
             data_vals[idx : idx + nnz2] = DD[n, :, :, 2][mask2]
             idx += nnz2
 
-        # Block n=N-1 (t=T-1): derivatives wrt v_{T-1} and v_T
+        # Block n=N-1 (t=T): derivatives wrt v_{T-1} and v_T
         n = N - 1
         base_row = p * n
 
-        mask0 = DD[n, :, :, 0] != 0
+        col_prev = DD[n, :, :, 0] + DD[n, :, :, 2] * alpha_prev[None, :]
+        mask0 = col_prev != 0
         nnz0 = np.sum(mask0)
         if nnz0 > 0:
             ii, jj = np.nonzero(mask0)
             row_indices[idx : idx + nnz0] = base_row + ii
             col_indices[idx : idx + nnz0] = p * (n - 1) + jj
-            data_vals[idx : idx + nnz0] = DD[n, :, :, 0][mask0]
+            data_vals[idx : idx + nnz0] = col_prev[mask0]
             idx += nnz0
 
-        mask1 = DD[n, :, :, 1] != 0
+        combined = DD[n, :, :, 1] + DD[n, :, :, 2] * alpha_curr[None, :]
+        mask1 = combined != 0
         nnz1 = np.sum(mask1)
         if nnz1 > 0:
             ii, jj = np.nonzero(mask1)
             row_indices[idx : idx + nnz1] = base_row + ii
             col_indices[idx : idx + nnz1] = p * n + jj
-            data_vals[idx : idx + nnz1] = DD[n, :, :, 1][mask1]
+            data_vals[idx : idx + nnz1] = combined[mask1]
             idx += nnz1
-
-        # Note: DD[n, :, :, 2] should be zero for N-1 since we already combined derivatives
     else:
         # Fallback for small N
         for n in range(max(1, N - 2), N):
             base_row = p * n
 
-            mask0 = DD[n, :, :, 0] != 0
+            if n == N - 1:
+                col_prev = DD[n, :, :, 0] + DD[n, :, :, 2] * alpha_prev[None, :]
+                combined = DD[n, :, :, 1] + DD[n, :, :, 2] * alpha_curr[None, :]
+            else:
+                col_prev = DD[n, :, :, 0]
+                combined = DD[n, :, :, 1]
+
+            mask0 = col_prev != 0
             nnz0 = np.sum(mask0)
             if nnz0 > 0:
                 ii, jj = np.nonzero(mask0)
                 row_indices[idx : idx + nnz0] = base_row + ii
                 col_indices[idx : idx + nnz0] = p * (n - 1) + jj
-                data_vals[idx : idx + nnz0] = DD[n, :, :, 0][mask0]
+                data_vals[idx : idx + nnz0] = col_prev[mask0]
                 idx += nnz0
 
-            combined = DD[n, :, :, 1] + DD[n, :, :, 2]
             mask_c = combined != 0
             nnz_c = np.sum(mask_c)
             if nnz_c > 0:
@@ -678,8 +740,18 @@ def _build_sparse_jacobian(
 
 
 def _build_dense_jacobian(
-    N: int, p: int, DD: np.ndarray, terminal_derivatives: dict
+    N: int,
+    p: int,
+    DD: np.ndarray,
+    terminal_derivatives: dict,
+    alpha_prev: np.ndarray = None,
+    alpha_curr: np.ndarray = None,
 ) -> np.ndarray:
+    if alpha_prev is None:
+        alpha_prev = np.zeros(p)
+    if alpha_curr is None:
+        alpha_curr = np.ones(p)
+
     J = np.zeros((N * p, N * p))
     for n in range(N):
         if n == 0:
@@ -688,10 +760,11 @@ def _build_dense_jacobian(
             # Terminal condition (last row) handled separately - skip for now
             pass
         elif n == N - 1:
-            # Fallback for small T or when no terminal conditions
-            J[p * n : p * (n + 1), p * (n - 1) : p * (n)] = DD[n, :, :, 0]
+            J[p * n : p * (n + 1), p * (n - 1) : p * (n)] = (
+                DD[n, :, :, 0] + DD[n, :, :, 2] * alpha_prev[None, :]
+            )
             J[p * n : p * (n + 1), p * n : p * (n + 1)] = (
-                DD[n, :, :, 1] + DD[n, :, :, 2]
+                DD[n, :, :, 1] + DD[n, :, :, 2] * alpha_curr[None, :]
             )
         else:
             J[p * n : p * (n + 1), p * (n - 1) : p * (n)] = DD[n, :, :, 0]
@@ -707,3 +780,64 @@ def _build_dense_jacobian(
             ] = deriv_matrix
 
     return J
+
+
+def _compute_terminal_continuation(
+    continuation: str,
+    v_prev: np.ndarray,
+    v_curr: np.ndarray,
+    ss: np.ndarray,
+    symbols: list[str],
+    growth_rate=None,
+    growth_type="geometric",
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Compute v_{T+1} and its sensitivities wrt v_{T-1} and v_T.
+
+    Returns:
+        v_next: shape (p,)
+        alpha_prev: shape (p,), d(v_{T+1}) / d(v_{T-1})
+        alpha_curr: shape (p,), d(v_{T+1}) / d(v_T)
+    """
+    p = len(symbols)
+    if continuation in ("steady_state", "steady", "ss"):
+        v_next = ss.copy()
+        alpha_prev = np.zeros(p)
+        alpha_curr = np.zeros(p)
+    elif continuation in ("constant_growth", "growth", "balanced_growth"):
+        if growth_rate is not None:
+            if isinstance(growth_rate, dict):
+                g = np.array([float(growth_rate.get(name, 0.0)) for name in symbols])
+            elif np.isscalar(growth_rate):
+                g = np.full(p, float(growth_rate))
+            else:
+                g = np.asarray(growth_rate, dtype=float)
+            v_next = (1.0 + g) * v_curr
+            alpha_prev = np.zeros(p)
+            alpha_curr = 1.0 + g
+        else:
+            # Endogenous growth rate from transition T-1 -> T
+            if growth_type == "linear":
+                v_next = 2.0 * v_curr - v_prev
+                alpha_prev = np.full(p, -1.0)
+                alpha_curr = np.full(p, 2.0)
+            else:  # geometric
+                v_next = np.empty(p)
+                alpha_prev = np.empty(p)
+                alpha_curr = np.empty(p)
+                for i in range(p):
+                    if v_prev[i] > 0 and v_curr[i] > 0:
+                        ratio = v_curr[i] / v_prev[i]
+                        v_next[i] = v_curr[i] * ratio
+                        alpha_prev[i] = -(ratio**2)
+                        alpha_curr[i] = 2.0 * ratio
+                    else:
+                        v_next[i] = 2.0 * v_curr[i] - v_prev[i]
+                        alpha_prev[i] = -1.0
+                        alpha_curr[i] = 2.0
+    else:
+        # Default: "stationary" (v_{T+1} = v_T)
+        v_next = v_curr.copy()
+        alpha_prev = np.zeros(p)
+        alpha_curr = np.ones(p)
+
+    return v_next, alpha_prev, alpha_curr
