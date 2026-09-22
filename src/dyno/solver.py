@@ -529,6 +529,7 @@ def deterministic_solve(
     continuation="stationary",
     growth_rate=None,
     growth_type="geometric",
+    return_iterations=False,
     **args,
 ):
 
@@ -570,5 +571,9 @@ def deterministic_solve(
     )
     df.index = pandas.RangeIndex(T + 1, name="t")
     df.reset_index(inplace=True)
+    df.attrs["iterations"] = nit
+
+    if return_iterations:
+        return df, nit
 
     return df
