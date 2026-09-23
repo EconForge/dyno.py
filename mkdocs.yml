@@ -1,47 +1,75 @@
 site_name: Dyno 🦖
+site_description: A modern Python framework for DSGE and macroeconomic modeling
+site_author: EconForge & Pablo Winant
 
 plugins:
-  - search # necessary for search to work
+  - search
   - mkdocstrings
 
 markdown_extensions:
-  - mdx_math
   - markdown.extensions.admonition
+  - markdown.extensions.attr_list
+  - markdown.extensions.def_list
+  - markdown.extensions.footnotes
+  - markdown.extensions.md_in_html
   - pymdownx.details
-  - pymdownx.arithmatex
+  - pymdownx.arithmatex:
+      generic: true
   - pymdownx.snippets
   - pymdownx.highlight:
       use_pygments: true
-      extend_pygments_lang: [yaml]
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
 
 theme:
   name: material
   features:
-    - content.tooltips 
-    - navigation.expand 
-    - navigation.indexes 
-    - navigation.sections 
-    - navigation.tabs 
+    - content.code.copy
+    - content.tooltips
+    - navigation.expand
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
+    - navigation.top
 
+extra_css:
+  - stylesheets/extra.css
 
 extra_javascript:
-  # other extra java script
-  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML
-  - https://cdn.jsdelivr.net/npm/vega@5
-  - https://cdn.jsdelivr.net/npm/vega-lite@3
-  - https://cdn.jsdelivr.net/npm/vega-embed@5
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
 
 nav:
-  - index.md
+  - Overview: index.md
   - Getting Started:
-    - Solving a Dynare Model: getting_started_dynare.md
-    - Writing a Dyno Model: getting_started_dyno.md
-  - model_classes.md
-  - model.md
-  - model2.md
-  - solution_methods.md
+      - Installation & Setup: getting_started/installation.md
+      - Writing a Dyno Model: getting_started/dyno_quickstart.md
+      - Solving a Dynare Model: getting_started/dynare_quickstart.md
+  - Model Specification:
+      - Language Syntax: model_specification/syntax.md
+      - Blocks & Metadata: model_specification/metadata_blocks.md
+      - Architecture: model_specification/architecture.md
+  - Solvers & Theory:
+      - Steady State: solvers/steady_state.md
+      - First-Order Perturbation: solvers/perturbation.md
+      - Deterministic & Perfect Foresight: solvers/deterministic.md
+  - Analysis & Simulation:
+      - Impulse Response Functions: analysis/irfs.md
+      - Moments & Covariance: analysis/moments.md
+      - Simulation: analysis/simulation.md
+      - Automated Reports: analysis/reports.md
+  - Tutorials:
+      - Real Business Cycle (RBC): tutorials/rbc_model.md
+      - Transition Dynamics: tutorials/transition_dynamics.md
+      - Interactive Web GUI: tutorials/interactive_gui.md
+  - API Reference:
+      - Models: api/models.md
+      - Solvers: api/solver.md
+      - Simulation: api/simul.md
+      - Reports: api/report.md
+      - Errors: api/errors.md

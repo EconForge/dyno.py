@@ -31,10 +31,14 @@ When making changes to the codebase, please ensure that you:
 
 ## Documentation
 
-The project uses `mkdocs` for documentation. 
+The project uses `zensical` for documentation. 
 If developing new features or modifying public APIs, consider updating the corresponding documentation and serve it to verify locally:
 ```bash
 pixi run -e dev docs
+```
+Or build statically:
+```bash
+pixi run -e dev build-docs
 ```
 
 ## General Guidelines

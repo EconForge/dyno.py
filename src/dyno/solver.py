@@ -400,16 +400,17 @@ def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:
 
     Parameters
     ----------
-    X, Y : (N,N) Matrix
-        matrices defining the stochastic process
-
-    Σ : (N,N) Matrix
-        covariance matrix of the independant idententically distributed error terms e_t
+    X : (N,N) Matrix
+        Transition matrix defining the stochastic process.
+    Y : (N,N) Matrix
+        Shock impact matrix defining the stochastic process.
+    Sigma : (N,N) Matrix
+        Covariance matrix of the independent identically distributed error terms e_t.
 
     Returns
     -------
-    Γ₀, Γ : (N,N) Matrix
-        conditional and unconditional covariance matrices of the stationary process y_t respectively
+    Gamma_0, Gamma : (N,N) Matrix
+        Conditional and unconditional covariance matrices of the stationary process y_t respectively.
 
     Notes
     -----

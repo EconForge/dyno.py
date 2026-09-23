@@ -13,3 +13,5 @@ temp*.yml
 .github/workflows/.ci_pixi.yaml
 *.conda
 .env
+site/
+.zensical/
