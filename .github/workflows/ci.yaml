@@ -30,3 +30,17 @@ jobs:
         with:
           file: ./coverage.xml
           flags: unittests
+
+  docs:
+    name: Verify Documentation (Zensical)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pixi
+        uses: prefix-dev/setup-pixi@v0.9.4
+        with:
+          environments: dev
+
+      - name: Verify Documentation Build (strict)
+        run: pixi run --environment dev zensical build --clean --strict
