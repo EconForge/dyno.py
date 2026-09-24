@@ -52,8 +52,29 @@ Dyno defines modular features and environments in `pixi.toml` to support differe
 | `dev` *(default)* | Full development environment | `pytest`, `mypy`, `black`, `jupyterlab`, `zensical` |
 | `test` | Lean CI test runner | `pytest`, `coverage`, `pytest-cov` |
 | `dynare` | Full Dynare preprocessor integration | `dynare-preprocessor-pylib` |
-| `solara` | Interactive web dashboard | `solara`, `ipyvuetify`, `anywidget` |
 | `prod` | Production / runtime notebook environment | `jupyter`, `numpy`, `scipy`, `pandas` |
+
+---
+
+## Installing Dyno Lab (JupyterLab Extension)
+
+For an interactive graphical interface, install **Dyno Lab** (`jupyterlab_dyno`) from the EconForge channel on Prefix.dev:
+
+```bash
+# Using Pixi
+pixi add --channel https://repo.prefix.dev/econforge jupyterlab_dyno
+
+# Using Micromamba
+micromamba install -c https://repo.prefix.dev/econforge jupyterlab_dyno
+```
+
+To launch JupyterLab with Dyno Lab enabled:
+
+```bash
+pixi run -e dev jupyter lab
+```
+
+For more details, see the [Dyno Lab Documentation](../dyno_lab/index.md).
 
 ### Running Commands in Environments
 

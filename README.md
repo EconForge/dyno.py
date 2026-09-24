@@ -9,16 +9,16 @@
 curl -fsSL https://pixi.sh/install.sh | sh
 ```
 
-We can then run Dyno's web server using:
+For interactive modeling, Dyno features a JupyterLab extension (`jupyterlab_dyno` / Dyno Lab):
 ```console
-pixi run solara
+pixi run -e dev jupyter lab
 ```
 
 For development (including documentation and unit tests), `pixi` provides a set of pre-configured tasks.
 
-To run `mkdocs`:
+To build and serve documentation locally with `zensical`:
 ```console
-pixi run docs
+pixi run -e dev docs
 ```
 
 To run unit and coverage tests:

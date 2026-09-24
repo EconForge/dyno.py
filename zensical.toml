@@ -44,6 +44,11 @@ nav = [
       "analysis/simulation.md",
       "analysis/reports.md",
   ]},
+  { "Dyno Lab (GUI)" = [
+      "dyno_lab/index.md",
+      "dyno_lab/interface.md",
+      "dyno_lab/options_and_settings.md",
+  ]},
   { "Tutorials" = [
       "tutorials/rbc_model.md",
       "tutorials/transition_dynamics.md",

@@ -26,7 +26,7 @@
     Inspect Blanchad-Kahn rank and order conditions, generalized eigenvalues, equation-level residuals, and theoretical asymptotic moments automatically.
 
 -   ### 📊 Rich Visualization & Reporting
-    Produce interactive Plotly impulse response charts, export tabular simulations as Pandas DataFrames, render dynamic reports, or explore models through an interactive Solara GUI dashboard.
+    Produce interactive Plotly impulse response charts, export tabular simulations as Pandas DataFrames, render dynamic reports, or explore models through the **Dyno Lab** (`jupyterlab_dyno`) interactive GUI.
 
 </div>
 
@@ -102,7 +102,8 @@ To get the most out of Dyno, explore the guided sections:
 |---|---|
 | [**Getting Started**](getting_started/installation.md) | Pixi installation, environment configuration, and quickstarts for `.dyno` and Dynare `.mod` files. |
 | [**Model Specification**](model_specification/syntax.md) | Syntax reference (`<-`, `=`, `[t]`, `[~]`, `forall`), equation blocks, metadata, and YAML wrappers. |
+| [**Dyno Lab (GUI)**](dyno_lab/index.md) | Interactive JupyterLab extension for live model editing, automatic re-solving, and Plotly visualization. |
 | [**Solvers & Theory**](solvers/steady_state.md) | Steady-state solvers, first-order perturbation (QZ / Time Iteration), and deterministic stacked-time Newton solver. |
 | [**Analysis & Simulation**](analysis/irfs.md) | IRFs, conditional/unconditional variance-covariance moments, stochastic simulations, and automated reporting. |
-| [**Tutorials**](tutorials/rbc_model.md) | Step-by-step guides for the canonical RBC model, deterministic transition paths, and the Solara GUI. |
+| [**Tutorials**](tutorials/rbc_model.md) | Step-by-step guides for the canonical RBC model, deterministic transition paths, and Dyno Lab interactive modeling. |
 | [**API Reference**](api/models.md) | Comprehensive class and function references for `DynoModel`, `DynareModel`, `solve`, and more. |
