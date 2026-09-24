@@ -1,5 +1,23 @@
 from .grammar import parser, str_expression
 from .analyze import FormulaEvaluator as Analyzer
+from .recipe import (
+    Recipe,
+    EquationGroupSpec,
+    VariableSpec,
+    ConformityResult,
+    Violation,
+    DTCC_RECIPE,
+    extract_variables_from_equation,
+    extract_lhs_variable,
+    check_equation_group,
+    check_dag,
+)
+from .funcgen import (
+    DefinitionsBlock,
+    build_definitions_block,
+    generate_equation_function,
+    compile_equation_group,
+)
 
 import numpy as np
 
