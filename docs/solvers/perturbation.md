@@ -11,6 +11,7 @@ Consider a non-linear DSGE model consisting of $n$ equations:
 $$\mathbb{E}_t \left[ f(y_{t+1}, y_t, y_{t-1}, \varepsilon_t) \right] = 0$$
 
 where:
+
 - $y_t \in \mathbb{R}^n$ is the vector of endogenous variables.
 - $\varepsilon_t \in \mathbb{R}^m$ is the vector of i.i.d. exogenous shocks with covariance matrix $\Sigma = \mathbb{E}[\varepsilon_t \varepsilon_t^T]$.
 - $\bar{y}$ is the deterministic steady state satisfying $f(\bar{y}, \bar{y}, \bar{y}, 0) = 0$.
@@ -36,8 +37,10 @@ Substituting this policy function into the linearized dynamic equation gives:
 $$(A X^2 + B X + C) \hat{y}_{t-1} + (A X Y + B Y + D) \varepsilon_t = 0$$
 
 This yields two fundamental matrix equations:
+
 1. **The Quadratic Matrix Equation** for the transition matrix $X$:
    $$A X^2 + B X + C = 0$$
+
 2. **The Shock Transmission Equation** for the impact matrix $Y$:
    $$(A X + B) Y + D = 0 \implies Y = -(A X + B)^{-1} D$$
 
@@ -50,6 +53,7 @@ Dyno provides two algorithms to solve the quadratic matrix equation $A X^2 + B X
 ### 1. Generalized Schur / QZ Decomposition (`method="qz"`, Default)
 
 The QZ decomposition transforms the matrix pencil into upper triangular forms:
+
 - Constructs the block state-space representation.
 - Computes generalized eigenvalues $\lambda_i = \alpha_i / \beta_i$.
 - Reorders the decomposition so stable eigenvalues ($|\lambda_i| < 1$) appear first.

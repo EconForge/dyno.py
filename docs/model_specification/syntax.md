@@ -77,6 +77,7 @@ e_d[t] <- N(0, 0.005^2)
 ```
 
 Behind the scenes:
+
 - Dyno registers `e_a` and `e_d` as exogenous variables in `model.symbols["exogenous"]`.
 - The shock covariance matrix $\Sigma$ is automatically constructed for perturbation and simulation solvers.
 - The mean (0) is automatically populated into `model.context["steady_states"]`.
@@ -109,12 +110,14 @@ forall t, 2 <= t < 10 : e[t] <- 0.025 / (t - 1)
 Dyno equations and assignments support standard mathematical expressions:
 
 ### Arithmetic & Power
+
 - Addition & Subtraction: `+`, `-`
 - Multiplication & Division: `*`, `/`
 - Exponentiation: `^` or `**` (e.g., `k[t-1]^alpha` or `k[t-1]**alpha`)
 - Grouping: `( ... )`
 
 ### Built-in Functions
+
 - Exponential: `exp(x)`
 - Natural Logarithm: `log(x)`
 - Square Root: `sqrt(x)`

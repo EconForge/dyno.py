@@ -105,6 +105,7 @@ plt.show()
 ```
 
 ### Transition Dynamics:
+
 - **Capital Accumulation**: Capital starts depressed at $0.85 \times \bar{k}$ and monotonically converges back to steady state.
 - **Consumption Cut**: Households suppress consumption immediately to finance high investment.
 - **High Return on Capital**: The marginal product of capital $\alpha y_{t+1}/k_t$ is elevated, incentivizing strong initial capital accumulation.

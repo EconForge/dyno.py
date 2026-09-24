@@ -36,6 +36,7 @@ Total factor productivity (TFP) evolves according to an AR(1) process:
 $$\log(a_t) = \rho \log(a_{t-1}) + \varepsilon_t, \quad \varepsilon_t \sim \text{i.i.d. } \mathcal{N}(0, \sigma^2)$$
 
 ### 4. Equilibrium Conditions
+
 - **Euler equation**: $\frac{1}{c_t} = \beta \, \mathbb{E}_t \left[ \frac{1}{c_{t+1}} (r_{t+1} + 1 - \delta) \right]$
 - **Intratemporal labor supply**: $w_t = \chi c_t n_t^\eta$
 - **Resource constraint**: $y_t = c_t + i_t$
@@ -111,6 +112,7 @@ print(df_tfp.loc[key_horizons, ["y", "c", "i", "n", "w", "r"]])
 ```
 
 ### Key Economic Insights from IRFs:
+
 1. **Investment volatility**: Investment $i_t$ surges more than output $y_t$ on impact due to consumption smoothing.
 2. **Consumption smoothing**: Consumption $c_t$ rises gradually and remains elevated longer than output.
 3. **Labor response**: Hours worked $n_t$ rise on impact as higher wages induce intertemporal labor substitution.

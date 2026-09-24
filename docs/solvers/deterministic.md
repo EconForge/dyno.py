@@ -15,12 +15,14 @@ df_trajectory = deterministic_solve(model, T=100)
 ```
 
 **Parameters:**
+
 - `model`: A `DynoModel` instance containing equations, calibration, and boundary values.
 - `x0` *(optional)*: Initial guess matrix for the solution path across all periods. Defaults to steady state.
 - `T` *(optional)*: Time horizon (number of periods). Inferred from model context if omitted.
 - `verbose` *(bool)*: Print iteration progress and residual norms.
 
 **Returns:**
+
 - A `pandas.DataFrame` where rows correspond to time periods $t = 0, 1, \dots, T$ and columns represent model variables.
 
 ---
@@ -30,6 +32,7 @@ df_trajectory = deterministic_solve(model, T=100)
 ### Variables and Stacking
 
 Let:
+
 - $p$ be the total number of variables (endogenous + exogenous).
 - $q$ be the number of dynamic equations ($q \le p$).
 - $T$ be the simulation horizon.
@@ -94,6 +97,7 @@ D_1^{(-1)} & D_1^{(0)} & D_1^{(1)} & \cdots & 0 & 0\\
 $$
 
 where:
+
 - $D_t^{(-1)} = \frac{\partial F_t}{\partial v_{t-1}}$ (derivatives with respect to lags)
 - $D_t^{(0)} = \frac{\partial F_t}{\partial v_t}$ (derivatives with respect to current variables)
 - $D_t^{(1)} = \frac{\partial F_t}{\partial v_{t+1}}$ (derivatives with respect to leads)

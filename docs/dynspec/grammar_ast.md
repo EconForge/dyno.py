@@ -102,6 +102,7 @@ class TimeFixer(Transformer):
 ```
 
 Every variable node in the resulting AST is guaranteed to possess a normalized shift:
+
 - `k[t]` $\implies$ `Tree('variable', [cname('k'), index('t'), shift('0')])`
 - `k[t-1]` $\implies$ `Tree('variable', [cname('k'), index('t'), shift('-1')])`
 - `k[~]` $\implies$ `Tree('variable', [cname('k'), index('~'), shift('0')])`

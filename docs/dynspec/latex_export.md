@@ -30,7 +30,9 @@ $$\frac{1}{c_{t}} = \beta \frac{1}{c_{t+1}} \left(\frac{\alpha y_{t+1}}{k_{t}} +
 ## Typography & Formatting Features
 
 ### 1. Automatic Greek Character Mapping
+
 ASCII symbol names matching Greek letter names are automatically converted to their LaTeX equivalents:
+
 - `alpha` $\implies$ `\alpha` ($\alpha$)
 - `beta` $\implies$ `\beta` ($\beta$)
 - `gamma` $\implies$ `\gamma` ($\gamma$)
@@ -39,7 +41,9 @@ ASCII symbol names matching Greek letter names are automatically converted to th
 - `epsilon` $\implies$ `\epsilon` ($\epsilon$)
 
 ### 2. Time Subscript Formatting
+
 Time indices and shifts are formatted as clean LaTeX subscripts:
+
 - `k[t]` $\implies$ `k_{t}` ($k_t$)
 - `k[t-1]` $\implies$ `k_{t-1}` ($k_{t-1}$)
 - `c[t+1]` $\implies$ `c_{t+1}` ($c_{t+1}$)
@@ -47,6 +51,7 @@ Time indices and shifts are formatted as clean LaTeX subscripts:
 - `k[0]` $\implies$ `k_{0}` ($k_0$)
 
 ### 3. Smart Fractions & Parentheses
+
 - Divisions are transformed into `\frac{numerator}{denominator}`.
 - Operator precedence rules automatically suppress redundant nested parentheses while preserving necessary algebraic groupings using `\left(` and `\right)`.
 

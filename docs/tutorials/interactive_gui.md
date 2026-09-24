@@ -19,14 +19,17 @@ This starts a local development server (typically at `http://localhost:8765`) an
 ## Features of the Interactive GUI
 
 ### 1. Real-Time Parameter Sliders
+
 - Adjust key parameters such as capital share $\alpha$, subjective discount factor $\beta$, depreciation $\delta$, and shock persistence $\rho$ using interactive sliders.
 - The steady-state solver runs reactively upon every parameter change, updating equilibrium values instantly.
 
 ### 2. Live Impulse Response Plots
+
 - Observe how shifts in calibration alter impulse response functions in real time.
 - Compare multiple calibration scenarios visually.
 
 ### 3. Model Introspection Tabs
+
 - **Equations View**: Formatted mathematical rendering of model equations.
 - **Steady-State Table**: Real-time display of all endogenous variables, residuals, and parameter calibrations.
 - **Jacobian Matrices**: Inspect transition matrix $X$ and shock impact matrix $Y$.

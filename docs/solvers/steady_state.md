@@ -20,6 +20,7 @@ c[~] <- y[~] - i[~]
 ```
 
 Steady-state definitions:
+
 - Can reference model parameters (`α`, `β`, `δ`).
 - Can reference previously defined steady-state values (e.g., `y[~]` references `k[~]`).
 - Are evaluated in topological order during model loading.
@@ -31,6 +32,7 @@ Steady-state definitions:
 Dyno provides tools to verify that declared steady states satisfy the dynamic system:
 
 ### 1. `model.residuals`
+
 Evaluates the absolute difference $|LHS - RHS|$ for each equation at the current steady-state point:
 
 ```python
@@ -41,6 +43,7 @@ for i, res in enumerate(model.residuals, start=1):
 ```
 
 ### 2. `model.check()`
+
 Checks whether any residual exceeds the numerical tolerance (default: $10^{-6}$). If so, it raises a `SteadyStateError`:
 
 ```python
@@ -69,6 +72,7 @@ For complex models where an analytical steady state is intractable, Dyno provide
    c[~] <- 1.0
    y[~] <- 1.0
    ```
+
 2. Call `model.steady()` in Python:
    ```python
    # Solves f(y_bar, y_bar, y_bar) = 0 numerically

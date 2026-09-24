@@ -15,6 +15,7 @@
 ## Why DynSpec?
 
 In computational economics, model representation and model solution have historically been tightly coupled within specific software suites (such as Dynare in MATLAB or Dolo in Python). This tight coupling creates several challenges:
+
 - Re-implementing parsers and AST interpreters across different solvers.
 - Difficulty porting models between perturbation, global projection, and agent-based frameworks.
 - Inconsistent timing conventions and symbol classification rules across tools.

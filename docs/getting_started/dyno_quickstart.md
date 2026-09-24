@@ -114,6 +114,7 @@ The resulting `PerturbationSolution` represents the policy rule:
 $$y_t = \bar{y} + X (y_{t-1} - \bar{y}) + Y \varepsilon_t$$
 
 Where:
+
 - $\bar{y}$ is the steady state (`solution.x0`)
 - $X$ is the transition matrix (`solution.X`)
 - $Y$ is the shock impact matrix (`solution.Y`)

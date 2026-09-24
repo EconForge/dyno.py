@@ -34,8 +34,8 @@ The signature and behavior of the compiled function depend on the equation group
 ### A. Recursive Groups (e.g., Transition Functions)
 
 For state transition equations ($s_t = g(m_{t-1}, s_{t-1}, x_{t-1}, m_t)$):
-- **Inputs**: NumPy arrays ordered according to the recipe's `allowed` groups:
-  `func(exo_prev, states_prev, controls_prev, exo_curr)`
+
+- **Inputs**: NumPy arrays ordered according to the recipe's `allowed` groups: `func(exo_prev, states_prev, controls_prev, exo_curr)`
 - **Output**: A 1-D NumPy array containing the updated states at period $t$.
 - **Evaluation**: Evaluated in topological DAG order, enabling auxiliary calculations to feed subsequent state equations.
 
@@ -55,8 +55,8 @@ print("Updated states [z_t, k_t]:", new_states)
 ### B. Residual Groups (e.g., Arbitrage & Equilibrium)
 
 For simultaneous equilibrium equations ($0 = \mathbb{E}_t [ h(\dots) ]$):
-- **Inputs**: Current and lead variable arrays:
-  `func(exo_0, states_0, controls_0, exo_1, states_1, controls_1)`
+
+- **Inputs**: Current and lead variable arrays: `func(exo_0, states_0, controls_0, exo_1, states_1, controls_1)`
 - **Output**: A 1-D NumPy array of residuals ($LHS - RHS$).
 - **Use Case**: Fed directly into non-linear root finders (e.g. Newton-Krylov, Powell, or projection collocation).
 
@@ -78,6 +78,7 @@ print("Arbitrage equation residuals:", residuals)
 ## 3. Vectorization and Solver Interoperability
 
 Because the compiled functions operate on standard NumPy arrays:
+
 - They can be integrated into custom Monte Carlo simulators without symbolic overhead.
 - They can be called millions of times inside optimization loops or value function iteration routines.
 - They provide a direct, clean bridge to external nonlinear solvers (such as Dolo, JAX, or SciPy).

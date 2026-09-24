@@ -90,12 +90,16 @@ model.context.keys()
 
 1. **`constants`** (`dict[str, float]`):
    Stores all calibrated scalar parameters (e.g. `{'alpha': 0.36, 'beta': 0.99}`).
+
 2. **`steady_states`** (`dict[str, float]`):
    Stores steady-state levels for all endogenous and exogenous variables (e.g. `{'k': 10.0, 'c': 0.8}`).
+
 3. **`values`** (`dict[str, dict[int, float]]`):
    Stores date-specific overrides or deterministic shock paths (e.g. `{'e': {0: 0.02, 1: 0.01}}`).
+
 4. **`processes`** (`dict[tuple[str, ...], Any]`):
    Contains Gaussian shock distribution objects (`Normal(mu, sigma2)`) mapping variable names to their stochastic parameters.
+
 5. **`variables`** (`dict[str, dict]`):
    Tracks metadata for all variables encountered in model equations.
 

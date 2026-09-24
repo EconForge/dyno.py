@@ -15,7 +15,6 @@ import numpy as np
 import pytest
 from dyno import DynoModel, deterministic_solve
 
-
 RAMSEY_MODEL_TXT = """
 # Neoclassical Ramsey Model with Perfect Foresight / Deterministic Transition
 # Parameters
@@ -72,8 +71,10 @@ def get_ramsey_model():
     return DynoModel(txt=RAMSEY_MODEL_TXT)
 
 
-def resource_constraint_residual(k_prev, k_curr, c_curr, x_curr, alph=0.50, delt=0.02, aa=0.511):
-    return c_curr + k_curr - (aa * x_curr * (k_prev ** alph) + (1.0 - delt) * k_prev)
+def resource_constraint_residual(
+    k_prev, k_curr, c_curr, x_curr, alph=0.50, delt=0.02, aa=0.511
+):
+    return c_curr + k_curr - (aa * x_curr * (k_prev**alph) + (1.0 - delt) * k_prev)
 
 
 def test_reproduce_notebook_simulation():
@@ -119,7 +120,9 @@ def test_continuation_stationary():
 
     # 1. Monotonic decay after peak: no reversal!
     k_diffs_late = np.diff(k[40:51])
-    assert np.all(k_diffs_late < 0), "Capital should monotonically decay towards steady state"
+    assert np.all(
+        k_diffs_late < 0
+    ), "Capital should monotonically decay towards steady state"
 
     # 2. Smooth arrival at steady state
     assert np.isclose(k[50], k_ss, atol=1e-3)
@@ -206,7 +209,9 @@ def test_disaster_experiment_both_continuations():
 
         # Resource constraint is satisfied at t=T
         res_T = resource_constraint_residual(k[49], k[50], c[50], x[50])
-        assert abs(res_T) < 1e-6, f"Resource constraint violated at T for {mode}: {res_T}"
+        assert (
+            abs(res_T) < 1e-6
+        ), f"Resource constraint violated at T for {mode}: {res_T}"
 
         # Capital does not have a 0.5 jump at t=T
         step = abs(k[50] - k[49])
@@ -245,7 +250,9 @@ def test_continuation_constant_growth_endogenous():
     x_g = traj_geom["x"].values
 
     res_T_g = resource_constraint_residual(k_g[49], k_g[50], c_g[50], x_g[50])
-    assert abs(res_T_g) < 1e-6, f"Resource constraint violated at T (geometric): {res_T_g}"
+    assert (
+        abs(res_T_g) < 1e-6
+    ), f"Resource constraint violated at T (geometric): {res_T_g}"
     assert abs(k_g[50] - k_g[49]) < 0.01, "Expected smooth arrival at T"
 
     # Linear growth
@@ -285,7 +292,9 @@ def test_continuation_constant_growth_explicit_rate():
     c = traj_g["c"].values
     x = traj_g["x"].values
     res_T = resource_constraint_residual(k[49], k[50], c[50], x[50])
-    assert abs(res_T) < 1e-6, f"Resource constraint violated with growth_rate=0.001: {res_T}"
+    assert (
+        abs(res_T) < 1e-6
+    ), f"Resource constraint violated with growth_rate=0.001: {res_T}"
 
     # Dict of growth rates
     traj_dict = deterministic_solve(
@@ -320,5 +329,6 @@ def test_constant_growth_jacobian_accuracy():
             J_numeric[:, i] = (r_plus - r0) / eps
 
         max_err = np.max(np.abs(J_analytic - J_numeric))
-        assert max_err < 1e-5, f"Jacobian mismatch for growth_type={g_type}: max diff = {max_err}"
-
+        assert (
+            max_err < 1e-5
+        ), f"Jacobian mismatch for growth_type={g_type}: max diff = {max_err}"

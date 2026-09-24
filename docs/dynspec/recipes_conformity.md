@@ -9,6 +9,7 @@ DynSpec introduces **Model Recipes** (`dyno.dynspec.recipe`): formal, programmat
 ## 1. What is a Recipe?
 
 A **`Recipe`** defines:
+
 1. **Variable Groups**: Valid classifications for variables (e.g. `exogenous`, `states`, `controls`, `auxiliaries`, `parameters`).
 2. **Equation Groups**: Named blocks of equations with strict rules on:
    - Which variable groups may appear and at what time shifts (`allowed`).
@@ -89,6 +90,7 @@ else:
 ### Violation Reporting
 
 When equations violate recipe constraints, `ConformityResult` provides detailed diagnostics:
+
 - Which equation violated the rule.
 - Offending variable and its timing shift (e.g. `k[t-1]`).
 - Explanation of why that variable is prohibited in the given equation group.
@@ -100,6 +102,7 @@ When equations violate recipe constraints, `ConformityResult` provides detailed 
 For recursive blocks (such as `definitions` and `transition`), equations must be evaluated in a valid causal sequence without circular dependencies.
 
 DynSpec implements **Kahn's topological sort algorithm** in `check_dag()`:
+
 1. Builds an adjacency graph where edges represent RHS variable dependencies.
 2. Identifies variables with in-degree 0 (no uncomputed dependencies).
 3. Traverses the graph to produce a deterministic, ordered list of equations.

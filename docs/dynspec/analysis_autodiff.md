@@ -28,8 +28,10 @@ print("Evaluated value:", result)  # 10.0^0.33 â‰ˆ 2.138
 
 - **Steady-State Evaluation (`steady_state=True`)**:
   All time shifts are ignored; $y[t-1]$, $y[t]$, and $y[t+1]$ all evaluate to the same steady-state scalar $\bar{y}$.
+
 - **Dynamic Evaluation (`steady_state=False`)**:
   Variables are resolved with full time index sensitivity using dated contexts.
+
 - **Fail-Fast NaN Diagnostics (`raise_on_nan=True`)**:
   Rather than allowing `NaN` to propagate silently across the entire model, DynSpec raises a `DefinitionError` immediately at the exact subtree where the invalid calculation occurs:
   ```python
@@ -48,6 +50,7 @@ DynSpec solves this using **dual numbers** implemented in `dyno.dynspec.autodiff
 ### The `DNumber` Data Structure
 
 A `DNumber` consists of two components:
+
 - `value` (`float` or `ndarray`): The primal scalar or array evaluation.
 - `derivatives` (`dict[str, float]`): A sparse dictionary mapping active variable identifiers (e.g., `'k[t-1]'`, `'c[t]'`, `'c[t+1]'`) to their partial derivatives.
 
@@ -67,6 +70,7 @@ print("Derivative dy/dk:", y.derivatives["k[t-1]"])  # 0.33 * 10.0^(0.33 - 1) â‰
 ### Supported Operations
 
 `DNumber` overloads all basic and transcendental operators:
+
 - **Arithmetic**: `+`, `-`, `*`, `/`, `**`
 - **Elementary Functions**: `exp`, `log`, `sqrt`, `abs`, `sin`, `cos`, `tan`
 - **Broadcasting**: Operates seamlessly with NumPy arrays and scalars.
