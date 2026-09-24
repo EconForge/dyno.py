@@ -53,7 +53,13 @@ nav:
   - Model Specification:
       - Language Syntax: model_specification/syntax.md
       - Blocks & Metadata: model_specification/metadata_blocks.md
-      - Architecture: model_specification/architecture.md
+  - DynSpec Engine:
+      - Overview & Architecture: dynspec/index.md
+      - Grammar & AST: dynspec/grammar_ast.md
+      - Evaluation & AutoDiff: dynspec/analysis_autodiff.md
+      - Recipes & Validation: dynspec/recipes_conformity.md
+      - Function Compilation: dynspec/funcgen_compilation.md
+      - LaTeX Export: dynspec/latex_export.md
   - Solvers & Theory:
       - Steady State: solvers/steady_state.md
       - First-Order Perturbation: solvers/perturbation.md
@@ -72,4 +78,5 @@ nav:
       - Solvers: api/solver.md
       - Simulation: api/simul.md
       - Reports: api/report.md
+      - DynSpec: api/dynspec.md
       - Errors: api/errors.md

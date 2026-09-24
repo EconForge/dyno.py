@@ -25,6 +25,14 @@ nav = [
       "model_specification/metadata_blocks.md",
       "model_specification/architecture.md",
   ]},
+  { "DynSpec Engine" = [
+      "dynspec/index.md",
+      "dynspec/grammar_ast.md",
+      "dynspec/analysis_autodiff.md",
+      "dynspec/recipes_conformity.md",
+      "dynspec/funcgen_compilation.md",
+      "dynspec/latex_export.md",
+  ]},
   { "Solvers & Theory" = [
       "solvers/steady_state.md",
       "solvers/perturbation.md",
@@ -46,6 +54,7 @@ nav = [
       "api/solver.md",
       "api/simul.md",
       "api/report.md",
+      "api/dynspec.md",
       "api/errors.md",
   ]},
 ]
