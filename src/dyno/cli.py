@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from dyno.dynare_model import DynareModel
+from dyno.dynare import DynareModel
 from dyno.report import RunResults
 
 

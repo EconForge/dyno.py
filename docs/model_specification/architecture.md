@@ -146,3 +146,33 @@ assert model.context["constants"]["beta"] != 0.985  # Original untouched
 ```python
 model_copy = model.copy()
 ```
+
+---
+
+## Package Organization & Incubated Subpackages
+
+The Dyno repository is architected as an umbrella workspace incubating specialized subsystems designed to eventually become independent, standalone packages:
+
+```text
+dyno/
+├── dynspec/          # Universal specification, parsing, recipes, and autodiff
+├── dynare/           # New version of Dynare in Python (DynareModel & preprocessor bridge)
+├── solvers/          # Numerical steady-state, perturbation, and deterministic solvers
+├── simul/            # Stochastic simulation, Monte Carlo, and IRF engines
+└── report/           # Automated execution pipelines, MIME diagnostics, and rich display
+```
+
+### The Incubation Model
+
+1. **`dyno.dynspec` (Future Specification Engine)**:
+   - Contains the language grammar, AST transformation rules (`TimeFixer`), forward-mode automatic differentiation (`DNumber`), and model recipes (`DTCC_RECIPE`).
+   - Completely solver-agnostic, designed to be extracted into a standalone package for general economic modeling frameworks.
+   - See the [DynSpec Documentation](../dynspec/index.md).
+
+2. **`dyno.dynare` (Future Dynare in Python Package)**:
+   - Contains the new Python implementation of Dynare, currently featuring [`DynareModel`](../dynare/index.md) and bridges to the official C++ preprocessor.
+   - Maintained with clean boundary isolation so it can be spun off into an autonomous `dynare` package.
+   - See the [Dynare Subpackage Documentation](../dynare/index.md).
+
+3. **`dyno` (Core Orchestrator)**:
+   - The user-facing DSGE library integrating specification, solution algorithms, simulations, interactive JupyterLab dashboards, and publication-ready reporting into a cohesive workflow.

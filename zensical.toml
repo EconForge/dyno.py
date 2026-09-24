@@ -33,6 +33,9 @@ nav = [
       "dynspec/funcgen_compilation.md",
       "dynspec/latex_export.md",
   ]},
+  { "Dynare in Python" = [
+      "dynare/index.md",
+  ]},
   { "Solvers & Theory" = [
       "solvers/steady_state.md",
       "solvers/perturbation.md",

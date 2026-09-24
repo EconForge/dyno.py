@@ -102,6 +102,8 @@ To get the most out of Dyno, explore the guided sections:
 |---|---|
 | [**Getting Started**](getting_started/installation.md) | Pixi installation, environment configuration, and quickstarts for `.dyno` and Dynare `.mod` files. |
 | [**Model Specification**](model_specification/syntax.md) | Syntax reference (`<-`, `=`, `[t]`, `[~]`, `forall`), equation blocks, metadata, and YAML wrappers. |
+| [**DynSpec Engine**](dynspec/index.md) | Universal AST parsing, forward-mode automatic differentiation, recipes, and compilation. |
+| [**Dynare in Python**](dynare/index.md) | The incubated next-generation Python implementation of Dynare (`dyno.dynare`). |
 | [**Dyno Lab (GUI)**](dyno_lab/index.md) | Interactive JupyterLab extension for live model editing, automatic re-solving, and Plotly visualization. |
 | [**Solvers & Theory**](solvers/steady_state.md) | Steady-state solvers, first-order perturbation (QZ / Time Iteration), and deterministic stacked-time Newton solver. |
 | [**Analysis & Simulation**](analysis/irfs.md) | IRFs, conditional/unconditional variance-covariance moments, stochastic simulations, and automated reporting. |

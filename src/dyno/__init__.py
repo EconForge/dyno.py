@@ -7,9 +7,10 @@ from .solver import *
 from .simul import *
 
 from .dyno_model import DynoModel
-from .dynare_model import DynareModel
+from . import dynare
+from .dynare import DynareModel
 from .report import DynoRunResults, DynareRunResults, Report, RunResults
-from .cli import dynare
+from .cli import dynare as dynare_cli
 
 
 def examples_path(*parts: str) -> Path:

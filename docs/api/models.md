@@ -14,7 +14,7 @@
 
 ---
 
-::: dyno.dynare_model.DynareModel
+::: dyno.dynare.model.DynareModel
     options:
       docstring_style: numpy
       heading_level: 2

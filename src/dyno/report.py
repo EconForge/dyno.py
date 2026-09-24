@@ -1212,7 +1212,7 @@ def _create_model(
             or "dynare"
         )
         if preprocessor == "dynare":
-            from dyno.dynare_model import DynareModel
+            from dyno.dynare import DynareModel
 
             return DynareModel(filename=filename, txt=txt)
         else:

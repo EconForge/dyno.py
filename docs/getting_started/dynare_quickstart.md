@@ -149,12 +149,12 @@ solution_alt.plot().show()
 
 ---
 
-## Using `DynareModel` (Dynare Preprocessor)
+## Using `DynareModel` (`dyno.dynare`)
 
-If your model uses advanced Dynare preprocessing features (such as intricate macro-processor loops, external steady-state functions, or complex block structures), use `DynareModel`:
+If your model uses advanced Dynare preprocessing features (such as intricate macro-processor loops, external steady-state functions, or complex block structures), use `DynareModel` from the **`dyno.dynare`** subpackage:
 
 ```python
-from dyno import DynareModel
+from dyno.dynare import DynareModel
 
 # Uses dynare-preprocessor-pylib under the hood
 model_official = DynareModel("examples/modfiles/RBC.mod")
@@ -169,3 +169,5 @@ fig.show()
 > ```bash
 > pixi run -e dev-dynare python my_script.py
 > ```
+> 
+> For an in-depth guide on the Python Dynare package roadmap and architecture, see [Dynare in Python (`dyno.dynare`)](../dynare/index.md).
