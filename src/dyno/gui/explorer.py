@@ -122,7 +122,9 @@ def model_representation_gui(directory: str | Path = "examples"):
     @solara.component
     def Controls(path: Path):
         with solara.Column(gap="8px"):
-            solara.Select(label="Content", value=content_type, values=list(CONTENT_TYPES))
+            solara.Select(
+                label="Content", value=content_type, values=list(CONTENT_TYPES)
+            )
 
             solara.Text("Frontends to show")
             with solara.Row(gap="12px"):
@@ -135,7 +137,9 @@ def model_representation_gui(directory: str | Path = "examples"):
                             formats.add(fmt)
                         else:
                             formats.discard(fmt)
-                        selected_formats.value = [f for f in OUTPUT_FORMATS if f in formats]
+                        selected_formats.value = [
+                            f for f in OUTPUT_FORMATS if f in formats
+                        ]
 
                     solara.Checkbox(label=fmt, value=checked, on_value=toggle_format)
 
@@ -155,7 +159,9 @@ def model_representation_gui(directory: str | Path = "examples"):
                         backends.discard(backend)
                     selected_backends.value = sorted(backends)
 
-                solara.Checkbox(label=backend, value=backend_checked, on_value=toggle_backend)
+                solara.Checkbox(
+                    label=backend, value=backend_checked, on_value=toggle_backend
+                )
 
     @solara.component
     def SourcePanel(error_lines: set[int]):
@@ -167,7 +173,7 @@ def model_representation_gui(directory: str | Path = "examples"):
                 return str(i)
             return (
                 '<span style="display:inline-block; width:100%; '
-                'background:#fecaca; color:#7f1d1d; font-weight:700; '
+                "background:#fecaca; color:#7f1d1d; font-weight:700; "
                 'border-radius:3px;">'
                 f"{i}</span>"
             )
@@ -256,7 +262,9 @@ def model_representation_gui(directory: str | Path = "examples"):
                 with solara.Column(style="flex:0 0 auto;"):
                     Controls(path)
                     solara.Markdown("---")
-                with solara.Column(style="flex:1 1 auto; min-height:0; overflow-y:auto;"):
+                with solara.Column(
+                    style="flex:1 1 auto; min-height:0; overflow-y:auto;"
+                ):
                     ModelList()
 
         solara.Markdown(f"## {path}")
@@ -268,9 +276,13 @@ def model_representation_gui(directory: str | Path = "examples"):
         ]
         panel_count = (1 if show_source.value else 0) + len(active_variants)
         if panel_count == 0:
-            solara.Warning(label="Select at least one import option, or show the source, in the sidebar.")
+            solara.Warning(
+                label="Select at least one import option, or show the source, in the sidebar."
+            )
         elif not selected_formats.value and active_variants:
-            solara.Warning(label="Select at least one frontend to show, in the sidebar.")
+            solara.Warning(
+                label="Select at least one frontend to show, in the sidebar."
+            )
         else:
             formats = [fmt for fmt in OUTPUT_FORMATS if fmt in selected_formats.value]
             variant_results = {

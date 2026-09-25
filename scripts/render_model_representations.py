@@ -69,7 +69,8 @@ def _render_model_section(path: Path, index: int) -> tuple[str, bool]:
     model_id = f"model-{index}"
     hidden = "" if index == 0 else " hidden"
     source = _source_to_html(path.read_text())
-    return f"""
+    return (
+        f"""
 <article class="model" id="{model_id}"{hidden}>
   <h2>{html.escape(str(path))}</h2>
     <div class="panels">
@@ -80,7 +81,9 @@ def _render_model_section(path: Path, index: int) -> tuple[str, bool]:
         {"".join(sections).replace('<section class="backend">', '<section class="panel backend">').replace('<section class="backend error">', '<section class="panel backend error">')}
     </div>
 </article>
-""", has_error
+""",
+        has_error,
+    )
 
 
 def _error_section(path: Path, error: Exception, backend: str | None = None) -> str:
@@ -213,7 +216,9 @@ def main() -> None:
     paths = discover_models(args.paths)
     if not paths:
         parser.error("no .mod or .dyno files found")
-    print(f"Model representations report written to {render_report(paths, args.output)}")
+    print(
+        f"Model representations report written to {render_report(paths, args.output)}"
+    )
 
 
 if __name__ == "__main__":

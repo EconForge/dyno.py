@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 
 _ANSI_FRAGMENT_FORMAT = (
-    '<pre style="font-family:Menlo,\'DejaVu Sans Mono\',consolas,\'Courier New\',monospace">'
+    "<pre style=\"font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">"
     '<code style="font-family:inherit">{code}</code></pre>'
 )
 _MARKDOWN_FRAGMENT_FORMAT = '<div class="markdown-render">{code}</div>'

@@ -110,9 +110,13 @@ def _render_directive(md: Any, name: str, title_arg: str, content: str) -> str:
         )
         return f'<div style="{box_style}">{title_html}{body_html}</div>'
 
-    plain_style = "border:1px solid #e2e8f0; padding:0.5em 1em; margin:1em 0; border-radius:4px;"
+    plain_style = (
+        "border:1px solid #e2e8f0; padding:0.5em 1em; margin:1em 0; border-radius:4px;"
+    )
     if name == "dropdown":
-        return _details_html(title=title_arg or "Details", body_html=body_html, style=plain_style)
+        return _details_html(
+            title=title_arg or "Details", body_html=body_html, style=plain_style
+        )
     if name == "tab-item":
         return _details_html(
             title=title_arg or "Tab", body_html=body_html, style=plain_style, open=True
@@ -152,12 +156,16 @@ def render_markdown_myst(markdown_text: str) -> str:
 
     default_fence_rule = md.renderer.rules["fence"]  # type: ignore[attr-defined]
 
-    def render_colon_fence(self: Any, tokens: Any, idx: Any, options: Any, env: Any) -> str:
+    def render_colon_fence(
+        self: Any, tokens: Any, idx: Any, options: Any, env: Any
+    ) -> str:
         token = tokens[idx]
         match = _DIRECTIVE_INFO_RE.match(token.info.strip())
         if match is None:
             return f"<pre><code>{html.escape(token.content)}</code></pre>\n"
-        return _render_directive(md, match.group(1), match.group(2).strip(), token.content)
+        return _render_directive(
+            md, match.group(1), match.group(2).strip(), token.content
+        )
 
     def render_fence(self: Any, tokens: Any, idx: Any, options: Any, env: Any) -> str:
         token = tokens[idx]
@@ -256,11 +264,13 @@ def _render_results(results: Any, format: OutputFormat) -> tuple[RenderKind, str
         return "html", ansi_to_html(str(results))
     if format == "html":
         rendered_html = results._repr_html_()
-        return "html", rendered_html if rendered_html is not None else ansi_to_html(
-            str(results)
+        return "html", (
+            rendered_html if rendered_html is not None else ansi_to_html(str(results))
         )
     markdown_text = results._repr_markdown_()
-    return "myst", render_markdown_myst(markdown_text if markdown_text else str(results))
+    return "myst", render_markdown_myst(
+        markdown_text if markdown_text else str(results)
+    )
 
 
 def render_report(model: Any, format: OutputFormat) -> tuple[RenderKind, str]:
@@ -345,4 +355,6 @@ def render_variant(
     `content` is an HTML fragment describing the error, and `error_line` is
     the offending source line when one could be determined.
     """
-    return render_variant_multi(path, source_text, variant, content_type, [format])[format]
+    return render_variant_multi(path, source_text, variant, content_type, [format])[
+        format
+    ]
