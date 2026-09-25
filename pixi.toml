@@ -18,6 +18,8 @@ dyno = { path = "." , editable = true}
 python = ">=3.10,<3.14"
 rich = ">=14.3.2,<15"
 interegular = ">=0.3.3,<0.4"
+markdown-it-py = ">=3.0.0,<5"
+mdit-py-plugins = ">=0.4.0,<1"
 sympy = ">=1.14.0,<2"
 altair = ">=6.0.0,<7"
 tempita = ">=0.6.0,<0.7"
@@ -34,7 +36,7 @@ lark = ">=1.3.1,<2"
 pyyaml = ">=6.0,<7"
 
 [feature.dynare.target.linux.dependencies]
-dynare-preprocessor-pylib = "0.0.1.dev0"
+dynare-preprocessor-pylib = "0.0.1.dev0.*"
 
 [feature.dynare-task.tasks]
 dynare = "python -c \"from dyno.cli import dynare_cmd; dynare_cmd()\""
@@ -74,6 +76,7 @@ pytest-cov = ">=7.0.0,<8"
 test = "pytest --ignore=tests/dynare"
 test-all = "pytest"
 test-dynare = "pytest tests/dynare"
+render-representations = "python scripts/render_model_representations.py examples"
 durations = "pytest --ignore=tests/dynare --durations=0 -vv"
 cov = "pytest --ignore=tests/dynare --cov=./ --cov-report=xml"
 
@@ -100,6 +103,7 @@ anywidget = ">=0.9.21,<0.10"
 
 [feature.gui.tasks]
 solara = "solara run examples/rbc_gui.py"
+explorer = "solara run scripts/model_representation.py"
 
 [feature.jupyter.dependencies]
 jupyterlab = ">=4.5.4,<5"
@@ -111,6 +115,15 @@ notebook = ">=7.5.3,<8"
 notebook = "ipython kernel install --name $PIXI_ENVIRONMENT_NAME --user && jupyter notebook"
 jlab = "ipython kernel install --name $PIXI_ENVIRONMENT_NAME --user && jupyter lab"
 ipython = "ipython"
+
+[feature.specta.dependencies]
+jupyterlite = ">=0.8.4,<0.9"
+jupyterlite-pyodide-kernel = ">=0.8.6,<0.9"
+specta = ">=0.5.2,<0.6"
+
+[feature.specta.tasks]
+lite-build = "jupyter lite build --contents notebooks --output-dir _output"
+lite-serve = "python -m http.server 8000 --directory _output"
 
 [feature.docs.dependencies]
 mkdocs = ">=1.6.1,<2"
@@ -144,10 +157,10 @@ jax = "*"
 [environments]
 test = ["test"]
 prod = ["jupyter"]
-solara = ["gui"]
-dev = ["test", "lint", "jupyter", "docs"]
+dev = ["test", "lint", "jupyter", "docs", "specta"]
 dynare = ["dynare", "dynare-task"]
-dev-dynare = ["test", "lint", "jupyter", "docs", "dynare"]
+solara = ["gui", "dynare"]
+dev-dynare = ["test", "lint", "jupyter", "docs", "dynare", "specta"]
 dev-experimental = ["test", "lint", "jupyter", "docs", "experimental", "dev-experimental"]
 py312 = ["test", "lint", "py312"]
 py313 = ["test", "lint", "py313"]

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "model-explorer",
+      "runtimeExecutable": "pixi",
+      "runtimeArgs": ["run", "-e", "solara", "explorer"],
+      "port": 8765
+    }
+  ]
+}
