@@ -1,0 +1,3331 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A modern Python framework for DSGE and macroeconomic modeling">
+      
+      
+        <meta name="author" content="EconForge & Pablo Winant">
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.52">
+    
+    
+      
+        <title>Dyno UX Audit Report: Misspecified & Incomplete Models Catalog - Dyno 🦖</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.8b3b5a67.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dyno-ux-audit-report-misspecified-incomplete-models-catalog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Dyno 🦖" class="md-header__button md-logo" aria-label="Dyno 🦖" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Dyno 🦖
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Dyno UX Audit Report: Misspecified &amp; Incomplete Models Catalog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting_started/installation/" class="md-tabs__link">
+          
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../model_specification/syntax/" class="md-tabs__link">
+          
+  
+  Model Specification
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../solvers/steady_state/" class="md-tabs__link">
+          
+  
+  Solvers & Theory
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../irfs/" class="md-tabs__link">
+          
+  
+  Analysis & Simulation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../subpackages/" class="md-tabs__link">
+          
+  
+  Subpackages & Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../dyno_lab/" class="md-tabs__link">
+          
+  
+  Dyno Lab (GUI)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tutorials/rbc_model/" class="md-tabs__link">
+          
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/models/" class="md-tabs__link">
+          
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Dyno 🦖" class="md-nav__button md-logo" aria-label="Dyno 🦖" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    Dyno 🦖
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting Started
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Getting Started
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Installation &amp; Setup
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/dyno_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Quickstart: Writing a Dyno Model
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/dynare_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Quickstart: Solving Dynare Models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Model Specification
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Model Specification
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../model_specification/syntax/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Language Syntax &amp; Semantics
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../model_specification/metadata_blocks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Blocks, Metadata &amp; YAML Wrappers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../model_specification/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Model Architecture &amp; Data Structures
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Solvers & Theory
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Solvers & Theory
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solvers/steady_state/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Steady State Computation &amp; Verification
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solvers/perturbation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  First-Order Perturbation &amp; Stochastic Solvers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solvers/deterministic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Deterministic &amp; Perfect Foresight Solvers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Analysis & Simulation
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Analysis & Simulation
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../irfs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Impulse Response Functions (IRFs)
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../moments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Asymptotic Moments &amp; Covariance Analysis
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../simulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stochastic &amp; Deterministic Simulation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Automated Pipelines &amp; Reports
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../subpackages/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Subpackages & Roadmap
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Subpackages & Roadmap
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../dynspec/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  DynSpec (Specification Engine)
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  DynSpec (Specification Engine)
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dynspec/grammar_ast/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Grammar, Parsing &amp; Abstract Syntax Trees
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dynspec/analysis_autodiff/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Evaluation &amp; Automatic Differentiation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dynspec/recipes_conformity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Model Recipes &amp; Conformity Checking
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dynspec/funcgen_compilation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Function Generation &amp; Compilation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dynspec/latex_export/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  LaTeX Rendering &amp; Export
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../dynare/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Dynare in Python
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Dynare in Python
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../dyno_lab/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Dyno Lab (GUI)
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Dyno Lab (GUI)
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dyno_lab/interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The Dyno Lab Interface &amp; Reactive Workspace
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dyno_lab/options_and_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Dyno Lab Options &amp; Settings
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tutorials
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Tutorials
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/rbc_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tutorial: The Real Business Cycle (RBC) Model
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/transition_dynamics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tutorial: Deterministic Transition Dynamics &amp; Policy Experiments
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/interactive_gui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tutorial: Interactive Modeling with Dyno Lab
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  API Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API Reference: Models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/solver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API Reference: Solvers &amp; Solutions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/simul/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API Reference: Simulation &amp; IRFs
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API Reference: Reports &amp; Results
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dynspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API Reference: DynSpec Engine
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  API Reference: Errors &amp; Exceptions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary-by-case" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary by Case
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#detailed-diagnostic-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Detailed Diagnostic Profiles
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Detailed Diagnostic Profiles">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#syn-001-top-level-equality-used-instead-of-assignment-operator" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYN-001] Top-level equality used instead of assignment operator
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syn-002-parentheses-used-for-time-indexing-instead-of-brackets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYN-002] Parentheses used for time indexing instead of brackets
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syn-003-trailing-semicolon-from-matlabdynare-convention" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYN-003] Trailing semicolon from MATLAB/Dynare convention
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syn-004-dynare-variable-declaration-block-in-dyno-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYN-004] Dynare variable declaration block in .dyno file
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syn-005-dynare-implicit-lag-notation-k-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYN-005] Dynare implicit lag notation k(-1)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syn-006-double-equals-comparison-operator-in-equation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYN-006] Double equals comparison operator in equation
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syn-007-reversed-assignment-arrow-" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYN-007] Reversed assignment arrow -&gt;
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syn-008-unsupported-mathematical-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYN-008] Unsupported mathematical function
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sym-001-typo-in-parameter-name-in-equation-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYM-001] Typo in parameter name in equation definition
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sym-002-variable-in-equation-without-time-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYM-002] Variable in equation without time index
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sym-003-out-of-order-parameter-calibration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYM-003] Out-of-order parameter calibration
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sym-004-circular-parameter-calibration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYM-004] Circular parameter calibration
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sym-005-parameter-self-reference-without-initial-calibration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYM-005] Parameter self-reference without initial calibration
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sym-006-typo-in-variable-name-creating-phantom-variable" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYM-006] Typo in variable name creating phantom variable
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ss-001-missing-steady-state-declaration-for-endogenous-variable" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SS-001] Missing steady-state declaration for endogenous variable
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ss-002-typo-in-steady-state-declaration-name-k_ss" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SS-002] Typo in steady-state declaration name k_ss
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ss-003-inconsistent-steady-state-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SS-003] Inconsistent steady-state value
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ss-004-steady-state-declaration-causes-division-by-zero" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SS-004] Steady-state declaration causes division by zero
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ss-005-steady-state-evaluation-causes-negative-log-domain-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SS-005] Steady-state evaluation causes negative log domain error
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ss-006-forward-reference-across-steady-state-declarations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SS-006] Forward reference across steady-state declarations
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shk-001-shock-variable-in-equations-without-distribution-declaration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SHK-001] Shock variable in equations without distribution declaration
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shk-002-shock-distribution-too-many-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SHK-002] Shock distribution too many arguments
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shk-003-shock-assigned-as-parameter-without-t" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SHK-003] Shock assigned as parameter without [t]
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shk-004-shock-distribution-function-name-typo-normal" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SHK-004] Shock distribution function name typo Normal()
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sys-001-underdetermined-model-fewer-equations-than-endogenous-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYS-001] Underdetermined model (fewer equations than endogenous variables)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sys-002-overdetermined-model-more-equations-than-endogenous-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYS-002] Overdetermined model (more equations than endogenous variables)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sys-003-higher-order-lag-kt-2-without-auxiliary-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYS-003] Higher-order lag k[t-2] without auxiliary state
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sys-004-higher-order-lead-ct2-without-auxiliary-variable" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYS-004] Higher-order lead c[t+2] without auxiliary variable
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sys-005-empty-model-file-comments-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SYS-005] Empty model file (comments only)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sol-001-blanchard-kahn-condition-violation-explosive-root-with-backward-variable" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SOL-001] Blanchard-Kahn condition violation (explosive root with backward variable)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sol-002-singular-jacobian-due-to-collinear-equations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        [SOL-002] Singular Jacobian due to collinear equations
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="dyno-ux-audit-report-misspecified-incomplete-models-catalog">Dyno UX Audit Report: Misspecified &amp; Incomplete Models Catalog<a class="headerlink" href="#dyno-ux-audit-report-misspecified-incomplete-models-catalog" title="Permanent link">&para;</a></h1>
+<p>Total catalog cases: <strong>31</strong></p>
+<h2 id="summary-by-case">Summary by Case<a class="headerlink" href="#summary-by-case" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Category</th>
+<th>Title</th>
+<th>Stage</th>
+<th>Raised Error</th>
+<th>Warnings</th>
+<th>Ideal Diagnostic</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SYN-001</strong></td>
+<td><code>syntax</code></td>
+<td>Top-level equality used instead of assignment operator</td>
+<td><code>import</code></td>
+<td><em>None</em></td>
+<td>2 warning(s)</td>
+<td>Top-level equality detected for 'alpha = 0.35'. In Dyno, '='...</td>
+</tr>
+<tr>
+<td><strong>SYN-002</strong></td>
+<td><code>syntax</code></td>
+<td>Parentheses used for time indexing instead of brackets</td>
+<td><code>import</code></td>
+<td><code>ValueError</code></td>
+<td>1 warning(s)</td>
+<td>Syntax error: 'k(t)' looks like a time index or lag. Time in...</td>
+</tr>
+<tr>
+<td><strong>SYN-003</strong></td>
+<td><code>syntax</code></td>
+<td>Trailing semicolon from MATLAB/Dynare convention</td>
+<td><code>import</code></td>
+<td><code>LARKParserError</code></td>
+<td><em>None</em></td>
+<td>Semicolons are not required or permitted as statement termin...</td>
+</tr>
+<tr>
+<td><strong>SYN-004</strong></td>
+<td><code>syntax</code></td>
+<td>Dynare variable declaration block in .dyno file</td>
+<td><code>import</code></td>
+<td><code>LARKParserError</code></td>
+<td><em>None</em></td>
+<td>Dyno does not require variable declarations. Variables are i...</td>
+</tr>
+<tr>
+<td><strong>SYN-005</strong></td>
+<td><code>syntax</code></td>
+<td>Dynare implicit lag notation k(-1)</td>
+<td><code>import</code></td>
+<td><code>ValueError</code></td>
+<td><em>None</em></td>
+<td>Dynare notation 'k(-1)' is not recognized in .dyno files. Us...</td>
+</tr>
+<tr>
+<td><strong>SYN-006</strong></td>
+<td><code>syntax</code></td>
+<td>Double equals comparison operator in equation</td>
+<td><code>import</code></td>
+<td><code>LARKParserError</code></td>
+<td><em>None</em></td>
+<td>Dynamic equations in Dyno use a single '=' operator (e.g. 'l...</td>
+</tr>
+<tr>
+<td><strong>SYN-007</strong></td>
+<td><code>syntax</code></td>
+<td>Reversed assignment arrow -&gt;</td>
+<td><code>import</code></td>
+<td><code>LARKParserError</code></td>
+<td><em>None</em></td>
+<td>Assignment in Dyno must be leftward: 'alpha &lt;- 0.35' or 'alp...</td>
+</tr>
+<tr>
+<td><strong>SYN-008</strong></td>
+<td><code>syntax</code></td>
+<td>Unsupported mathematical function</td>
+<td><code>import</code></td>
+<td><code>ValueError</code></td>
+<td><em>None</em></td>
+<td>Function 'sigmoid' is not recognized. Supported functions in...</td>
+</tr>
+<tr>
+<td><strong>SYM-001</strong></td>
+<td><code>symbol_resolution</code></td>
+<td>Typo in parameter name in equation definition</td>
+<td><code>import</code></td>
+<td><em>None</em></td>
+<td>2 warning(s)</td>
+<td>Parameter 'alhpa' used in equation is never defined. Did you...</td>
+</tr>
+<tr>
+<td><strong>SYM-002</strong></td>
+<td><code>symbol_resolution</code></td>
+<td>Variable in equation without time index</td>
+<td><code>import</code></td>
+<td><em>None</em></td>
+<td>2 warning(s)</td>
+<td>Symbol 'c' appears in equation without a time index [t], but...</td>
+</tr>
+<tr>
+<td><strong>SYM-003</strong></td>
+<td><code>symbol_resolution</code></td>
+<td>Out-of-order parameter calibration</td>
+<td><code>import</code></td>
+<td><em>None</em></td>
+<td>2 warning(s)</td>
+<td>Parameter 'b' was referenced on line 2 before its assignment...</td>
+</tr>
+<tr>
+<td><strong>SYM-004</strong></td>
+<td><code>symbol_resolution</code></td>
+<td>Circular parameter calibration</td>
+<td><code>import</code></td>
+<td><em>None</em></td>
+<td>2 warning(s)</td>
+<td>Circular dependency detected in parameter calibration betwee...</td>
+</tr>
+<tr>
+<td><strong>SYM-005</strong></td>
+<td><code>symbol_resolution</code></td>
+<td>Parameter self-reference without initial calibration</td>
+<td><code>import</code></td>
+<td><em>None</em></td>
+<td>2 warning(s)</td>
+<td>Parameter 'a' references itself before having an established...</td>
+</tr>
+<tr>
+<td><strong>SYM-006</strong></td>
+<td><code>symbol_resolution</code></td>
+<td>Typo in variable name creating phantom variable</td>
+<td><code>check</code></td>
+<td><code>UndefinedSymbolError</code></td>
+<td><em>None</em></td>
+<td>Variable 'k_cap[t]' appears in equations but has no steady s...</td>
+</tr>
+<tr>
+<td><strong>SS-001</strong></td>
+<td><code>steady_state</code></td>
+<td>Missing steady-state declaration for endogenous variable</td>
+<td><code>check</code></td>
+<td><code>UndefinedSymbolError</code></td>
+<td><em>None</em></td>
+<td>Variable 'k' has no steady-state declaration. Provide 'k[~] ...</td>
+</tr>
+<tr>
+<td><strong>SS-002</strong></td>
+<td><code>steady_state</code></td>
+<td>Typo in steady-state declaration name k_ss</td>
+<td><code>check</code></td>
+<td><code>UndefinedSymbolError</code></td>
+<td><em>None</em></td>
+<td>Unused parameter 'k_ss' detected. Did you mean to declare th...</td>
+</tr>
+<tr>
+<td><strong>SS-003</strong></td>
+<td><code>steady_state</code></td>
+<td>Inconsistent steady-state value</td>
+<td><code>check</code></td>
+<td><code>SteadyStateError</code></td>
+<td><em>None</em></td>
+<td>Equation 1 has non-zero steady-state residual (residual = -6...</td>
+</tr>
+<tr>
+<td><strong>SS-004</strong></td>
+<td><code>steady_state</code></td>
+<td>Steady-state declaration causes division by zero</td>
+<td><code>check</code></td>
+<td><code>ZeroDivisionError</code></td>
+<td><em>None</em></td>
+<td>Division by zero encountered in equation 1 when evaluated at...</td>
+</tr>
+<tr>
+<td><strong>SS-005</strong></td>
+<td><code>steady_state</code></td>
+<td>Steady-state evaluation causes negative log domain error</td>
+<td><code>check</code></td>
+<td><code>ValueError</code></td>
+<td><em>None</em></td>
+<td>Domain error: log(z[t]) evaluated with non-positive steady s...</td>
+</tr>
+<tr>
+<td><strong>SS-006</strong></td>
+<td><code>steady_state</code></td>
+<td>Forward reference across steady-state declarations</td>
+<td><code>check</code></td>
+<td><code>UndefinedSymbolError</code></td>
+<td><em>None</em></td>
+<td>Steady state 'y[~]' was referenced in 'k[~]' before 'y[~]' w...</td>
+</tr>
+<tr>
+<td><strong>SHK-001</strong></td>
+<td><code>shocks</code></td>
+<td>Shock variable in equations without distribution declaration</td>
+<td><code>solve</code></td>
+<td><code>UndefinedSymbolError</code></td>
+<td><em>None</em></td>
+<td>Variable 'e' appears to be an exogenous shock but has no dis...</td>
+</tr>
+<tr>
+<td><strong>SHK-002</strong></td>
+<td><code>shocks</code></td>
+<td>Shock distribution too many arguments</td>
+<td><code>import</code></td>
+<td><code>TypeError</code></td>
+<td><em>None</em></td>
+<td>N(...) requires 1 or 2 arguments: N(std) or N(mean, std). E....</td>
+</tr>
+<tr>
+<td><strong>SHK-003</strong></td>
+<td><code>shocks</code></td>
+<td>Shock assigned as parameter without [t]</td>
+<td><code>solve</code></td>
+<td><code>UndefinedSymbolError</code></td>
+<td><em>None</em></td>
+<td>Shock process assigned to constant 'e' rather than time seri...</td>
+</tr>
+<tr>
+<td><strong>SHK-004</strong></td>
+<td><code>shocks</code></td>
+<td>Shock distribution function name typo Normal()</td>
+<td><code>import</code></td>
+<td><code>ValueError</code></td>
+<td><em>None</em></td>
+<td>Distribution 'Normal' is not recognized. Use 'N(std)' or 'N(...</td>
+</tr>
+<tr>
+<td><strong>SYS-001</strong></td>
+<td><code>system_structure</code></td>
+<td>Underdetermined model (fewer equations than endogenous variables)</td>
+<td><code>solve</code></td>
+<td><code>SteadyStateError</code></td>
+<td><em>None</em></td>
+<td>Model is underdetermined: 1 equation provided for 2 endogeno...</td>
+</tr>
+<tr>
+<td><strong>SYS-002</strong></td>
+<td><code>system_structure</code></td>
+<td>Overdetermined model (more equations than endogenous variables)</td>
+<td><code>solve</code></td>
+<td><code>ValueError</code></td>
+<td><em>None</em></td>
+<td>Model is overdetermined: 2 equations provided for 1 endogeno...</td>
+</tr>
+<tr>
+<td><strong>SYS-003</strong></td>
+<td><code>system_structure</code></td>
+<td>Higher-order lag k[t-2] without auxiliary state</td>
+<td><code>import</code></td>
+<td><em>None</em></td>
+<td>1 warning(s)</td>
+<td>Higher-order lag 'k[t-2]' detected. Dyno first-order solvers...</td>
+</tr>
+<tr>
+<td><strong>SYS-004</strong></td>
+<td><code>system_structure</code></td>
+<td>Higher-order lead c[t+2] without auxiliary variable</td>
+<td><code>import</code></td>
+<td><em>None</em></td>
+<td>1 warning(s)</td>
+<td>Higher-order lead 'c[t+2]' detected. Dyno solvers support le...</td>
+</tr>
+<tr>
+<td><strong>SYS-005</strong></td>
+<td><code>system_structure</code></td>
+<td>Empty model file (comments only)</td>
+<td><code>import</code></td>
+<td><code>LARKParserError</code></td>
+<td><em>None</em></td>
+<td>Model description is empty. Provide at least one equation an...</td>
+</tr>
+<tr>
+<td><strong>SOL-001</strong></td>
+<td><code>solvability</code></td>
+<td>Blanchard-Kahn condition violation (explosive root with backward variable)</td>
+<td><code>solve</code></td>
+<td><code>BlanchardKahnError</code></td>
+<td><em>None</em></td>
+<td>Blanchard-Kahn condition failed: explosive eigenvalue 2.0 as...</td>
+</tr>
+<tr>
+<td><strong>SOL-002</strong></td>
+<td><code>solvability</code></td>
+<td>Singular Jacobian due to collinear equations</td>
+<td><code>solve</code></td>
+<td><code>ValueError</code></td>
+<td><em>None</em></td>
+<td>Jacobian matrix is singular. Equation 2 is a scalar multiple...</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="detailed-diagnostic-profiles">Detailed Diagnostic Profiles<a class="headerlink" href="#detailed-diagnostic-profiles" title="Permanent link">&para;</a></h2>
+<h3 id="syn-001-top-level-equality-used-instead-of-assignment-operator">[SYN-001] Top-level equality used instead of assignment operator<a class="headerlink" href="#syn-001-top-level-equality-used-instead-of-assignment-operator" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>syntax</code></li>
+<li><strong>User Intent:</strong> User intends to define parameter alpha = 0.35 using Python/Julia syntax.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>alpha = 0.35
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>k[t] = 0.9 * k[t-1]
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <em>None (Execution succeeded or silent NaN)</em></li>
+<li><strong>Warnings Emitted:</strong></li>
+<li><code>UndefinedSymbolWarning</code>: Undefined value: alpha at (2, 1). Defaulting to NaN.</li>
+<li><code>UndefinedSymbolWarning</code>: Undefined parameter(s) used in equation definitions: alpha. Defaulting to NaN.</li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Top-level equality detected for 'alpha = 0.35'. In Dyno, '=' defines dynamic equations. Did you mean 'alpha &lt;- 0.35'?</em></li>
+<li><strong>Suggested Fix:</strong> <code>alpha &lt;- 0.35</code></li>
+</ul>
+<h3 id="syn-002-parentheses-used-for-time-indexing-instead-of-brackets">[SYN-002] Parentheses used for time indexing instead of brackets<a class="headerlink" href="#syn-002-parentheses-used-for-time-indexing-instead-of-brackets" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>syntax</code></li>
+<li><strong>User Intent:</strong> User writes time subscript as c(t) instead of c[t].</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>alpha &lt;- 0.35
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>k(t) = 0.9 * k(t-1)
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>ValueError</code>: <code>Undefined function: k</code></li>
+<li><strong>Warnings Emitted:</strong></li>
+<li><code>UndefinedSymbolWarning</code>: Undefined value: t at (3, 16). Defaulting to NaN.</li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Syntax error: 'k(t)' looks like a time index or lag. Time indices in Dyno must use square brackets: 'k[t]'.</em></li>
+<li><strong>Suggested Fix:</strong> <code>k[t] = 0.9 * k[t-1]</code></li>
+</ul>
+<h3 id="syn-003-trailing-semicolon-from-matlabdynare-convention">[SYN-003] Trailing semicolon from MATLAB/Dynare convention<a class="headerlink" href="#syn-003-trailing-semicolon-from-matlabdynare-convention" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>syntax</code></li>
+<li><strong>User Intent:</strong> User ends parameter statement with semicolon.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>alpha &lt;- 0.35;
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>k[t] = 0.9 * k[t-1]
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>LARKParserError</code>: <code>Unexpected token</code>;<code>at (2, 14)</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Semicolons are not required or permitted as statement terminators in Dyno. Remove trailing ';'.</em></li>
+<li><strong>Suggested Fix:</strong> <code>alpha &lt;- 0.35</code></li>
+</ul>
+<h3 id="syn-004-dynare-variable-declaration-block-in-dyno-file">[SYN-004] Dynare variable declaration block in .dyno file<a class="headerlink" href="#syn-004-dynare-variable-declaration-block-in-dyno-file" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>syntax</code></li>
+<li><strong>User Intent:</strong> User attempts to declare variables using Dynare syntax.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>var k, c;
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>parameters alpha;
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>alpha &lt;- 0.35
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>k[t] = 0.9 * k[t-1]
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>LARKParserError</code>: <code>Unexpected token</code>k, c;<code>at (2, 5)</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Dyno does not require variable declarations. Variables are inferred automatically from time indices [t] and steady-state declarations [~].</em></li>
+<li><strong>Suggested Fix:</strong> <code>Remove 'var' and 'parameters' declarations.</code></li>
+</ul>
+<h3 id="syn-005-dynare-implicit-lag-notation-k-1">[SYN-005] Dynare implicit lag notation k(-1)<a class="headerlink" href="#syn-005-dynare-implicit-lag-notation-k-1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>syntax</code></li>
+<li><strong>User Intent:</strong> User references lagged variable without explicit 't'.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>alpha &lt;- 0.35
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>k[t] = 0.9 * k(-1)
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>ValueError</code>: <code>Undefined function: k</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Dynare notation 'k(-1)' is not recognized in .dyno files. Use explicit time indexing: 'k[t-1]'.</em></li>
+<li><strong>Suggested Fix:</strong> <code>k[t] = 0.9 * k[t-1]</code></li>
+</ul>
+<h3 id="syn-006-double-equals-comparison-operator-in-equation">[SYN-006] Double equals comparison operator in equation<a class="headerlink" href="#syn-006-double-equals-comparison-operator-in-equation" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>syntax</code></li>
+<li><strong>User Intent:</strong> User uses '==' instead of '=' for dynamic equation.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>alpha &lt;- 0.35
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>k[t] == 0.9 * k[t-1]
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>LARKParserError</code>: <code>Unexpected token</code>= 0.9 * k[t-1]<code>at (3, 7)</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Dynamic equations in Dyno use a single '=' operator (e.g. 'lhs = rhs').</em></li>
+<li><strong>Suggested Fix:</strong> <code>k[t] = 0.9 * k[t-1]</code></li>
+</ul>
+<h3 id="syn-007-reversed-assignment-arrow-">[SYN-007] Reversed assignment arrow -&gt;<a class="headerlink" href="#syn-007-reversed-assignment-arrow-" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>syntax</code></li>
+<li><strong>User Intent:</strong> User writes assignment with rightward arrow.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>0.35 -&gt; alpha
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>k[t] = 0.9 * k[t-1]
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>LARKParserError</code>: <code>Unexpected token</code>&gt; alpha<code>at (2, 7)</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Assignment in Dyno must be leftward: 'alpha &lt;- 0.35' or 'alpha := 0.35'.</em></li>
+<li><strong>Suggested Fix:</strong> <code>alpha &lt;- 0.35</code></li>
+</ul>
+<h3 id="syn-008-unsupported-mathematical-function">[SYN-008] Unsupported mathematical function<a class="headerlink" href="#syn-008-unsupported-mathematical-function" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>syntax</code></li>
+<li><strong>User Intent:</strong> User calls an unsupported function such as sigmoid.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>alpha &lt;- 0.35
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>k[t] = sigmoid(k[t-1])
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>ValueError</code>: <code>Undefined function: sigmoid</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Function 'sigmoid' is not recognized. Supported functions include: exp, log, sqrt, abs, sin, cos, tan.</em></li>
+<li><strong>Suggested Fix:</strong> <code>Define sigmoid analytically using exp(x) / (1 + exp(x)).</code></li>
+</ul>
+<h3 id="sym-001-typo-in-parameter-name-in-equation-definition">[SYM-001] Typo in parameter name in equation definition<a class="headerlink" href="#sym-001-typo-in-parameter-name-in-equation-definition" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>symbol_resolution</code></li>
+<li><strong>User Intent:</strong> User meant 'alpha' but typed 'alhpa'.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>alpha &lt;- 0.35
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>k[t] = alhpa * k[t-1]
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <em>None (Execution succeeded or silent NaN)</em></li>
+<li><strong>Warnings Emitted:</strong></li>
+<li><code>UndefinedSymbolWarning</code>: Undefined value: alhpa at (3, 8). Defaulting to NaN.</li>
+<li><code>UndefinedSymbolWarning</code>: Undefined parameter(s) used in equation definitions: alhpa. Defaulting to NaN.</li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Parameter 'alhpa' used in equation is never defined. Did you mean 'alpha'?</em></li>
+<li><strong>Suggested Fix:</strong> <code>k[t] = alpha * k[t-1]</code></li>
+</ul>
+<h3 id="sym-002-variable-in-equation-without-time-index">[SYM-002] Variable in equation without time index<a class="headerlink" href="#sym-002-variable-in-equation-without-time-index" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>symbol_resolution</code></li>
+<li><strong>User Intent:</strong> User omits '[t]' when referring to contemporaneous variable c.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>alpha &lt;- 0.35
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>k[t] = alpha * k[t-1] + c
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>c[t] = 0.5 * k[t]
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>k[~] &lt;- 1.0
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>c[~] &lt;- 0.5
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <em>None (Execution succeeded or silent NaN)</em></li>
+<li><strong>Warnings Emitted:</strong></li>
+<li><code>UndefinedSymbolWarning</code>: Undefined value: c at (3, 25). Defaulting to NaN.</li>
+<li><code>UndefinedSymbolWarning</code>: Undefined parameter(s) used in equation definitions: c. Defaulting to NaN.</li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Symbol 'c' appears in equation without a time index [t], but 'c' is declared as a variable. Did you mean 'c[t]'?</em></li>
+<li><strong>Suggested Fix:</strong> <code>k[t] = alpha * k[t-1] + c[t]</code></li>
+</ul>
+<h3 id="sym-003-out-of-order-parameter-calibration">[SYM-003] Out-of-order parameter calibration<a class="headerlink" href="#sym-003-out-of-order-parameter-calibration" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>symbol_resolution</code></li>
+<li><strong>User Intent:</strong> User references parameter 'b' before its definition.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>a &lt;- b * 2.0
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>b &lt;- 1.0
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>k[t] = a * k[t-1]
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <em>None (Execution succeeded or silent NaN)</em></li>
+<li><strong>Warnings Emitted:</strong></li>
+<li><code>UndefinedSymbolWarning</code>: Undefined value: b at (2, 6). Defaulting to NaN.</li>
+<li><code>UndefinedSymbolWarning</code>: Undefined parameter(s) used in equation definitions: a. Defaulting to NaN.</li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Parameter 'b' was referenced on line 2 before its assignment on line 3.</em></li>
+<li><strong>Suggested Fix:</strong> <code>Define 'b &lt;- 1.0' before 'a &lt;- b * 2.0'.</code></li>
+</ul>
+<h3 id="sym-004-circular-parameter-calibration">[SYM-004] Circular parameter calibration<a class="headerlink" href="#sym-004-circular-parameter-calibration" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>symbol_resolution</code></li>
+<li><strong>User Intent:</strong> User mutually defines parameters without a base value.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>a &lt;- b + 1.0
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>b &lt;- a + 1.0
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>k[t] = a * k[t-1]
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <em>None (Execution succeeded or silent NaN)</em></li>
+<li><strong>Warnings Emitted:</strong></li>
+<li><code>UndefinedSymbolWarning</code>: Undefined value: b at (2, 6). Defaulting to NaN.</li>
+<li><code>UndefinedSymbolWarning</code>: Undefined parameter(s) used in equation definitions: a. Defaulting to NaN.</li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Circular dependency detected in parameter calibration between 'a' and 'b'.</em></li>
+<li><strong>Suggested Fix:</strong> <code>Provide an exogenous numerical value for at least one parameter.</code></li>
+</ul>
+<h3 id="sym-005-parameter-self-reference-without-initial-calibration">[SYM-005] Parameter self-reference without initial calibration<a class="headerlink" href="#sym-005-parameter-self-reference-without-initial-calibration" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>symbol_resolution</code></li>
+<li><strong>User Intent:</strong> User writes recursive parameter expression a &lt;- a + 1.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>a &lt;- a + 1.0
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>k[t] = a * k[t-1]
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <em>None (Execution succeeded or silent NaN)</em></li>
+<li><strong>Warnings Emitted:</strong></li>
+<li><code>UndefinedSymbolWarning</code>: Undefined value: a at (2, 6). Defaulting to NaN.</li>
+<li><code>UndefinedSymbolWarning</code>: Undefined parameter(s) used in equation definitions: a. Defaulting to NaN.</li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Parameter 'a' references itself before having an established value.</em></li>
+<li><strong>Suggested Fix:</strong> <code>Initialize 'a' with a literal number first.</code></li>
+</ul>
+<h3 id="sym-006-typo-in-variable-name-creating-phantom-variable">[SYM-006] Typo in variable name creating phantom variable<a class="headerlink" href="#sym-006-typo-in-variable-name-creating-phantom-variable" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>symbol_resolution</code></li>
+<li><strong>User Intent:</strong> User meant 'k[t]' but typed 'k_cap[t]'.</li>
+<li><strong>Expected Detection Stage:</strong> <code>check</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>check</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>alpha &lt;- 0.35
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>k_cap[t] = alpha * k[t-1]
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>k[~] &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>UndefinedSymbolError</code>: <code>Cannot check model due to uninitialized symbols (variables without steady state: k_cap).</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Variable 'k_cap[t]' appears in equations but has no steady state [~] or transition law.</em></li>
+<li><strong>Suggested Fix:</strong> <code>k[t] = alpha * k[t-1]</code></li>
+</ul>
+<h3 id="ss-001-missing-steady-state-declaration-for-endogenous-variable">[SS-001] Missing steady-state declaration for endogenous variable<a class="headerlink" href="#ss-001-missing-steady-state-declaration-for-endogenous-variable" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>steady_state</code></li>
+<li><strong>User Intent:</strong> User writes dynamic equations but completely omits k[~].</li>
+<li><strong>Expected Detection Stage:</strong> <code>check</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>check</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>alpha &lt;- 0.35
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>k[t] = alpha * k[t-1]
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>UndefinedSymbolError</code>: <code>Cannot check model due to uninitialized symbols (variables without steady state: k).</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Variable 'k' has no steady-state declaration. Provide 'k[~] &lt;- ...' or use model.steady() to solve numerically.</em></li>
+<li><strong>Suggested Fix:</strong> <code>k[~] &lt;- 0.0</code></li>
+</ul>
+<h3 id="ss-002-typo-in-steady-state-declaration-name-k_ss">[SS-002] Typo in steady-state declaration name k_ss<a class="headerlink" href="#ss-002-typo-in-steady-state-declaration-name-k_ss" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>steady_state</code></li>
+<li><strong>User Intent:</strong> User declares steady state as k_ss &lt;- 1.0 instead of k[~] &lt;- 1.0.</li>
+<li><strong>Expected Detection Stage:</strong> <code>check</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>check</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>alpha &lt;- 0.35
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>k[t] = alpha * k[t-1]
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>k_ss &lt;- 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>UndefinedSymbolError</code>: <code>Cannot check model due to uninitialized symbols (variables without steady state: k).</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Unused parameter 'k_ss' detected. Did you mean to declare the steady state as 'k[~] &lt;- 1.0'?</em></li>
+<li><strong>Suggested Fix:</strong> <code>k[~] &lt;- 1.0</code></li>
+</ul>
+<h3 id="ss-003-inconsistent-steady-state-value">[SS-003] Inconsistent steady-state value<a class="headerlink" href="#ss-003-inconsistent-steady-state-value" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>steady_state</code></li>
+<li><strong>User Intent:</strong> User supplies an incorrect steady-state guess (residual is non-zero).</li>
+<li><strong>Expected Detection Stage:</strong> <code>check</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>check</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>alpha &lt;- 0.35
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>k[t] = alpha * k[t-1]
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>k[~] &lt;- 10.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>SteadyStateError</code>: <code>Steady state values don't satisfy model equations. Max residual is 6.5</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Equation 1 has non-zero steady-state residual (residual = -6.5). The steady-state condition is k = 0, but k[~] was set to 10.0.</em></li>
+<li><strong>Suggested Fix:</strong> <code>k[~] &lt;- 0.0</code></li>
+</ul>
+<h3 id="ss-004-steady-state-declaration-causes-division-by-zero">[SS-004] Steady-state declaration causes division by zero<a class="headerlink" href="#ss-004-steady-state-declaration-causes-division-by-zero" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>steady_state</code></li>
+<li><strong>User Intent:</strong> User sets c[~] = 0 in a model with utility 1/c.</li>
+<li><strong>Expected Detection Stage:</strong> <code>check</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>c[~] &lt;- 0.0
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>1 / c[t] = 1.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>ZeroDivisionError</code>: <code>float division by zero</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Division by zero encountered in equation 1 when evaluated at steady state (c[~] = 0.0).</em></li>
+<li><strong>Suggested Fix:</strong> <code>c[~] &lt;- 1.0</code></li>
+</ul>
+<h3 id="ss-005-steady-state-evaluation-causes-negative-log-domain-error">[SS-005] Steady-state evaluation causes negative log domain error<a class="headerlink" href="#ss-005-steady-state-evaluation-causes-negative-log-domain-error" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>steady_state</code></li>
+<li><strong>User Intent:</strong> User sets steady state of z to -1 where equation has log(z).</li>
+<li><strong>Expected Detection Stage:</strong> <code>check</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>z[~] &lt;- -1.0
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>y[t] = log(z[t])
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>ValueError</code>: <code>math domain error</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Domain error: log(z[t]) evaluated with non-positive steady state z[~] = -1.0.</em></li>
+<li><strong>Suggested Fix:</strong> <code>z[~] &lt;- 1.0</code></li>
+</ul>
+<h3 id="ss-006-forward-reference-across-steady-state-declarations">[SS-006] Forward reference across steady-state declarations<a class="headerlink" href="#ss-006-forward-reference-across-steady-state-declarations" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>steady_state</code></li>
+<li><strong>User Intent:</strong> User defines k[~] referencing y[~] before y[~] is defined.</li>
+<li><strong>Expected Detection Stage:</strong> <code>check</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>check</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>k[~] &lt;- y[~] * 0.5
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>y[~] &lt;- 2.0
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>k[t] = 0.5 * k[t-1] + 0.5 * y[t]
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>y[t] = 2.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>UndefinedSymbolError</code>: <code>Cannot check model due to uninitialized symbols (variables without steady state: k).</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Steady state 'y[~]' was referenced in 'k[~]' before 'y[~]' was assigned.</em></li>
+<li><strong>Suggested Fix:</strong> <code>Define 'y[~] &lt;- 2.0' before 'k[~] &lt;- y[~] * 0.5'.</code></li>
+</ul>
+<h3 id="shk-001-shock-variable-in-equations-without-distribution-declaration">[SHK-001] Shock variable in equations without distribution declaration<a class="headerlink" href="#shk-001-shock-variable-in-equations-without-distribution-declaration" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>shocks</code></li>
+<li><strong>User Intent:</strong> User uses e[t] in equation but never writes e[t] &lt;- N(0, sigma^2).</li>
+<li><strong>Expected Detection Stage:</strong> <code>solve</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>check</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>rho &lt;- 0.9
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>z[t] = rho * z[t-1] + e[t]
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>z[~] &lt;- 0.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>UndefinedSymbolError</code>: <code>Cannot check model due to uninitialized symbols (variables without steady state: e).</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Variable 'e' appears to be an exogenous shock but has no distribution. Declare 'e[t] &lt;- N(0, sigma^2)'.</em></li>
+<li><strong>Suggested Fix:</strong> <code>e[t] &lt;- N(0, 0.01^2)</code></li>
+</ul>
+<h3 id="shk-002-shock-distribution-too-many-arguments">[SHK-002] Shock distribution too many arguments<a class="headerlink" href="#shk-002-shock-distribution-too-many-arguments" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>shocks</code></li>
+<li><strong>User Intent:</strong> User calls N(0, 0.01, 1) with three arguments instead of std or mean and std.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>rho &lt;- 0.9
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>z[t] = rho * z[t-1] + e[t]
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>z[~] &lt;- 0.0
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>e[t] &lt;- N(0, 0.01, 1)
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>TypeError</code>: <code>N() takes 1 or 2 arguments: N(std) or N(mean, std), but 3 were given</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>N(...) requires 1 or 2 arguments: N(std) or N(mean, std). E.g. 'e[t] &lt;- N(0.01)'.</em></li>
+<li><strong>Suggested Fix:</strong> <code>e[t] &lt;- N(0.01)</code></li>
+</ul>
+<h3 id="shk-003-shock-assigned-as-parameter-without-t">[SHK-003] Shock assigned as parameter without [t]<a class="headerlink" href="#shk-003-shock-assigned-as-parameter-without-t" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>shocks</code></li>
+<li><strong>User Intent:</strong> User writes e &lt;- N(0, 0.01) instead of e[t] &lt;- N(0, 0.01).</li>
+<li><strong>Expected Detection Stage:</strong> <code>solve</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>check</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>rho &lt;- 0.9
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>z[t] = rho * z[t-1] + e[t]
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>z[~] &lt;- 0.0
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>e &lt;- N(0, 0.01)
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>UndefinedSymbolError</code>: <code>Cannot check model due to uninitialized symbols (variables without steady state: e).</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Shock process assigned to constant 'e' rather than time series 'e[t]'. Use 'e[t] &lt;- N(...)'.</em></li>
+<li><strong>Suggested Fix:</strong> <code>e[t] &lt;- N(0, 0.01)</code></li>
+</ul>
+<h3 id="shk-004-shock-distribution-function-name-typo-normal">[SHK-004] Shock distribution function name typo Normal()<a class="headerlink" href="#shk-004-shock-distribution-function-name-typo-normal" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>shocks</code></li>
+<li><strong>User Intent:</strong> User writes Normal(0, 0.01) instead of N(0, 0.01).</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>rho &lt;- 0.9
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>z[t] = rho * z[t-1] + e[t]
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>z[~] &lt;- 0.0
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>e[t] &lt;- Normal(0, 0.01)
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>ValueError</code>: <code>Undefined function: Normal</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Distribution 'Normal' is not recognized. Use 'N(std)' or 'N(mean, std)' for Gaussian shocks.</em></li>
+<li><strong>Suggested Fix:</strong> <code>e[t] &lt;- N(0.01)</code></li>
+</ul>
+<h3 id="sys-001-underdetermined-model-fewer-equations-than-endogenous-variables">[SYS-001] Underdetermined model (fewer equations than endogenous variables)<a class="headerlink" href="#sys-001-underdetermined-model-fewer-equations-than-endogenous-variables" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>system_structure</code></li>
+<li><strong>User Intent:</strong> User forgets one equation in a 2-variable model.</li>
+<li><strong>Expected Detection Stage:</strong> <code>solve</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>check</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>alpha &lt;- 0.35
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>k[t] = alpha * k[t-1] + c[t] + e[t]
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>k[~] &lt;- 1.0
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>c[~] &lt;- 0.5
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>e[t] &lt;- N(0, 0.01)
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>SteadyStateError</code>: <code>Steady state values don't satisfy model equations. Max residual is 0.15000000000000002</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Model is underdetermined: 1 equation provided for 2 endogenous variables ('k', 'c'). Provide an equation for 'c[t]'.</em></li>
+<li><strong>Suggested Fix:</strong> <code>Add equation for c[t].</code></li>
+</ul>
+<h3 id="sys-002-overdetermined-model-more-equations-than-endogenous-variables">[SYS-002] Overdetermined model (more equations than endogenous variables)<a class="headerlink" href="#sys-002-overdetermined-model-more-equations-than-endogenous-variables" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>system_structure</code></li>
+<li><strong>User Intent:</strong> User accidentally duplicates an equation.</li>
+<li><strong>Expected Detection Stage:</strong> <code>solve</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>steady</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>alpha &lt;- 0.35
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>k[t] = alpha * k[t-1] + e[t]
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>k[t] = 0.8 * k[t-1] + e[t]
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>k[~] &lt;- 0.0
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>e[t] &lt;- N(0, 0.01)
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>ValueError</code>: <code>The array returned by a function changed size between calls</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Model is overdetermined: 2 equations provided for 1 endogenous variable ('k'). Remove redundant equation.</em></li>
+<li><strong>Suggested Fix:</strong> <code>Remove duplicated or conflicting equation.</code></li>
+</ul>
+<h3 id="sys-003-higher-order-lag-kt-2-without-auxiliary-state">[SYS-003] Higher-order lag k[t-2] without auxiliary state<a class="headerlink" href="#sys-003-higher-order-lag-kt-2-without-auxiliary-state" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>system_structure</code></li>
+<li><strong>User Intent:</strong> User models AR(2) process directly with lag 2.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>alpha1 &lt;- 0.5
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>alpha2 &lt;- 0.2
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>k[t] = alpha1 * k[t-1] + alpha2 * k[t-2] + e[t]
+</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>k[~] &lt;- 0.0
+</span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>e[t] &lt;- N(0, 0.01)
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <em>None (Execution succeeded or silent NaN)</em></li>
+<li><strong>Warnings Emitted:</strong></li>
+<li><code>UndefinedSymbolWarning</code>: Higher-order lead/lag detected (k[t-2]). Dyno solvers currently support shifts in [-1, 1].</li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Higher-order lag 'k[t-2]' detected. Dyno first-order solvers support leads and lags within [-1, 1]. Introduce an auxiliary variable 'k_lag[t] = k[t-1]'.</em></li>
+<li><strong>Suggested Fix:</strong> <code>k_lag[t] = k[t-1]
+k[t] = alpha1 * k[t-1] + alpha2 * k_lag[t-1]</code></li>
+</ul>
+<h3 id="sys-004-higher-order-lead-ct2-without-auxiliary-variable">[SYS-004] Higher-order lead c[t+2] without auxiliary variable<a class="headerlink" href="#sys-004-higher-order-lead-ct2-without-auxiliary-variable" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>system_structure</code></li>
+<li><strong>User Intent:</strong> User models two-period ahead forward expectation.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>beta &lt;- 0.95
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>c[t] = beta * c[t+2] + e[t]
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>c[~] &lt;- 0.0
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>e[t] &lt;- N(0, 0.01)
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <em>None (Execution succeeded or silent NaN)</em></li>
+<li><strong>Warnings Emitted:</strong></li>
+<li><code>UndefinedSymbolWarning</code>: Higher-order lead/lag detected (c[t+2]). Dyno solvers currently support shifts in [-1, 1].</li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Higher-order lead 'c[t+2]' detected. Dyno solvers support leads within [-1, 1]. Define an auxiliary expected value variable.</em></li>
+<li><strong>Suggested Fix:</strong> <code>c_lead[t] = c[t+1]
+c[t] = beta * c_lead[t+1] + e[t]</code></li>
+</ul>
+<h3 id="sys-005-empty-model-file-comments-only">[SYS-005] Empty model file (comments only)<a class="headerlink" href="#sys-005-empty-model-file-comments-only" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>system_structure</code></li>
+<li><strong>User Intent:</strong> User loads an empty model file.</li>
+<li><strong>Expected Detection Stage:</strong> <code>import</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>import</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a># Only comments in this model file
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a># Nothing else
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>LARKParserError</code>: <code>Unexpected token `` at (1, 1)</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Model description is empty. Provide at least one equation and parameter definition.</em></li>
+<li><strong>Suggested Fix:</strong> <code>Add equations and parameters.</code></li>
+</ul>
+<h3 id="sol-001-blanchard-kahn-condition-violation-explosive-root-with-backward-variable">[SOL-001] Blanchard-Kahn condition violation (explosive root with backward variable)<a class="headerlink" href="#sol-001-blanchard-kahn-condition-violation-explosive-root-with-backward-variable" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>solvability</code></li>
+<li><strong>User Intent:</strong> User specifies an unstable backward-looking autoregressive system.</li>
+<li><strong>Expected Detection Stage:</strong> <code>solve</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>solve</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>k[t] = 2.0 * k[t-1] + e[t]
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>k[~] &lt;- 0.0
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>e[t] &lt;- N(0, 0.01)
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>BlanchardKahnError</code>: <code>Eigenvalue condition not satisfied: l_(n)=2.0, l_(n+1)=inf. No stable solution.</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Blanchard-Kahn condition failed: explosive eigenvalue 2.0 associated with predetermined backward-looking variable 'k'. No stable path exists.</em></li>
+<li><strong>Suggested Fix:</strong> <code>Ensure coefficient on k[t-1] has absolute value &lt; 1.</code></li>
+</ul>
+<h3 id="sol-002-singular-jacobian-due-to-collinear-equations">[SOL-002] Singular Jacobian due to collinear equations<a class="headerlink" href="#sol-002-singular-jacobian-due-to-collinear-equations" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Category:</strong> <code>solvability</code></li>
+<li><strong>User Intent:</strong> User writes two linearly dependent equations.</li>
+<li><strong>Expected Detection Stage:</strong> <code>solve</code></li>
+<li><strong>Actual Stage Reached:</strong> <code>solve</code></li>
+<li><strong>Source Code Snippet:</strong>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>k[t] = 0.5 * k[t-1] + c[t]
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>2 * k[t] = k[t-1] + 2 * c[t]
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>k[~] &lt;- 0.0
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>c[~] &lt;- 0.0
+</span></code></pre></div></li>
+<li><strong>Raised Exception:</strong> <code>ValueError</code>: <code>could not broadcast input array from shape (2,) into shape (4,)</code></li>
+<li><strong>Warnings Emitted:</strong> <em>None</em></li>
+<li><strong>Ideal Diagnostic:</strong> &gt; <em>Jacobian matrix is singular. Equation 2 is a scalar multiple of Equation 1. Replace with an independent equilibrium condition.</em></li>
+<li><strong>Suggested Fix:</strong> <code>Replace redundant equation with an independent relation.</code></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 EconForge
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","content.code.annotate","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight"],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.ed145cee.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

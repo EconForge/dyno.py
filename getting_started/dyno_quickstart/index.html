@@ -2387,7 +2387,7 @@
 <li><strong>Parameters &amp; Calibrated Constants</strong>: Assigned using <code>&lt;-</code> or <code>:=</code>.</li>
 <li><strong>Steady-State Values</strong>: Designated with the <code>[~]</code> time index.</li>
 <li><strong>Dynamic Equations</strong>: Equilibrium conditions written with <code>=</code>.</li>
-<li><strong>Exogenous Shocks</strong>: Stochastic distributions declared via <code>N(mean, variance)</code>.</li>
+<li><strong>Exogenous Shocks</strong>: Stochastic distributions declared via <code>N(std)</code> or <code>N(mean, std)</code>.</li>
 </ol>
 <hr />
 <h2 id="step-1-writing-the-model-file">Step 1: Writing the Model File<a class="headerlink" href="#step-1-writing-the-model-file" title="Permanent link">&para;</a></h2>
@@ -2414,7 +2414,7 @@
 </span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>β * (c[t+1]/c[t])^(-γ) * (1 - δ + α * y[t+1]/k[t]) = 1
 </span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a># 4. Exogenous Shocks
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>e_z[t] &lt;- N(0, 0.002^2)
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>e_z[t] &lt;- N(0.002)
 </span></code></pre></div>
 <h3 id="syntax-cheat-sheet">Syntax Cheat Sheet<a class="headerlink" href="#syntax-cheat-sheet" title="Permanent link">&para;</a></h3>
 <table>
@@ -2452,9 +2452,9 @@
 <td>Expected future consumption</td>
 </tr>
 <tr>
-<td><code>e_z[t] &lt;- N(0, σ²)</code></td>
+<td><code>e_z[t] &lt;- N(σ)</code></td>
 <td>Gaussian shock</td>
-<td>Variance specification</td>
+<td>Standard deviation specification</td>
 </tr>
 <tr>
 <td><code>lhs = rhs</code></td>
@@ -2544,7 +2544,7 @@ If you don't know the exact analytical steady state, provide reasonable initial 
 <div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">txt</span> <span class="o">=</span> <span class="s2">"""</span>
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="s2">ρ &lt;- 0.95</span>
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="s2">x[~] &lt;- 0.0</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="s2">e[t] &lt;- N(0, 0.01^2)</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="s2">e[t] &lt;- N(0.01)</span>
 </span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="s2">x[t] = ρ * x[t-1] + e[t]</span>
 </span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="s2">"""</span>
 </span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>

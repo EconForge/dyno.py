@@ -849,6 +849,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="4. Exogenous Shocks &amp; Stochastic Processes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#note-on-correlated-shocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Note on Correlated Shocks
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -909,6 +926,56 @@
       </span>
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-missing-and-undefined-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        8. Missing and Undefined Parameters
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Missing and Undefined Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#permissive-mode-default-strictfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Permissive Mode (Default: <code>strict=False</code>)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strict-mode-stricttrue" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Strict Mode (<code>strict=True</code>)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fast-fail-validation-in-check-and-solve" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Fast-Fail Validation in <code>check()</code> and <code>solve()</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2273,6 +2340,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="4. Exogenous Shocks &amp; Stochastic Processes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#note-on-correlated-shocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Note on Correlated Shocks
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2333,6 +2417,56 @@
       </span>
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-missing-and-undefined-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        8. Missing and Undefined Parameters
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Missing and Undefined Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#permissive-mode-default-strictfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Permissive Mode (Default: <code>strict=False</code>)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strict-mode-stricttrue" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Strict Mode (<code>strict=True</code>)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fast-fail-validation-in-check-and-solve" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Fast-Fail Validation in <code>check()</code> and <code>solve()</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2477,38 +2611,52 @@
 </ul>
 <hr />
 <h2 id="4-exogenous-shocks-stochastic-processes">4. Exogenous Shocks &amp; Stochastic Processes<a class="headerlink" href="#4-exogenous-shocks-stochastic-processes" title="Permanent link">&para;</a></h2>
-<p>Stochastic shock processes are declared using the Gaussian distribution operator:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>e[t] &lt;- N(mean, variance)
+<p>Stochastic shock processes are declared using the Gaussian distribution operator <code>N(...)</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a># Specify standard deviation (zero-mean default):
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>e[t] &lt;- N(std)
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a># Or specify both mean and standard deviation:
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>e[t] &lt;- N(mean, std)
 </span></code></pre></div>
 <blockquote>
-<p>[!WARNING]
-The second parameter of <code>N(...)</code> is <strong>variance</strong> (<span class="arithmatex">\(\sigma^2\)</span>), not standard deviation. For a standard deviation of 0.01, write <code>0.01^2</code>.</p>
+<p>[!NOTE]
+The scale parameter of <code>N(...)</code> is <strong>standard deviation</strong> (<span class="arithmatex">\(\sigma\)</span>), not variance. For a 1% standard deviation shock, simply write <code>N(0.01)</code>. If only one argument is provided, the mean defaults to zero.</p>
 </blockquote>
 <p>Examples:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a># Zero-mean productivity shock with 1% standard deviation
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>e_a[t] &lt;- N(0, 0.01^2)
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>e_a[t] &lt;- N(0.01)
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a># Demand shock with 0.5% standard deviation
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>e_d[t] &lt;- N(0, 0.005^2)
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a># Demand shock with explicit mean and 0.5% standard deviation
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>e_d[t] &lt;- N(0.0, 0.005)
 </span></code></pre></div>
 <p>Behind the scenes:</p>
 <ul>
 <li>Dyno registers <code>e_a</code> and <code>e_d</code> as exogenous variables in <code>model.symbols["exogenous"]</code>.</li>
-<li>The shock covariance matrix <span class="arithmatex">\(\Sigma\)</span> is automatically constructed for perturbation and simulation solvers.</li>
-<li>The mean (0) is automatically populated into <code>model.context["steady_states"]</code>.</li>
+<li>The shock covariance matrix <span class="arithmatex">\(\Sigma\)</span> is automatically constructed for perturbation and simulation solvers (with diagonal entries <span class="arithmatex">\(\sigma^2\)</span>).</li>
+<li>The mean (<code>0.0</code> by default) is automatically populated into <code>model.context["steady_states"]</code>.</li>
 </ul>
+<h3 id="note-on-correlated-shocks">Note on Correlated Shocks<a class="headerlink" href="#note-on-correlated-shocks" title="Permanent link">&para;</a></h3>
+<p>Currently, shocks declared via <code>N(...)</code> are treated as mutually independent. This is <strong>without loss of generality</strong>: any correlated multivariate Gaussian shock system can be represented structurally as a linear combination of independent orthogonal innovations (e.g., via a Cholesky decomposition or common factor structure):</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># Orthogonal structural innovations
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>u_1[t] &lt;- N(1.0)
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>u_2[t] &lt;- N(1.0)
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a># Correlated shocks via factor loadings
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>e_a[t] &lt;- sigma_a * u_1[t]
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>e_b[t] &lt;- sigma_b * (rho * u_1[t] + sqrt(1 - rho^2) * u_2[t])
+</span></code></pre></div>
 <hr />
 <h2 id="5-deterministic-paths-quantified-assignments">5. Deterministic Paths &amp; Quantified Assignments<a class="headerlink" href="#5-deterministic-paths-quantified-assignments" title="Permanent link">&para;</a></h2>
 <p>For deterministic models or policy experiments, exogenous paths or shocks can be pinned across specific time intervals using <code>forall</code> (or the Unicode symbol <code>∀</code>):</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># Pin shock at initial dates
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>e[0] &lt;- 0.05
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>e[1] &lt;- 0.025
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a># Quantified assignment over a bounded interval:
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>forall t, 2 &lt;= t &lt; 10 : e[t] &lt;- 0.025 / (t - 1)
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a># Using Unicode symbol:
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>∀ t, 10 &lt;= t &lt; 20 : e[t] &lt;- 0.0
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a># Pin shock at initial dates
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>e[0] &lt;- 0.05
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>e[1] &lt;- 0.025
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a># Quantified assignment over a bounded interval:
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>forall t, 2 &lt;= t &lt; 10 : e[t] &lt;- 0.025 / (t - 1)
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a># Using Unicode symbol:
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>∀ t, 10 &lt;= t &lt; 20 : e[t] &lt;- 0.0
 </span></code></pre></div>
 <blockquote>
 <p>[!NOTE]
@@ -2532,15 +2680,54 @@ Quantified assignments must specify explicit bounds of the form <code>a &lt;= t 
 <li>Trigonometric: <code>sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code></li>
 </ul>
 <p>Example:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>y[t] = exp(a[t]) * (k[t-1]^alpha) * (n[t]^(1-alpha))
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>utility[t] = log(c[t]) - psi * (n[t]^(1+eta)) / (1+eta)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>y[t] = exp(a[t]) * (k[t-1]^alpha) * (n[t]^(1-alpha))
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>utility[t] = log(c[t]) - psi * (n[t]^(1+eta)) / (1+eta)
 </span></code></pre></div>
 <hr />
 <h2 id="7-comments">7. Comments<a class="headerlink" href="#7-comments" title="Permanent link">&para;</a></h2>
 <p>Comments begin with <code>#</code> and can appear as standalone lines or inline at the end of a line:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a># This is a full-line comment
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>beta &lt;- 0.99  # Household discount factor
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a># This is a full-line comment
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>beta &lt;- 0.99  # Household discount factor
 </span></code></pre></div>
+<hr />
+<h2 id="8-missing-and-undefined-parameters">8. Missing and Undefined Parameters<a class="headerlink" href="#8-missing-and-undefined-parameters" title="Permanent link">&para;</a></h2>
+<p>When building a model, parameters may be referenced before being defined, or omitted entirely:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>k[t] = alpha * k[t-1]  # 'alpha' is referenced in equations but never assigned
+</span></code></pre></div>
+<p>Dyno handles missing parameters through a dual diagnostic model:</p>
+<h3 id="permissive-mode-default-strictfalse">Permissive Mode (Default: <code>strict=False</code>)<a class="headerlink" href="#permissive-mode-default-strictfalse" title="Permanent link">&para;</a></h3>
+<p>By default, Dyno accommodates incremental model authoring and interactive exploration:</p>
+<ul>
+<li>Unassigned parameters are registered in <code>model.symbols["parameters"]</code> and initialized to <code>NaN</code> in <code>model.context["constants"]</code>.</li>
+<li>Dyno emits an immediate <strong><code>UndefinedSymbolWarning</code></strong> reporting which parameters are unassigned.</li>
+<li>In Jupyter notebooks and terminal displays, uninitialized parameters and variables are flagged with an orange caret (<code>^</code>):
+  <div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>constants: alpha^
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>^ uninitialized (steady-state) value: defaults to nan
+</span></code></pre></div></li>
+<li>Unassigned parameters can be supplied later using <code>recalibrate()</code>:
+  <div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"model.dyno"</span><span class="p">)</span>  <span class="c1"># Emits UndefinedSymbolWarning</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">recalibrate</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.35</span><span class="p">)</span>  <span class="c1"># Now fully calibrated</span>
+</span></code></pre></div></li>
+</ul>
+<h3 id="strict-mode-stricttrue">Strict Mode (<code>strict=True</code>)<a class="headerlink" href="#strict-mode-stricttrue" title="Permanent link">&para;</a></h3>
+<p>For automated pipelines and continuous integration, pass <code>strict=True</code> to reject incomplete models immediately:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"model.dyno"</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1"># Raises dyno.errors.UndefinedSymbolError:</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># Undefined parameter(s) used in equation definitions: alpha</span>
+</span></code></pre></div>
+<h3 id="fast-fail-validation-in-check-and-solve">Fast-Fail Validation in <code>check()</code> and <code>solve()</code><a class="headerlink" href="#fast-fail-validation-in-check-and-solve" title="Permanent link">&para;</a></h3>
+<p>Even in permissive mode, a model cannot be checked or solved while parameters remain <code>NaN</code>:</p>
+<ul>
+<li>
+<p><strong><code>model.check()</code></strong> inspects all parameters and steady states. If any are missing, it raises <code>UndefinedSymbolError</code> with an explicit list:
+  <div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>UndefinedSymbolError: Cannot check model due to uninitialized symbols (parameters without values: alpha).
+</span></code></pre></div>
+  This prevents silent <code>NaN</code> residual propagation and uninformative solver errors.</p>
+</li>
+<li>
+<p><strong><code>model.solve()</code></strong> verifies that the system is complete and square (<span class="arithmatex">\(N_{eq} = N_{endo}\)</span>), raising <code>SystemStructureError</code> if the model is under- or overdetermined.</p>
+</li>
+</ul>
 
 
 
