@@ -22,7 +22,7 @@ Developing the new Python version of Dynare within Dyno provides:
 ```mermaid
 graph TD
     subgraph "Dyno Ecosystem"
-        DYNO["dyno (Core Orchestrator)"]
+        DYNO["dyno (Modeling Language)"]
         DYNSPEC["dyno.dynspec<br/>(Future Standalone Spec Engine)"]
         DYNARE["dyno.dynare<br/>(Future Standalone Dynare Python)"]
     end

@@ -174,5 +174,5 @@ dyno/
    - Maintained with clean boundary isolation so it can be spun off into an autonomous `dynare` package.
    - See the [Dynare Subpackage Documentation](../dynare/index.md).
 
-3. **`dyno` (Core Orchestrator)**:
-   - The user-facing DSGE library integrating specification, solution algorithms, simulations, interactive JupyterLab dashboards, and publication-ready reporting into a cohesive workflow.
+3. **`dyno` (Modeling Language)**:
+   - A fresh take on a modeling language for dynamic macroeconomic models, combining intuitive equation syntax, perturbation and deterministic solvers, and publication-ready reporting into an expressive workflow.
