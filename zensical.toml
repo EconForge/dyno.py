@@ -49,11 +49,11 @@ nav = [
       { "Dynare in Python" = [
           "dynare/index.md",
       ]},
-      { "JupyterLab Dyno (GUI)" = [
-          "dyno_lab/index.md",
-          "dyno_lab/interface.md",
-          "dyno_lab/options_and_settings.md",
-      ]},
+  ]},
+  { "Dyno Lab (GUI)" = [
+      "dyno_lab/index.md",
+      "dyno_lab/interface.md",
+      "dyno_lab/options_and_settings.md",
   ]},
   { "Tutorials" = [
       "tutorials/rbc_model.md",

@@ -15,7 +15,8 @@ Developing the new Python version of Dynare within Dyno provides:
 - **Incubation & Co-Evolution**: Rapidly iterate on Pythonic Dynare abstractions while leveraging Dyno's high-performance perturbation solvers, steady-state engines, and reporting infrastructure.
 - **Future Package Autonomy**: Clear API boundaries ensure that when `dynare` is spun off as a standalone package, downstream code requires zero architectural refactoring.
 - **Dual Preprocessor Strategy**:
-  - `dyno.dynare.DynareModel`: Integrates with the official C++ Dynare preprocessor (`dynare-preprocessor-pylib`) for complete 1-to-1 fidelity with legacy `.mod` syntax and macro-processing commands.
+
+  - `dyno.dynare.DynareModel`: Integrates with the official, co-developed C++ Dynare preprocessor Python library (`dynare-preprocessor-pylib`) for complete 1-to-1 fidelity with legacy `.mod` syntax and macro-processing commands.
   - `dyno.DynoModel`: Pure-Python Lark-based parser for `.mod` files that runs anywhere without C++ compilation.
 
 ```mermaid
@@ -28,7 +29,7 @@ graph TD
 
     subgraph "Dynare Model Flow"
         MOD[".mod File"] --> DM["DynareModel (dyno.dynare.model)"]
-        CPP["Official C++ Preprocessor<br/>(dynare-preprocessor-pylib)"] --> DM
+        CPP["Co-Developed C++ Preprocessor<br/>(dynare-preprocessor-pylib)<br/>[conda-forge & prefix.dev]"] --> DM
         DM --> SOLVE["Dyno Perturbation Solver (QZ / Time Iteration)"]
         SOLVE --> OUT["Pandas DataFrames & Plotly Visualizations"]
     end
@@ -37,6 +38,36 @@ graph TD
     DYNO --> DYNARE
     DYNO --> DYNSPEC
 ```
+
+---
+
+## Co-Developed C++ Preprocessor Python Library (`dynare-preprocessor-pylib`)
+
+A cornerstone of the Python Dynare initiative is **`dynare-preprocessor-pylib`**, a co-developed Python library wrapping the official Dynare C++ preprocessor codebase.
+
+### Availability on conda-forge & prefix.dev
+
+The preprocessor library is packaged and distributed across modern package registries:
+
+- **prefix.dev**: Available via the [`econforge`](https://prefix.dev/econforge) channel.
+- **conda-forge**: Available directly through the community [`conda-forge`](https://conda-forge.org/) channel.
+
+You can install it into your environment using `pixi` or `conda`:
+
+```bash
+# Via prefix.dev (EconForge channel)
+pixi add --channel https://prefix.dev/econforge dynare-preprocessor-pylib
+
+# Via conda-forge
+pixi add --channel conda-forge dynare-preprocessor-pylib
+```
+
+### Key Technical Roles
+
+1. **Native In-Memory Parsing**: Binds directly to the C++ parser without invoking external command-line binaries or intermediate file serialization, exposing the preprocessed model AST as native Python data structures.
+2. **Macro-Processing Parity**: Faithfully executes complex macro-processing commands (`@#include`, `@#for`, `@#define`, `@#if/@#endif`) exactly as Dynare in MATLAB does.
+3. **Symbol & Equation Extraction**: Seamlessly extracts variable blocks (`var`, `varexo`, `parameters`), equation declarations, parameter values, and lead/lag auxiliary variable mapping into the `symbolic.context` dictionary.
+4. **Foundation for Standalone Dynare**: As `dyno.dynare` transitions into an independent package, `dynare-preprocessor-pylib` serves as the official C++ compilation backend powering command emulation and model ingestion.
 
 ---
 

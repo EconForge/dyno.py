@@ -1,6 +1,6 @@
 # Dyno Lab (JupyterLab Extension)
 
-**Dyno Lab** (`jupyterlab_dyno`) is the official interactive web-based graphical user interface for DSGE modeling in Dyno. Built as a native JupyterLab extension, Dyno Lab provides a live, synchronized side-by-side workspace for authoring, solving, and visualizing dynamic economic models.
+**Dyno Lab** (`jupyterlab_dyno`) is the official interactive web-based graphical user interface for DSGE modeling in Dyno. Developed and maintained as an **independent package** in the EconForge ecosystem, Dyno Lab is a native JupyterLab extension providing a live, synchronized side-by-side workspace for authoring, solving, and visualizing dynamic economic models.
 
 Dyno Lab natively supports both Dyno model specifications (`.dyno`, `.dyno.yaml`) and legacy Dynare files (`.mod`).
 
