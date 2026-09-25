@@ -2091,17 +2091,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#autonomous-ecosystem-packages" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Autonomous Ecosystem Packages
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#development-roadmap" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2191,50 +2180,23 @@
                   
 
 <h1 id="subpackages-roadmap">Subpackages &amp; Roadmap<a class="headerlink" href="#subpackages-roadmap" title="Permanent link">&para;</a></h1>
-<p>Dyno acts as an incubation umbrella for specialized tools in computational economics. Rather than maintaining a monolithic codebase, core subsystems are developed with strict modular boundaries inside Dyno until they mature into autonomous packages with independent release cycles on PyPI and conda-forge.</p>
-<pre class="mermaid"><code>graph TD
-    subgraph "Core Orchestrator"
-        DYNO["dyno.py&lt;br/&gt;(Models, Solvers, Simulations, Reporting)"]
-    end
-
-    subgraph "Incubated Subpackages (Future Standalone)"
-        DYNSPEC["dyno.dynspec&lt;br/&gt;➜ Standalone: dynspec"]
-        DYNARE["dyno.dynare&lt;br/&gt;➜ Standalone: dynare"]
-    end
-
-    subgraph "Independent Ecosystem Packages"
-        DYNOLAB["jupyterlab-dyno&lt;br/&gt;(JupyterLab GUI Extension)"]
-        PREPROC["dynare-preprocessor-pylib&lt;br/&gt;(Co-developed C++ Preprocessor)&lt;br/&gt;[conda-forge &amp; prefix.dev]"]
-    end
-
-    DYNO --&gt; DYNSPEC
-    DYNO --&gt; DYNARE
-    DYNOLAB -.-&gt; DYNO
-    PREPROC -.-&gt; DYNARE
-
-    style DYNO fill:#2563eb,stroke:#1d4ed8,color:#fff
-    style DYNSPEC fill:#059669,stroke:#047857,color:#fff
-    style DYNARE fill:#7c3aed,stroke:#6d28d9,color:#fff
-    style DYNOLAB fill:#d97706,stroke:#b45309,color:#fff
-    style PREPROC fill:#0891b2,stroke:#0e7490,color:#fff</code></pre>
+<p>Dyno is a fresh take on a modeling language for dynamic economic models. During its early development, the repository also temporarily houses two specialized subsystems intended to become standalone packages once they mature: <strong>DynSpec</strong> (the specification and AST engine) and <strong><code>dyno.dynare</code></strong> (the Python implementation of Dynare).</p>
+<p>Developing these modules with strict boundary separation allows rapid experimentation alongside Dyno's own language features while preparing them for independent lifecycles on PyPI and conda-forge.</p>
 <hr />
 <h2 id="incubated-subpackages">Incubated Subpackages<a class="headerlink" href="#incubated-subpackages" title="Permanent link">&para;</a></h2>
 <h3 id="dynspec-dynodynspec">DynSpec (<code>dyno.dynspec</code>)<a class="headerlink" href="#dynspec-dynodynspec" title="Permanent link">&para;</a></h3>
-<p><strong>DynSpec</strong> is a language-independent, solver-agnostic specification and AST engine for dynamic economic models. It handles declarative EBNF grammar parsing, AST transformations, topological dependency sorting, formal model recipes, forward-mode automatic differentiation (<code>DNumber</code>), and JIT NumPy compilation. Currently incubated in <code>dyno.dynspec</code>, it will graduate into an autonomous <code>dynspec</code> package usable across diverse macroeconomic frameworks.</p>
+<p><strong>DynSpec</strong> is a language-independent, solver-agnostic specification and AST engine for dynamic economic models. It handles declarative EBNF grammar parsing, AST transformations, topological dependency sorting, formal model recipes, forward-mode automatic differentiation (<code>DNumber</code>), and JIT NumPy compilation. Currently developed inside <code>dyno.dynspec</code>, it will graduate into an autonomous <code>dynspec</code> package usable across diverse macroeconomic frameworks.</p>
 <p>Detailed architecture, AST grammar, recipes, and autodiff documentation are available in the <a href="../dynspec/">DynSpec Specification Engine Guide</a>.</p>
 <hr />
 <h3 id="dynare-in-python-dynodynare">Dynare in Python (<code>dyno.dynare</code>)<a class="headerlink" href="#dynare-in-python-dynodynare" title="Permanent link">&para;</a></h3>
 <p><strong><code>dyno.dynare</code></strong> brings first-class, Pythonic Dynare modeling to modern scientific workflows. Built around <code>DynareModel</code>, it interfaces directly with a co-developed C++ preprocessor Python library (<code>dynare-preprocessor-pylib</code>, distributed on conda-forge and prefix.dev) to ensure exact syntax and macro-processing parity with official Dynare <code>.mod</code> files. In the future, <code>dyno.dynare</code> will graduate into an independent <code>dynare</code> package featuring a standalone CLI, full command emulation, and pure-Python parsing fallbacks.</p>
 <p>For usage workflows, lifecycle details, and migration examples, explore the <a href="../dynare/">Dynare in Python Guide</a>.</p>
 <hr />
-<h2 id="autonomous-ecosystem-packages">Autonomous Ecosystem Packages<a class="headerlink" href="#autonomous-ecosystem-packages" title="Permanent link">&para;</a></h2>
-<p>The broader Dyno ecosystem also relies on independent companion tools. <strong>JupyterLab Dyno</strong> (<code>jupyterlab-dyno</code>) is an already-independent package providing an interactive, live split-panel workspace and Plotly visualization inside JupyterLab (detailed in the <a href="../dyno_lab/">Dyno Lab Guide</a>). Under the hood, Dynare <code>.mod</code> ingestion is powered by <strong><code>dynare-preprocessor-pylib</code></strong>, a co-developed C++ Python binding distributed on conda-forge and prefix.dev for fast in-memory AST generation without disk overhead or external CLI wrappers.</p>
-<hr />
 <h2 id="development-roadmap">Development Roadmap<a class="headerlink" href="#development-roadmap" title="Permanent link">&para;</a></h2>
-<p>Development follows a three-phase transition plan:</p>
-<p><strong>Phase 1: Modular Encapsulation (Current)</strong> focuses on establishing clean internal interfaces (<code>DynareModel</code>, <code>DynoModel</code>, <code>FormulaEvaluator</code>, <code>Recipe</code>) and comprehensive test coverage while incubating inside the <code>dyno</code> repository.</p>
-<p><strong>Phase 2: Decoupled Extraction</strong> will spin off <code>dynspec</code> and <code>dynare</code> into standalone repositories or workspace members, complete with independent command-line entry points and bidirectional translation tools.</p>
-<p><strong>Phase 3: Ecosystem Harmony</strong> will see independent releases published to PyPI and conda-forge. Downstream libraries will be able to depend directly on <code>dynspec</code> or <code>dynare</code>, while <code>dyno</code> continues to serve as the unified, high-level modeling orchestrator.</p>
+<p>The roadmap toward independent packages follows a straightforward three-phase path:</p>
+<p><strong>Phase 1: Modular Encapsulation (Current)</strong> establishes clean internal interfaces (<code>DynareModel</code>, <code>FormulaEvaluator</code>, <code>Recipe</code>) and comprehensive test coverage while incubating inside the <code>dyno</code> repository.</p>
+<p><strong>Phase 2: Decoupled Extraction</strong> will spin off <code>dynspec</code> and <code>dynare</code> into standalone repositories or workspace packages with dedicated command-line tools and standalone test suites.</p>
+<p><strong>Phase 3: Independent Releases</strong> will publish <code>dynspec</code> and <code>dynare</code> as independent packages on PyPI and conda-forge for the wider scientific community, while <code>dyno</code> continues to focus on its primary vision as a modern, expressive modeling language.</p>
 
 
 
