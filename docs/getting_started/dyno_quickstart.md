@@ -11,7 +11,7 @@ A `.dyno` file is structured into four intuitive sections:
 1. **Parameters & Calibrated Constants**: Assigned using `<-` or `:=`.
 2. **Steady-State Values**: Designated with the `[~]` time index.
 3. **Dynamic Equations**: Equilibrium conditions written with `=`.
-4. **Exogenous Shocks**: Stochastic distributions declared via `N(mean, variance)`.
+4. **Exogenous Shocks**: Stochastic distributions declared via `N(std)` or `N(mean, std)`.
 
 ---
 
@@ -42,7 +42,7 @@ c[t] = exp(z[t]) * k[t-1]^α - i[t]
 β * (c[t+1]/c[t])^(-γ) * (1 - δ + α * y[t+1]/k[t]) = 1
 
 # 4. Exogenous Shocks
-e_z[t] <- N(0, 0.002^2)
+e_z[t] <- N(0.002)
 ```
 
 ### Syntax Cheat Sheet
@@ -54,7 +54,7 @@ e_z[t] <- N(0, 0.002^2)
 | `k[t]` | Current period variable | Contemporaneous state or control |
 | `k[t-1]` | Lagged variable | Predetermined capital stock |
 | `c[t+1]` | Forward-looking lead | Expected future consumption |
-| `e_z[t] <- N(0, σ²)` | Gaussian shock | Variance specification |
+| `e_z[t] <- N(σ)` | Gaussian shock | Standard deviation specification |
 | `lhs = rhs` | Dynamic equilibrium condition | Model equation |
 
 ---
@@ -173,7 +173,7 @@ You can also pass model code directly as a multi-line Python string:
 txt = """
 ρ <- 0.95
 x[~] <- 0.0
-e[t] <- N(0, 0.01^2)
+e[t] <- N(0.01)
 x[t] = ρ * x[t-1] + e[t]
 """
 

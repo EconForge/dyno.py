@@ -70,7 +70,7 @@ y[t] = l[t] + w[t-1]*r
 c[t] = y[t] - (w[t]-w[t-1])
 1 = β*(c[t+1]/c[t])^(-σ)*(1+r) + φ*(w[t])^(-η)/(c[t])^(-σ)
 
-e_l[t] <- N(0, 0.1^2)
+e_l[t] <- N(0.1)
 """
 
     model = DynoModel(txt=txt)
@@ -165,7 +165,7 @@ model: |
   rho <- 0.8
 
   x[t] = rho*x[t-1] + e[t]
-  e[t] <- N(0, 0.1^2)
+  e[t] <- N(0.1)
 """
 
     model = DynoModel(filename="<run>.yaml", yaml=txt)
@@ -227,7 +227,7 @@ def test_dyno_run_accumulates_repeated_metadata_assignments() -> None:
 rho <- 0.8
 
 x[t] = rho*x[t-1] + e[t]
-e[t] <- N(0, 0.1^2)
+e[t] <- N(0.1)
 
 @run: steady
 @run: check

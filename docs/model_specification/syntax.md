@@ -57,30 +57,48 @@ x[1]      # Pinned value at date 1
 
 ## 4. Exogenous Shocks & Stochastic Processes
 
-Stochastic shock processes are declared using the Gaussian distribution operator:
+Stochastic shock processes are declared using the Gaussian distribution operator `N(...)`:
 
 ```text
-e[t] <- N(mean, variance)
+# Specify standard deviation (zero-mean default):
+e[t] <- N(std)
+
+# Or specify both mean and standard deviation:
+e[t] <- N(mean, std)
 ```
 
-> [!WARNING]
-> The second parameter of `N(...)` is **variance** ($\sigma^2$), not standard deviation. For a standard deviation of 0.01, write `0.01^2`.
+> [!NOTE]
+> The scale parameter of `N(...)` is **standard deviation** ($\sigma$), not variance. For a 1% standard deviation shock, simply write `N(0.01)`. If only one argument is provided, the mean defaults to zero.
 
 Examples:
 
 ```text
 # Zero-mean productivity shock with 1% standard deviation
-e_a[t] <- N(0, 0.01^2)
+e_a[t] <- N(0.01)
 
-# Demand shock with 0.5% standard deviation
-e_d[t] <- N(0, 0.005^2)
+# Demand shock with explicit mean and 0.5% standard deviation
+e_d[t] <- N(0.0, 0.005)
 ```
 
 Behind the scenes:
 
 - Dyno registers `e_a` and `e_d` as exogenous variables in `model.symbols["exogenous"]`.
-- The shock covariance matrix $\Sigma$ is automatically constructed for perturbation and simulation solvers.
-- The mean (0) is automatically populated into `model.context["steady_states"]`.
+- The shock covariance matrix $\Sigma$ is automatically constructed for perturbation and simulation solvers (with diagonal entries $\sigma^2$).
+- The mean (`0.0` by default) is automatically populated into `model.context["steady_states"]`.
+
+### Note on Correlated Shocks
+
+Currently, shocks declared via `N(...)` are treated as mutually independent. This is **without loss of generality**: any correlated multivariate Gaussian shock system can be represented structurally as a linear combination of independent orthogonal innovations (e.g., via a Cholesky decomposition or common factor structure):
+
+```text
+# Orthogonal structural innovations
+u_1[t] <- N(1.0)
+u_2[t] <- N(1.0)
+
+# Correlated shocks via factor loadings
+e_a[t] <- sigma_a * u_1[t]
+e_b[t] <- sigma_b * (rho * u_1[t] + sqrt(1 - rho^2) * u_2[t])
+```
 
 ---
 
@@ -140,3 +158,55 @@ Comments begin with `#` and can appear as standalone lines or inline at the end 
 # This is a full-line comment
 beta <- 0.99  # Household discount factor
 ```
+
+---
+
+## 8. Missing and Undefined Parameters
+
+When building a model, parameters may be referenced before being defined, or omitted entirely:
+
+```text
+k[t] = alpha * k[t-1]  # 'alpha' is referenced in equations but never assigned
+```
+
+Dyno handles missing parameters through a dual diagnostic model:
+
+### Permissive Mode (Default: `strict=False`)
+
+By default, Dyno accommodates incremental model authoring and interactive exploration:
+
+- Unassigned parameters are registered in `model.symbols["parameters"]` and initialized to `NaN` in `model.context["constants"]`.
+- Dyno emits an immediate **`UndefinedSymbolWarning`** reporting which parameters are unassigned.
+- In Jupyter notebooks and terminal displays, uninitialized parameters and variables are flagged with an orange caret (`^`):
+  ```text
+  constants: alpha^
+  ^ uninitialized (steady-state) value: defaults to nan
+  ```
+- Unassigned parameters can be supplied later using `recalibrate()`:
+  ```python
+  model = DynoModel("model.dyno")  # Emits UndefinedSymbolWarning
+  model = model.recalibrate(alpha=0.35)  # Now fully calibrated
+  ```
+
+### Strict Mode (`strict=True`)
+
+For automated pipelines and continuous integration, pass `strict=True` to reject incomplete models immediately:
+
+```python
+model = DynoModel("model.dyno", strict=True)
+# Raises dyno.errors.UndefinedSymbolError:
+# Undefined parameter(s) used in equation definitions: alpha
+```
+
+### Fast-Fail Validation in `check()` and `solve()`
+
+Even in permissive mode, a model cannot be checked or solved while parameters remain `NaN`:
+
+- **`model.check()`** inspects all parameters and steady states. If any are missing, it raises `UndefinedSymbolError` with an explicit list:
+  ```text
+  UndefinedSymbolError: Cannot check model due to uninitialized symbols (parameters without values: alpha).
+  ```
+  This prevents silent `NaN` residual propagation and uninformative solver errors.
+
+- **`model.solve()`** verifies that the system is complete and square ($N_{eq} = N_{endo}$), raising `SystemStructureError` if the model is under- or overdetermined.
+

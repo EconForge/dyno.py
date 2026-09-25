@@ -22,6 +22,23 @@ class DefinitionError(Exception):
         return f"({meta.line}, {meta.column}): {self.msg}"
 
 
+def _normal_distribution(*args: Any) -> Normal:
+    if len(args) == 1:
+        u = 0.0
+        s = args[0]
+    elif len(args) == 2:
+        u = args[0]
+        s = args[1]
+    else:
+        raise TypeError(
+            f"N() takes 1 or 2 arguments: N(std) or N(mean, std), but {len(args)} were given"
+        )
+    val = getattr(s, "value", s)
+    if isinstance(val, (int, float)) and val < 0:
+        raise ValueError(f"Standard deviation must be non-negative, got {val}")
+    return Normal(Sigma=[[s**2]], Μ=[u])
+
+
 function_table_0 = {
     "exp": math.exp,
     "log": math.log,
@@ -80,13 +97,27 @@ class FormulaEvaluator(Interpreter):
         from .autodiff import MATH_FUNCTIONS
 
         self.function_table.update(MATH_FUNCTIONS)
-        self.function_table.update({"N": (lambda u, v: Normal(Sigma=[[v]], Μ=[u]))})
+        self.function_table.update({"N": _normal_distribution})
 
     def _undefined(self, message: str, tree):
         """Report an undefined value: raise if `unknown_as_nan` is False, else return NaN."""
         if not self.unknown_as_nan:
             raise DefinitionError(message, tree=tree)
-        self.errors.append(DefinitionError(message, tree=tree))
+        err = DefinitionError(message, tree=tree)
+        self.errors.append(err)
+        import warnings
+        from dyno.errors import UndefinedSymbolWarning
+
+        if getattr(tree, "data", None) == "constant":
+            try:
+                loc = f" at ({tree.meta.line}, {tree.meta.column})"
+            except Exception:
+                loc = ""
+            warnings.warn(
+                f"{message}{loc}. Defaulting to NaN.",
+                UndefinedSymbolWarning,
+                stacklevel=3,
+            )
         return math.nan
 
     def visit(self, tree):
@@ -273,7 +304,7 @@ class AssignmentEvaluator(FormulaEvaluator):
         from .autodiff import MATH_FUNCTIONS
 
         self.function_table.update(MATH_FUNCTIONS)
-        self.function_table.update({"N": (lambda u, v: Normal(Sigma=[[v]], Μ=[u]))})
+        self.function_table.update({"N": _normal_distribution})
 
     def _normalize_metadata(self, item_list: List[tuple[str, Any]]) -> Dict[str, Any]:
         tags: List[str] = []

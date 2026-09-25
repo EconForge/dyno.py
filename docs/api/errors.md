@@ -4,6 +4,34 @@ Dyno defines a structured exception hierarchy rooted in `DynoError` to facilitat
 
 ---
 
+::: dyno.errors.DynoError
+    options:
+      docstring_style: numpy
+      heading_level: 2
+
+---
+
+::: dyno.errors.UndefinedSymbolError
+    options:
+      docstring_style: numpy
+      heading_level: 2
+
+---
+
+::: dyno.errors.UndefinedSymbolWarning
+    options:
+      docstring_style: numpy
+      heading_level: 2
+
+---
+
+::: dyno.errors.SystemStructureError
+    options:
+      docstring_style: numpy
+      heading_level: 2
+
+---
+
 ::: dyno.errors.SteadyStateError
     options:
       docstring_style: numpy

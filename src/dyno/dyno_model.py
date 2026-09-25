@@ -179,6 +179,7 @@ class DynoModel(AbstractModel):
         filename: str | os.PathLike[str] | None = None,
         txt: str | None = None,
         yaml: str | None = None,
+        strict: bool = False,
         **kwargs,
     ) -> None:
         if yaml is not None:
@@ -188,7 +189,7 @@ class DynoModel(AbstractModel):
             if filename is None:
                 filename = "*anonymous*.yaml"
 
-        super().__init__(filename=filename, txt=txt, **kwargs)
+        super().__init__(filename=filename, txt=txt, strict=strict, **kwargs)
 
     def import_model(self: Self, txt: str, **kwargs) -> None:
 
@@ -229,8 +230,46 @@ class DynoModel(AbstractModel):
 
         # Ensure constants used in equations are explicit in context, even if
         # they were never assigned in declarations.
+        unassigned_constants = []
         for name in self._constants_used_in_equations():
-            constants.setdefault(name, math.nan)
+            if name not in constants:
+                constants[name] = math.nan
+                unassigned_constants.append(name)
+            elif isinstance(constants[name], float) and math.isnan(constants[name]):
+                unassigned_constants.append(name)
+
+        if unassigned_constants:
+            from .errors import UndefinedSymbolError, UndefinedSymbolWarning
+
+            names_str = ", ".join(sorted(set(unassigned_constants)))
+            msg = f"Undefined parameter(s) used in equation definitions: {names_str}"
+            if getattr(self, "strict", False):
+                raise UndefinedSymbolError(msg)
+            else:
+                warnings.warn(
+                    f"{msg}. Defaulting to NaN.",
+                    UndefinedSymbolWarning,
+                    stacklevel=2,
+                )
+
+        # Detect higher-order leads/lags in equations
+        invalid_shifts = []
+        for eq in getattr(self.symbolic, "equations", []):
+            for subtree in eq.iter_subtrees_topdown():
+                if subtree.data == "variable":
+                    shift = int(subtree.children[2].children[0])
+                    if abs(shift) > 1:
+                        vname = str(subtree.children[0].children[0])
+                        invalid_shifts.append(f"{vname}[t{shift:+d}]")
+        if invalid_shifts:
+            from .errors import SystemStructureError, UndefinedSymbolWarning
+
+            shifts_str = ", ".join(invalid_shifts)
+            msg = f"Higher-order lead/lag detected ({shifts_str}). Dyno solvers currently support shifts in [-1, 1]."
+            if getattr(self, "strict", False):
+                raise SystemStructureError(msg)
+            else:
+                warnings.warn(msg, UndefinedSymbolWarning, stacklevel=2)
 
         # Ensure every referenced variable has a steady-state entry.
         for name in variables.keys():

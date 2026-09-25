@@ -90,3 +90,54 @@ def test_dynare_parser_error_reads_begin_attrs_and_location():
 
     assert parsed.line == 9
     assert parsed.column == 14
+
+
+import pytest
+import warnings
+from dyno import DynoModel
+from dyno.errors import (
+    UndefinedSymbolWarning,
+    UndefinedSymbolError,
+    SystemStructureError,
+)
+
+
+def test_undefined_parameter_in_equations_emits_warning():
+    txt = """
+k[t] = alpha * k[t-1]
+k[~] <- 1.0
+"""
+    with pytest.warns(UndefinedSymbolWarning, match="Undefined parameter.*alpha"):
+        model = DynoModel(txt=txt)
+    assert "alpha" in model.context["constants"]
+
+
+def test_undefined_parameter_in_equations_strict_raises_error():
+    txt = """
+k[t] = alpha * k[t-1]
+k[~] <- 1.0
+"""
+    with pytest.raises(UndefinedSymbolError, match="Undefined parameter.*alpha"):
+        DynoModel(txt=txt, strict=True)
+
+
+def test_check_raises_undefined_symbol_error_when_symbols_uninitialized():
+    txt = """
+k[t] = 0.5 * k[t-1]
+"""
+    model = DynoModel(txt=txt)
+    with pytest.raises(UndefinedSymbolError, match="variables without steady state: k"):
+        model.check()
+
+
+def test_solve_raises_system_structure_error_when_system_not_square():
+    txt = """
+k[t] = 0.5 * k[t-1] + c[t]
+k[~] <- 1.0
+c[~] <- 0.5
+"""
+    model = DynoModel(txt=txt)
+    with pytest.raises(
+        SystemStructureError, match="Model has 1 equation.*2 endogenous variable"
+    ):
+        model.solve()

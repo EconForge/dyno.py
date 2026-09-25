@@ -37,13 +37,16 @@ class AbstractModel(ABC):
     paths: dict[str, dict[int, float]] | None
     symbolic: SymbolicModel
     __steady_state__: dict[str, float] | None
+    strict: bool
 
     def __init__(
         self: Self,
         filename: str | os.PathLike[str] | None = None,
         txt: str | None = None,
+        strict: bool = False,
         **kwargs: Any,
     ) -> None:
+        self.strict = strict
         if filename is not None:
             filename = os.fspath(filename)
 
@@ -274,6 +277,34 @@ class AbstractModel(ABC):
     def check(
         self: "Self", tol: float = 1e-6, compute_eigenvalues: bool | None = None
     ) -> "Self":
+        unassigned_params = [
+            p
+            for p in self.symbols.get("parameters", [])
+            if isinstance(self.context.get("constants", {}).get(p), float)
+            and np.isnan(self.context.get("constants", {}).get(p))
+        ]
+        unassigned_ss = [
+            v
+            for v in self.symbols.get("endogenous", [])
+            if isinstance(self.context.get("steady_states", {}).get(v), float)
+            and np.isnan(self.context.get("steady_states", {}).get(v))
+        ]
+        if unassigned_params or unassigned_ss:
+            msgs = []
+            if unassigned_params:
+                msgs.append(
+                    f"parameters without values: {', '.join(sorted(unassigned_params))}"
+                )
+            if unassigned_ss:
+                msgs.append(
+                    f"variables without steady state: {', '.join(sorted(unassigned_ss))}"
+                )
+            from .errors import UndefinedSymbolError
+
+            raise UndefinedSymbolError(
+                f"Cannot check model due to uninitialized symbols ({'; '.join(msgs)})."
+            )
+
         r = self.residuals
         if not all(abs(x) < tol for x in r):
             raise SteadyStateError(r)
@@ -367,6 +398,14 @@ class AbstractModel(ABC):
         return self._render_repr_html(self._repr_data())
 
     def solve(self: Self, **args: Any) -> "PerturbationSolution | pd.DataFrame":
+        neq = len(getattr(self.symbolic, "equations", []))
+        n_endo = len(self.symbols.get("endogenous", []))
+        if neq != n_endo:
+            from .errors import SystemStructureError
+
+            raise SystemStructureError(
+                f"Model has {neq} equation(s) but {n_endo} endogenous variable(s): {self.symbols.get('endogenous', [])}. The dynamic system must be square."
+            )
         if self.is_deterministic:
             from .solver import deterministic_solve
 

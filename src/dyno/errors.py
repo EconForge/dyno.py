@@ -3,7 +3,23 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 
-class ParserError(Exception):
+class DynoError(Exception):
+    """Base exception for all Dyno-specific errors."""
+
+
+class UndefinedSymbolWarning(UserWarning):
+    """Warning raised when a model references undefined parameters or variables."""
+
+
+class UndefinedSymbolError(DynoError):
+    """Raised when an operation requires symbols that are not defined."""
+
+
+class SystemStructureError(DynoError):
+    """Raised when the system of equations has structural issues (e.g. non-square system)."""
+
+
+class ParserError(DynoError):
 
     line: int | None
     column: int | None
@@ -103,7 +119,7 @@ class DynareParserError(ParserError):
         self.details = message
 
 
-class SteadyStateError(Exception):
+class SteadyStateError(DynoError):
 
     def __init__(self, residuals) -> None:
         self.residuals = residuals
@@ -112,5 +128,5 @@ class SteadyStateError(Exception):
         super().__init__(message)
 
 
-class BlanchardKahnError(Exception):
+class BlanchardKahnError(DynoError):
     """Raised when Blanchard-Kahn eigenvalue conditions are not satisfied."""

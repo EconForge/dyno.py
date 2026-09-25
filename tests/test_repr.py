@@ -271,7 +271,7 @@ def test_runresults_markdown_includes_conditional_and_unconditional_moments():
     txt = """
 alpha := 0.9
 x[~] := 0
-e[t] := N(0, 0.04)
+e[t] := N(0.2)
 x[t] = alpha * x[t-1] + e[t]
 """
     model = DynoModel(filename="moments_sections.dyno", txt=txt)
@@ -302,7 +302,7 @@ def test_runresults_html_includes_conditional_and_unconditional_moments():
     txt = """
 alpha := 0.9
 x[~] := 0
-e[t] := N(0, 0.04)
+e[t] := N(0.2)
 x[t] = alpha * x[t-1] + e[t]
 """
     model = DynoModel(filename="moments_sections_html.dyno", txt=txt)
