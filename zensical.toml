@@ -25,17 +25,6 @@ nav = [
       "model_specification/metadata_blocks.md",
       "model_specification/architecture.md",
   ]},
-  { "DynSpec Engine" = [
-      "dynspec/index.md",
-      "dynspec/grammar_ast.md",
-      "dynspec/analysis_autodiff.md",
-      "dynspec/recipes_conformity.md",
-      "dynspec/funcgen_compilation.md",
-      "dynspec/latex_export.md",
-  ]},
-  { "Dynare in Python" = [
-      "dynare/index.md",
-  ]},
   { "Solvers & Theory" = [
       "solvers/steady_state.md",
       "solvers/perturbation.md",
@@ -47,10 +36,24 @@ nav = [
       "analysis/simulation.md",
       "analysis/reports.md",
   ]},
-  { "Dyno Lab (GUI)" = [
-      "dyno_lab/index.md",
-      "dyno_lab/interface.md",
-      "dyno_lab/options_and_settings.md",
+  { "Subpackages & Roadmap" = [
+      "subpackages/index.md",
+      { "DynSpec (Specification Engine)" = [
+          "dynspec/index.md",
+          "dynspec/grammar_ast.md",
+          "dynspec/analysis_autodiff.md",
+          "dynspec/recipes_conformity.md",
+          "dynspec/funcgen_compilation.md",
+          "dynspec/latex_export.md",
+      ]},
+      { "Dynare in Python" = [
+          "dynare/index.md",
+      ]},
+      { "JupyterLab Dyno (GUI)" = [
+          "dyno_lab/index.md",
+          "dyno_lab/interface.md",
+          "dyno_lab/options_and_settings.md",
+      ]},
   ]},
   { "Tutorials" = [
       "tutorials/rbc_model.md",
