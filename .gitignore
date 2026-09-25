@@ -15,3 +15,4 @@ temp*.yml
 .env
 site/
 .zensical/
+tests/output/

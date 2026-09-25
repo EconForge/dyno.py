@@ -5,6 +5,35 @@ from typing import Any
 
 import numpy as np
 
+_ANSI_FRAGMENT_FORMAT = (
+    '<pre style="font-family:Menlo,\'DejaVu Sans Mono\',consolas,\'Courier New\',monospace">'
+    '<code style="font-family:inherit">{code}</code></pre>'
+)
+_MARKDOWN_FRAGMENT_FORMAT = '<div class="markdown-render">{code}</div>'
+
+
+def ansi_to_html(ansi_text: str) -> str:
+    """Render text that may contain ANSI escape codes (e.g. from `rich`) as HTML."""
+    from rich.console import Console
+    from rich.text import Text
+
+    compact_text = "\n".join(line.rstrip() for line in ansi_text.splitlines())
+    console = Console(record=True, force_terminal=True, width=90)
+    console.print(Text.from_ansi(compact_text))
+    return console.export_html(inline_styles=True, code_format=_ANSI_FRAGMENT_FORMAT)
+
+
+def markdown_to_html(markdown_text: str) -> str:
+    """Render a Markdown string to a standalone HTML fragment via `rich`."""
+    from rich.console import Console
+    from rich.markdown import Markdown
+
+    console = Console(record=True, width=90)
+    console.print(Markdown(markdown_text))
+    return console.export_html(
+        inline_styles=True, code_format=_MARKDOWN_FRAGMENT_FORMAT
+    )
+
 
 def model_repr_data(model: Any) -> dict[str, Any]:
     name = model.name if model.name is not None else "Unnamed"
