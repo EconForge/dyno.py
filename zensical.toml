@@ -38,6 +38,7 @@ nav = [
   ]},
   { "Subpackages & Roadmap" = [
       "subpackages/index.md",
+      "subpackages/model_explorer.md",
       { "DynSpec (Specification Engine)" = [
           "dynspec/index.md",
           "dynspec/grammar_ast.md",
