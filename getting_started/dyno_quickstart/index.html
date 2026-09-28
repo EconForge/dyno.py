@@ -27,7 +27,7 @@
     
     
       
-        <title>Quickstart: Writing a Dyno Model - Dyno 🦖</title>
+        <title>Quickstart: Writing a Dyno Model - Dyno</title>
       
     
     
@@ -99,7 +99,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Dyno 🦖" class="md-header__button md-logo" aria-label="Dyno 🦖" data-md-component="logo">
+    <a href="../.." title="Dyno" class="md-header__button md-logo" aria-label="Dyno" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
@@ -113,7 +113,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Dyno 🦖
+            Dyno
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -343,6 +343,8 @@
       
         
       
+        
+      
     
     
     
@@ -479,13 +481,13 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Dyno 🦖" class="md-nav__button md-logo" aria-label="Dyno 🦖" data-md-component="logo">
+    <a href="../.." title="Dyno" class="md-nav__button md-logo" aria-label="Dyno" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
 
     </a>
-    Dyno 🦖
+    Dyno
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -1303,6 +1305,8 @@
       
         
       
+        
+      
     
     
     
@@ -1361,6 +1365,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../subpackages/model_explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Model Representation Explorer (Dev Tool)
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1391,7 +1422,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1412,14 +1443,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1599,7 +1630,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1621,8 +1652,8 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2516,18 +2547,22 @@ If you don't know the exact analytical steady state, provide reasonable initial 
 </span></code></pre></div>
 <hr />
 <h2 id="step-5-impulse-response-functions-irfs">Step 5: Impulse Response Functions (IRFs)<a class="headerlink" href="#step-5-impulse-response-functions-irfs" title="Permanent link">&para;</a></h2>
-<p>Compute impulse responses representing percentage deviations from steady state:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># T=40 periods horizon</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">irfs_dict</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">irfs</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">"log-deviation"</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+<p>Compute impulse responses representing deviations from steady state:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># T=40 periods horizon (deviations from steady state)</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">irfs_dict</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">irfs</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">"deviation"</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 </span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># irfs_dict maps each shock name to a Pandas DataFrame</span>
 </span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">irfs_dict</span><span class="p">[</span><span class="s2">"e_z"</span><span class="p">]</span>
 </span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"i"</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
 </span></code></pre></div>
 <p>Plot the IRFs interactively with Plotly:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">fig</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">"log-deviation"</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">fig</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">"deviation"</span><span class="p">)</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </span></code></pre></div>
+<blockquote>
+<p>[!NOTE]
+<code>type="deviation"</code> computes <span class="arithmatex">\(y_t - \bar{y}\)</span>. For models where all variables have strictly positive steady-state values, <code>type="log-deviation"</code> computes percentage deviations <span class="arithmatex">\((y_t - \bar{y}) / \bar{y} \times 100\)</span>.</p>
+</blockquote>
 <hr />
 <h2 id="step-6-recalibration-on-the-fly">Step 6: Recalibration On the Fly<a class="headerlink" href="#step-6-recalibration-on-the-fly" title="Permanent link">&para;</a></h2>
 <p>To perform comparative statics or sensitivity analysis, use <code>model.recalibrate()</code>:</p>
