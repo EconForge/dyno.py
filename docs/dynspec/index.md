@@ -1,68 +1,53 @@
 # DynSpec Specification Engine
 
-<p align="left">
-  <span class="badge badge-success">Standalone Architecture</span>
-  <span class="badge">Lark Grammar</span>
-  <span class="badge">Forward AutoDiff</span>
-  <span class="badge">Recipe Validation</span>
-  <span class="badge badge-warning">Target: Independent Package</span>
-</p>
-
-**DynSpec** is the symbolic, parsing, and code-generation engine underlying Dyno. While currently distributed as `dyno.dynspec`, DynSpec is architected with strict boundary separation so that it can be extracted into an **independent, solver-agnostic package** for dynamic economic model specification.
+**DynSpec** is the parsing, symbolic representation, and code-generation subsystem in Dyno. It parses model files into typed Abstract Syntax Trees (ASTs), validates equation structures against model recipes, evaluates mathematical expressions, and provides automatic differentiation via dual numbers.
 
 ---
 
-## Why DynSpec?
+## Overview
 
-In computational economics, model representation and model solution have historically been tightly coupled within specific software suites (such as Dynare in MATLAB or Dolo in Python). This tight coupling creates several challenges:
-
-- Re-implementing parsers and AST interpreters across different solvers.
-- Difficulty porting models between perturbation, global projection, and agent-based frameworks.
-- Inconsistent timing conventions and symbol classification rules across tools.
-
-**DynSpec solves this by serving as a universal specification layer**:
+In dynamic economic modeling, decoupling model specification from specific solver backends improves reusability and testing:
 
 ```mermaid
 graph TD
-    A[".dyno Model Files / Strings"] --> B[DynSpec Parser & AST]
+    A[".dyno Files / Strings"] --> B[DynSpec Parser & AST]
     C[".mod Dynare Files"] --> B
-    D["YAML Model Specs"] --> B
+    D["YAML Configurations"] --> B
 
     B --> E["Formula Evaluator & Analysis"]
     B --> F["Forward-Mode AutoDiff (DNumber)"]
-    B --> G["Recipe Conformity & DAG Checker"]
+    B --> G["Recipe Conformity & DAG Sorting"]
     B --> H["LaTeX Transformer"]
 
-    E --> I["Dyno (Perturbation & Deterministic)"]
+    E --> I["Dyno Solvers (Perturbation & Deterministic)"]
     F --> I
-    G --> J["Dolo (Nonlinear Projections)"]
-    G --> K["Global & Deep Learning Solvers"]
-    H --> L["Publication Papers & Reports"]
+    G --> J["External / Non-linear Solvers"]
+    H --> K["Documentation & LaTeX Output"]
 ```
 
 ---
 
-## Core Pillars of DynSpec
+## Capabilities
 
 <div class="grid cards" markdown>
 
--   ### 📜 Formal Grammar & AST (`grammar.py`)
-    A robust, LALR(1) Lark-based grammar defining declarations (`<-`), equations (`=`), timing subscripts (`[t]`, `[t-1]`, `[t+1]`, `[~]`), and metadata blocks.
+-   ### Grammar & AST (`grammar.py`)
+    An LALR(1) Lark grammar defining model declarations (`<-`), equilibrium equations (`=`), time indexing (`[t]`, `[t-1]`, `[t+1]`, `[~]`), and metadata blocks.
 
--   ### 🔍 AST Analysis & Evaluation (`analyze.py`)
-    An extensible visitor and interpreter hierarchy that evaluates steady-state formulas, computes residuals, and extracts variable catalogs.
+-   ### AST Analysis & Evaluation (`analyze.py`)
+    Visitors and interpreters that evaluate steady-state expressions, verify residuals, and extract variable lists across time leads and lags.
 
--   ### ⚡ Forward-Mode AutoDiff (`autodiff.py`)
-    A lightweight, dual-number arithmetic engine (`DNumber`) computing exact first-order analytical Jacobians $[A, B, C, D]$ with respect to lead, current, and lag variables.
+-   ### Dual-Number AutoDiff (`autodiff.py`)
+    A dual-number arithmetic engine (`DNumber`) providing exact analytical derivatives for lead, contemporaneous, and lagged variables in a single forward pass.
 
--   ### 📐 Model Recipes & Validation (`recipe.py`)
-    A formal typing and validation system for economic equation groups (e.g. `DTCC_RECIPE`). Verifies timing constraints and topological DAG execution orders.
+-   ### Model Recipes (`recipe.py`)
+    A structural validation system (such as `DTCC_RECIPE`) that checks variable timing restrictions, equation counts, and computes topological evaluation order for recursive blocks.
 
--   ### 🚀 Fast Function Generation (`funcgen.py`)
-    Compiles symbolic equation trees into high-speed callable NumPy functions suitable for non-linear iterative algorithms.
+-   ### Function Compilation (`funcgen.py`)
+    Compiles symbolic equation trees into vectorized callable NumPy functions for non-linear iterative algorithms.
 
--   ### 📑 LaTeX Typesetting (`latex.py`)
-    Translates parsed ASTs into clean, publication-ready LaTeX math equations, automatically mapping Greek characters and fractions.
+-   ### LaTeX Export (`latex.py`)
+    Transforms parsed ASTs into clean LaTeX equations, automatically handling Greek variable names, time subscripts, and algebraic fractions.
 
 </div>
 
@@ -70,38 +55,41 @@ graph TD
 
 ## Standalone Usage Example
 
-Even within Dyno today, `dynspec` can be used completely independently of any solvers:
+DynSpec can be used directly for parsing, AST inspection, variable extraction, and LaTeX generation:
 
 ```python
-from dyno.dynspec import parser, Analyzer
-from dyno.dynspec.autodiff import DNumber
+from dyno.dynspec.grammar import parser
+from dyno.dynspec.recipe import extract_variables_from_equation
+from dyno.dynspec.latex import latex
 
-# 1. Parse an equation block
 txt = """
 y[t] = exp(z[t]) * k[t-1]^alpha
-1/c[t] = beta * (1/c[t+1]) * (alpha*y[t+1]/k[t] + 1 - delta)
+1/c[t] = beta * (1/c[t+1]) * (alpha * y[t+1]/k[t] + 1 - delta)
 """
-tree = parser.parse(txt, start="equation_block")
 
-# 2. Inspect the abstract syntax tree
+# Parse an equation block
+tree = parser.parse(txt, start="equation_block")
 print("AST root node:", tree.data)
 
-# 3. Analyze variables and timing
-analyzer = Analyzer()
-for eq in tree.children:
-    analyzer.visit(eq)
+# Extract variables and time shifts from the first equation
+first_equation = tree.children[0]
+variables = extract_variables_from_equation(first_equation)
+print("Variables in equation 1:", variables)
+# {'y': {0}, 'z': {0}, 'k': {-1}}
 
-print("Encountered variables:", analyzer.symbols["variables"])
+# Convert equation AST nodes directly to LaTeX
+for eq in tree.children:
+    print(latex(eq))
 ```
 
 ---
 
-## Exploration Guide
+## Subsystem Documentation
 
 | Section | Focus |
 |---|---|
-| [**Grammar & AST**](grammar_ast.md) | Lark grammar structure, lexical rules, token definitions, and `TimeFixer`. |
-| [**Evaluation & AutoDiff**](analysis_autodiff.md) | Formula evaluation, symbol extraction, and `DNumber` automatic differentiation. |
-| [**Model Recipes & Conformity**](recipes_conformity.md) | Declaring model recipes (`Recipe`), checking variable timing rules, and DAG sorting. |
-| [**Function Generation**](funcgen_compilation.md) | Compiling equation groups into executable, vectorized callable functions. |
-| [**LaTeX Export**](latex_export.md) | Rendering symbolic equations to LaTeX for publications and presentations. |
+| [**Grammar & AST**](grammar_ast.md) | Lark grammar structure, entry points, and AST node types. |
+| [**Evaluation & AutoDiff**](analysis_autodiff.md) | Expression evaluation and `DNumber` automatic differentiation. |
+| [**Model Recipes & Conformity**](recipes_conformity.md) | Defining model specifications (`Recipe`), timing rules, and DAG sorting. |
+| [**Function Generation**](funcgen_compilation.md) | Compiling equation groups into callable NumPy functions. |
+| [**LaTeX Export**](latex_export.md) | Exporting symbolic equations to LaTeX markup. |

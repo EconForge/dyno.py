@@ -1,5 +1,5 @@
 [project]
-site_name = "Dyno 🦖"
+site_name = "Dyno"
 site_description = "A modern Python framework for DSGE and macroeconomic modeling"
 site_author = "EconForge & Pablo Winant"
 copyright = "Copyright &copy; 2026 EconForge"

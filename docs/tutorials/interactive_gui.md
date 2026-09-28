@@ -49,30 +49,27 @@ y[t] = c[t] + i[t]
 beta * (c[t+1]/c[t])^(-1) * (alpha * y[t+1]/k[t] + 1 - delta) = 1
 
 # 4. Stochastic Shocks
-e_z[t] <- N(0, 0.01^2)
+e_z[t] <- N(0.01)
 ```
 
-Upon opening `rbc.dyno`, Dyno Lab immediately configures a split-pane layout:
+Upon opening `rbc.dyno`, Dyno Lab configures a split-pane layout:
 
-- The **Code Editor** remains on the left with full syntax highlighting.
-- The **Dyno Report** opens on the right, connected to a background Python kernel.
-
-Within seconds, the background solver evaluates steady states, solves the first-order perturbation decision rule, and generates interactive Plotly impulse response charts.
+- **Left Pane — Code Editor**: Code editor with syntax highlighting for `.dyno` and `.mod` files.
+- **Right Pane — Dyno Report**: Interactive report viewer connected to a background Python kernel, displaying steady-state values, eigenvalues, and IRFs.
 
 ---
 
-## Step 2: Live Reactive Exploration
+## Step 2: Live Model Exploration
 
-Dyno Lab eliminates the need to manually re-run scripts or switch between windows.
+Dyno Lab updates the report automatically as you modify model specifications.
 
-### Experiment 1: Altering Technology Shock Persistence
+### Experiment 1: Modifying Shock Persistence
 
-1. In the left code editor, change the persistence parameter `rho` from `0.95` to `0.70`:
+1. In the editor, change the persistence parameter `rho` from `0.95` to `0.70`:
    ```text
    rho <- 0.70
    ```
-2. Stop typing for half a second.
-3. Observe how the impulse response plots on the right instantly re-render! The response of output $y_t$ and consumption $c_t$ now decays much faster back to the steady-state baseline.
+2. After a brief pause, the background solver recomputes the decision rule. The impulse responses on the right update to reflect the faster decay back to steady state.
 
 ### Experiment 2: Modifying Capital Depreciation
 
@@ -80,31 +77,31 @@ Dyno Lab eliminates the need to manually re-run scripts or switch between window
    ```text
    delta <- 0.050
    ```
-2. The report updates immediately:
-   - Steady-state capital $k^*$ adjusts downwards to reflect higher depreciation costs.
-   - Investment $i^*$ increases proportionally to replenish capital.
-   - The scroll position of your report view remains fixed right where you were looking.
+2. The report updates:
+   - Steady-state capital $k^*$ falls to reflect higher depreciation.
+   - Investment $i^*$ adjusts to maintain the stationary capital stock.
+   - The report view maintains its scroll position during re-computation.
 
 ---
 
 ## Step 3: Using the Dyno Options Sidebar
 
-To adjust solution parameters without editing model code:
+Solution parameters can be adjusted via the sidebar interface:
 
-1. Click the **Dyno Options** tab in the left JupyterLab sidebar (or click the **Options** button in the report toolbar).
-2. Switch **Simulation Type** from `Log-Deviation` to `Level`. The IRF charts now display exact physical units rather than percentage deviations.
-3. Change **Horizon** from `40` to `80` periods to observe long-term capital accumulation trajectories.
-4. Check **Steady state only** if you are calibrating deep structural parameters and want instantaneous algebraic feedback without running stochastic simulations.
+1. Click the **Dyno Options** tab in the JupyterLab sidebar (or the **Options** button in the report toolbar).
+2. Change **Simulation Type** between `Deviation`, `Log-Deviation`, or `Level`.
+3. Adjust the **Horizon** (e.g. from `40` to `80` periods) to examine longer-term dynamics.
+4. Enable **Steady state only** when calibrating parameters to inspect steady-state values without running perturbation solvers.
 
 ---
 
-## Step 4: Interactive Diagnostic Highlighting
+## Step 4: Diagnostic Highlighting
 
-Dyno Lab guides you directly to syntax and mathematical mistakes:
+Dyno Lab flags syntax and mathematical errors directly in the editor:
 
-1. In the code editor, introduce a deliberate typo in an equation (e.g. `c[t] = y[t] - i[t] + unknown_var[t]`).
-2. Notice that the background solver catches the missing symbol and immediately highlights the erroneous line in red inside the code editor.
-3. Correct the line back to `c[t] = y[t] - i[t]`. The error highlight clears and the full report reappears instantly.
+1. In the code editor, introduce an undefined variable (e.g. `c[t] = y[t] - i[t] + unknown_var[t]`).
+2. The background solver identifies the undefined symbol and highlights the offending line in the editor gutter.
+3. Correcting the line clears the diagnostic marker and restores the report.
 
 ---
 

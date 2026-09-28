@@ -130,11 +130,11 @@ print("\nTransition & Impact Matrices:\n", coeffs_df)
 
 ## Step 5: Impulse Response Functions (IRFs)
 
-Compute impulse responses representing percentage deviations from steady state:
+Compute impulse responses representing deviations from steady state:
 
 ```python
-# T=40 periods horizon
-irfs_dict = solution.irfs(type="log-deviation", T=40)
+# T=40 periods horizon (deviations from steady state)
+irfs_dict = solution.irfs(type="deviation", T=40)
 
 # irfs_dict maps each shock name to a Pandas DataFrame
 df = irfs_dict["e_z"]
@@ -144,9 +144,13 @@ print(df[["y", "c", "k", "i"]].head(10))
 Plot the IRFs interactively with Plotly:
 
 ```python
-fig = solution.plot(type="log-deviation")
+fig = solution.plot(type="deviation")
 fig.show()
 ```
+
+> [!NOTE]
+> `type="deviation"` computes $y_t - \bar{y}$. For models where all variables have strictly positive steady-state values, `type="log-deviation"` computes percentage deviations $(y_t - \bar{y}) / \bar{y} \times 100$.
+
 
 ---
 

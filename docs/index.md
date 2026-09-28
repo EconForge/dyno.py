@@ -1,45 +1,40 @@
-# Dyno 🦖
+# Dyno
 
-<p align="left">
-  <span class="badge badge-success">Python 3.10+</span>
-  <span class="badge">DSGE Modeling</span>
-  <span class="badge">Perturbation Solvers</span>
-  <span class="badge">Deterministic Stacked-Time</span>
-  <span class="badge badge-warning">Dynare Preprocessor Compatible</span>
-</p>
-
-**Dyno** is a modern, high-performance Python framework for Dynamic Stochastic General Equilibrium (DSGE) and macroeconomic modeling. Developed by the EconForge community, Dyno combines the simplicity and elegance of native Python workflows with the numerical power required by macroeconomic research, policy analysis, and quantitative modeling.
+Dyno is a Python library for specifying, solving, and simulating dynamic macroeconomic models, including Dynamic Stochastic General Equilibrium (DSGE) and deterministic transition models. It combines a human-readable modeling language (`.dyno`) with native support for Dynare `.mod` files and standard numerical solvers for macroeconomic analysis.
 
 ---
 
-## Key Highlights
+## Features
 
 <div class="grid cards" markdown>
 
--   ### ✍️ Expressive DSL & Native Syntax
-    Define models cleanly in human-readable `.dyno` files, embed them in YAML pipelines, or import legacy Dynare `.mod` files directly.
+-   ### Model Specification
+    Write models in clean `.dyno` files with explicit time indexing (`[t]`, `[t-1]`, `[t+1]`, `[~]`), embed specifications in YAML configurations, or load existing Dynare `.mod` files directly.
 
--   ### ⚡ State-of-the-Art Solvers
-    Compute steady states, solve stochastic models via 1st-order perturbation (QZ Schur decomposition & Time Iteration), and solve large stacked-time deterministic models with exact automatic differentiation and sparse Jacobians.
+-   ### Perturbation Solvers
+    Compute steady states and solve linearized rational expectations models using first-order perturbation, supporting generalized Schur (QZ) decomposition and time iteration.
 
--   ### 🔍 Diagnostic Rigor
-    Inspect Blanchad-Kahn rank and order conditions, generalized eigenvalues, equation-level residuals, and theoretical asymptotic moments automatically.
+-   ### Deterministic Simulation
+    Solve non-linear perfect foresight transition dynamics over finite horizons using exact automatic differentiation and sparse block-tridiagonal Newton solvers.
 
--   ### 📊 Rich Visualization & Reporting
-    Produce interactive Plotly impulse response charts, export tabular simulations as Pandas DataFrames, render dynamic reports, or explore models through the **Dyno Lab** (`jupyterlab_dyno`) interactive GUI.
+-   ### Diagnostics & Analysis
+    Evaluate steady-state equation residuals, verify Blanchard-Kahn rank and order conditions, compute asymptotic variance-covariance moments via Lyapunov equations, and generate impulse response functions.
+
+-   ### Visualization & Tooling
+    Export simulation trajectories to Pandas DataFrames, render interactive charts with Plotly or Altair, or explore models interactively in JupyterLab using the Dyno Lab extension.
 
 </div>
 
 ---
 
-## Quickstart in 60 Seconds
+## Quickstart
 
-### 1. Define a Model (`neo.dyno`)
+### 1. Write a Model (`neo.dyno`)
 
-Dyno files clearly separate calibrated constants, steady-state expressions, dynamic equations, and shock distributions:
+A `.dyno` file separates calibrated constants, steady-state declarations, dynamic equations, and shock processes:
 
 ```text
-# Parameters
+# Calibrated parameters
 α <- 0.36
 β <- 0.99
 δ <- 0.025
@@ -60,11 +55,11 @@ k[t] = (1-δ) * k[t-1] + i[t]
 c[t] = y[t] - i[t]
 β * (c[t+1]/c[t])^(-γ) * (α * y[t+1]/k[t] + 1 - δ) = 1
 
-# Exogenous shocks
-e_z[t] <- N(0, 0.01^2)
+# Exogenous shocks (standard deviation 0.01)
+e_z[t] <- N(0.01)
 ```
 
-### 2. Load, Check, and Solve
+### 2. Solve and Inspect in Python
 
 ```python
 from dyno import DynoModel
@@ -72,39 +67,37 @@ from dyno import DynoModel
 # Load the model
 model = DynoModel("neo.dyno")
 
-# Verify steady-state residuals (should evaluate to ~0)
-print(model.residuals)
+# Verify that steady-state declarations satisfy all equations
+print("Steady-state residuals:", model.residuals)
 model.check()
 
-# Solve using first-order perturbation (QZ decomposition)
+# Solve the model using first-order perturbation (QZ decomposition)
 solution = model.solve()
 
-# Inspect decision rule: y_t = y_bar + X * (y_{t-1} - y_bar) + Y * eps_t
+# Inspect the state-space decision rules: y_t = y_ss + X * (y_{t-1} - y_ss) + Y * eps_t
 print("Transition matrix X:\n", solution.X)
-print("Shock impact matrix Y:\n", solution.Y)
+print("Impact matrix Y:\n", solution.Y)
 
-# Generate impulse responses (% log-deviation over 40 periods)
-irfs = solution.irfs(type="log-deviation", T=40)
+# Compute impulse response functions (deviations from steady state over 40 periods)
+irfs = solution.irfs(type="deviation", T=40)
 print(irfs["e_z"][["y", "c", "k", "i"]].head())
 
-# Render interactive Plotly chart
-fig = solution.plot(type="log-deviation")
+# Render an interactive Plotly chart
+fig = solution.plot(type="deviation")
 fig.show()
 ```
 
 ---
 
-## Navigating the Documentation
+## Documentation Overview
 
-To get the most out of Dyno, explore the guided sections:
-
-| Section | Focus |
+| Section | Description |
 |---|---|
-| [**Getting Started**](getting_started/installation.md) | Pixi installation, environment configuration, and quickstarts for `.dyno` and Dynare `.mod` files. |
-| [**Model Specification**](model_specification/syntax.md) | Syntax reference (`<-`, `=`, `[t]`, `[~]`, `forall`), equation blocks, metadata, and YAML wrappers. |
-| [**Solvers & Theory**](solvers/steady_state.md) | Steady-state solvers, first-order perturbation (QZ / Time Iteration), and deterministic stacked-time Newton solver. |
-| [**Analysis & Simulation**](analysis/irfs.md) | IRFs, conditional/unconditional variance-covariance moments, stochastic simulations, and automated reporting. |
-| [**Subpackages & Roadmap**](subpackages/index.md) | Incubated subsystems and development plans for standalone extraction (`dynspec`, `dyno.dynare`). |
-| [**Dyno Lab (GUI)**](dyno_lab/index.md) | Interactive JupyterLab extension for live model editing, automatic re-solving, and Plotly visualization. |
-| [**Tutorials**](tutorials/rbc_model.md) | Step-by-step guides for the canonical RBC model, deterministic transition paths, and Dyno Lab interactive modeling. |
-| [**API Reference**](api/models.md) | Comprehensive class and function references for `DynoModel`, `DynareModel`, `solve`, and more. |
+| [**Getting Started**](getting_started/installation.md) | Installation with Pixi, environment options, and introductory walkthroughs for `.dyno` and `.mod` files. |
+| [**Model Specification**](model_specification/syntax.md) | Syntax reference for declarations (`<-`), equations (`=`), time indices, metadata tags, and YAML wrappers. |
+| [**Solvers & Theory**](solvers/steady_state.md) | Numerical root-finding for steady states, first-order perturbation methods, and deterministic stacked-time Newton solvers. |
+| [**Analysis & Simulation**](analysis/irfs.md) | Impulse response functions, theoretical moments, stochastic simulation, and automated reporting. |
+| [**Subpackages & Architecture**](subpackages/index.md) | Architectural layout of Dyno and its companion modules (`dynspec` and `dyno.dynare`). |
+| [**Dyno Lab (GUI)**](dyno_lab/index.md) | Interactive JupyterLab extension providing live model evaluation, error tracking, and visual diagnostics. |
+| [**Tutorials**](tutorials/rbc_model.md) | Step-by-step guides for neoclassical RBC modeling, policy experiments, and interactive workflows. |
+| [**API Reference**](api/models.md) | Python class and function signatures across the package. |

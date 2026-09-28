@@ -1,6 +1,6 @@
 # Tutorial: The Real Business Cycle (RBC) Model
 
-The Real Business Cycle (RBC) model developed by Kydland & Prescott (1982) and Hansen (1985) is the foundational benchmark of modern macroeconomic theory. This tutorial walks through setting up, calibrating, solving, and analyzing the canonical RBC model in Dyno.
+This tutorial walks through specifying, calibrating, solving, and analyzing a standard Hansen (1985) Real Business Cycle model in Dyno.
 
 ---
 
@@ -80,7 +80,7 @@ r[t] = alpha*y[t]/k[t-1]
 y[t] = c[t] + i[t]
 
 # 4. Shock Process (0.9% standard deviation)
-epsilon[t] <- N(0, 0.009^2)
+epsilon[t] <- N(0.009)
 ```
 
 ---
