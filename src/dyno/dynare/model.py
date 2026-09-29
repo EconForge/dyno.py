@@ -86,7 +86,12 @@ class DynareModel(AbstractModel):
                 txt = f.read()
 
         options = getattr(self, "_import_options", {})
-        model = self.__class__(filename=self.filename, txt=txt, **options)
+        model = self.__class__(
+            filename=self.filename,
+            txt=txt,
+            strict=getattr(self, "strict", False),
+            **options,
+        )
 
         previous = getattr(self, "_calibration_overrides", {})
         if len(previous) > 0:
@@ -208,7 +213,10 @@ class DynareModel(AbstractModel):
 
         deriv_order: int = kwargs.get("deriv_order", 1)
         params_deriv_order: int = kwargs.get("params_deriv_order", 0)
-        allow_undeclared_params: bool = kwargs.get("allow_undeclared_params", False)
+        if "allow_undeclared_params" in kwargs:
+            allow_undeclared_params: bool = kwargs["allow_undeclared_params"]
+        else:
+            allow_undeclared_params = not getattr(self, "strict", False)
 
         self._import_options = {
             "deriv_order": deriv_order,
@@ -284,6 +292,14 @@ class DynareModel(AbstractModel):
         model_split = re.split(r"\bmodel\s*;", txt_no_comments, flags=re.IGNORECASE)
         declarations_part = model_split[0] if model_split else txt_no_comments
 
+        # Remove shocks block from declarations part if placed before model
+        declarations_part = re.sub(
+            r"\bshocks\s*;.*?end\s*;",
+            "",
+            declarations_part,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+
         # Split original text into lines for reconstruction
         lines = txt.split("\n")
 
@@ -348,10 +364,19 @@ class DynareModel(AbstractModel):
                     j += 1
             else:
                 # No parameters section exists, create one after var/varexo declarations
-                # Find the last var/varexo declaration
+                # Find the last var/varexo declaration (ignoring any inside shocks blocks)
                 last_var_section = 0
+                in_shocks = False
                 for i, line in enumerate(lines):
-                    if re.match(r"\s*(var|varexo)\s", line, re.IGNORECASE):
+                    stripped = line.strip().lower()
+                    if stripped.startswith("shocks;"):
+                        in_shocks = True
+                    elif in_shocks and stripped.startswith("end;"):
+                        in_shocks = False
+                        continue
+                    if not in_shocks and re.match(
+                        r"\s*(var|varexo)\s", line, re.IGNORECASE
+                    ):
                         last_var_section = i
                         # Find end of this declaration
                         j = i

@@ -33,7 +33,7 @@ b[t] = tau*a[t-1]+rho*b[t-1] + u[t]
 
 
 # Initial Values
-k[0] <- k[~]*1.01
+# k[0] <- k[~]*1.01
 
 # Exogenous Shocks
 ∀ t, 0 <= t < 10 : e[t] <- 0.99/(t+1)

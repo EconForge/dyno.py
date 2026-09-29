@@ -38,6 +38,7 @@ class AbstractModel(ABC):
     symbolic: SymbolicModel
     __steady_state__: dict[str, float] | None
     strict: bool
+    _invalid_shifts: list[str] | None
 
     def __init__(
         self: Self,
@@ -47,6 +48,7 @@ class AbstractModel(ABC):
         **kwargs: Any,
     ) -> None:
         self.strict = strict
+        self._invalid_shifts = None
         if filename is not None:
             filename = os.fspath(filename)
 
@@ -325,6 +327,16 @@ class AbstractModel(ABC):
         return self
 
     def steady(self: Self, tol: float = 1e-10, maxiter: int = 100) -> Self:
+        invalid_shifts = getattr(self, "_invalid_shifts", None)
+        if invalid_shifts:
+            from .errors import SystemStructureError
+
+            shifts_str = ", ".join(invalid_shifts)
+            raise SystemStructureError(
+                f"Unsupported timing (only -1, 0, 1 so far): higher-order lead/lag detected ({shifts_str}). "
+                "Dyno solvers currently support shifts in [-1, 1]."
+            )
+
         endogenous = self.symbols["endogenous"]
         if len(endogenous) == 0:
             return self.copy()
@@ -398,6 +410,16 @@ class AbstractModel(ABC):
         return self._render_repr_html(self._repr_data())
 
     def solve(self: Self, **args: Any) -> "PerturbationSolution | pd.DataFrame":
+        invalid_shifts = getattr(self, "_invalid_shifts", None)
+        if invalid_shifts:
+            from .errors import SystemStructureError
+
+            shifts_str = ", ".join(invalid_shifts)
+            raise SystemStructureError(
+                f"Unsupported timing (only -1, 0, 1 so far): higher-order lead/lag detected ({shifts_str}). "
+                "Dyno solvers currently support shifts in [-1, 1]."
+            )
+
         neq = len(getattr(self.symbolic, "equations", []))
         n_endo = len(self.symbols.get("endogenous", []))
         if neq != n_endo:
