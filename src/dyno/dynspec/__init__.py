@@ -18,6 +18,11 @@ from .funcgen import (
     generate_equation_function,
     compile_equation_group,
 )
+from .dynare import (
+    evaluate_steady_block,
+    evaluate_steady_state_block,
+    evaluate_assignments_block,
+)
 
 import numpy as np
 

@@ -245,10 +245,26 @@ class FormulaEvaluator(Interpreter):
     def call(self, tree):
         """Handle function calls: func_name(arg)"""
         func_name = str(tree.children[0].children[0])
-        args = [self.visit(c) for c in tree.children[1:]]
 
         if func_name in self.function_table:
+            args = [self.visit(c) for c in tree.children[1:]]
             return self.function_table[func_name](*args)
+        elif func_name == "steady_state":
+            arg = tree.children[1]
+            if getattr(arg, "data", None) == "variable":
+                name = str(arg.children[0].children[0])
+                if name not in self.steady_states:
+                    return self._undefined(
+                        f"Undefined steady state for variable {name}[~]", tree
+                    )
+                return self.steady_states[name]
+            else:
+                prev_ss = self.steady_state
+                try:
+                    self.steady_state = True
+                    return self.visit(arg)
+                finally:
+                    self.steady_state = prev_ss
         else:
             raise ValueError(f"Undefined function: {func_name}")
 
