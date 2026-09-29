@@ -10,6 +10,7 @@ from dyno.dynspec.analyze import (
 from typing_extensions import Self
 import numpy as np
 from typing import List, Dict, Any
+import re
 from dyno.errors import LARKParserError, ParserError
 from lark.exceptions import UnexpectedInput
 
@@ -205,6 +206,40 @@ from dyno.dynspec.dynare import (
 )
 
 
+def substitute_model_local_vars(content: str) -> str:
+    """Substitute Dynare model-local variables (`# var = expr;`) inside `model; ... end;` blocks."""
+    pattern = re.compile(
+        r"(\bmodel\s*(?:\([^)]*\))?\s*;)(.*?)(\bend\s*;)", re.DOTALL | re.IGNORECASE
+    )
+
+    def repl_model(match: re.Match) -> str:
+        header = match.group(1)
+        body = match.group(2)
+        footer = match.group(3)
+
+        local_var_pattern = re.compile(
+            r"^[ \t]*#[ \t]*([a-zA-Z_]\w*)[ \t]*=[ \t]*(.*?);", re.MULTILINE
+        )
+        raw_vars: list[tuple[str, str]] = []
+        for m in local_var_pattern.finditer(body):
+            raw_vars.append((m.group(1), m.group(2).strip()))
+
+        if not raw_vars:
+            return match.group(0)
+
+        new_body = local_var_pattern.sub("", body)
+        expanded_vars: list[tuple[str, str]] = []
+        for name, expr in raw_vars:
+            for prev_name, prev_expr in expanded_vars:
+                expr = re.sub(rf"\b{re.escape(prev_name)}\b", f"({prev_expr})", expr)
+            expanded_vars.append((name, expr))
+            new_body = re.sub(rf"\b{re.escape(name)}\b", f"({expr})", new_body)
+
+        return f"{header}{new_body}{footer}"
+
+    return pattern.sub(repl_model, content)
+
+
 class LModFile(SymbolicModel):
     """Class for LARK .mod files"""
 
@@ -218,7 +253,8 @@ class LModFile(SymbolicModel):
 
         from lark import Lark
 
-        content = self.content
+        content = substitute_model_local_vars(self.content)
+        self.content = content
 
         trans = ModFileTransformer()
         parser = Lark(
@@ -229,19 +265,35 @@ class LModFile(SymbolicModel):
             cache=True,
             # strict=True,
         )
+        # Pre-parse check: detect known unsupported features that may either
+        # confuse the grammar or survive parsing but fail later.  Raising here
+        # gives a clear UnsupportedFeatureError before Lark even tries.
+        from dyno.errors import detect_unsupported_features_preparsed
+
+        pre_err = detect_unsupported_features_preparsed(content)
+        if pre_err is not None:
+            raise pre_err
+
         try:
             tree = parser.parse(content)
             self.tree = tree
         except UnexpectedInput as e:
+            from dyno.errors import detect_unsupported_dynare_feature
+
+            unsupported = detect_unsupported_dynare_feature(e, content)
+            if unsupported is not None:
+                raise unsupported from e
             raise LARKParserError(e, content) from e
 
         variables = trans.variables
         variables_exo = trans.variables_exo
         parameters = trans.parameters
 
+        endogenous = [v for v in variables if v not in variables_exo]
+
         self.symbols = {
             "variables": variables,
-            "endogenous": variables,
+            "endogenous": endogenous,
             "exogenous": variables_exo,
             "parameters": parameters,
         }
@@ -260,7 +312,9 @@ class LModFile(SymbolicModel):
             "abs": math.fabs,
         }
 
-        fe = InterpretModfile(**calib, function_table=function_table)
+        fe = InterpretModfile(
+            symbols=self.symbols, **calib, function_table=function_table
+        )
         fe.visit(self.tree)
 
         self.equations = fe.equations
@@ -339,12 +393,30 @@ class LModFile(SymbolicModel):
 
             tail = list(statement.children[1:])
             i = 0
-            while i + 1 < len(tail):
-                key = _name_from_node(tail[i])
-                if key is None:
-                    break
-                options[key] = _coerce_value(tail[i + 1])
-                i += 2
+            while i < len(tail):
+                child = tail[i]
+                if isinstance(child, Tree):
+                    if child.data in ("cmd_opt_num", "cmd_opt_name"):
+                        k = _name_from_node(child.children[0])
+                        v = _coerce_value(child.children[1])
+                        if k is not None:
+                            options[k] = v
+                        i += 1
+                        continue
+                    elif child.data == "cmd_opt_flag":
+                        k = _name_from_node(child.children[0])
+                        if k is not None:
+                            options[k] = True
+                        i += 1
+                        continue
+                    elif child.data == "name":
+                        if i + 1 < len(tail):
+                            k = _name_from_node(tail[i])
+                            if k is not None:
+                                options[k] = _coerce_value(tail[i + 1])
+                            i += 2
+                            continue
+                i += 1
 
             commands.append({"command": command, "options": options})
 

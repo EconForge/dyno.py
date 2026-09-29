@@ -1,17 +1,17 @@
 /*
  * Example 1 from F. Collard (2001): "Stochastic simulations with DYNARE:
  * A practical guide" (see "guide.pdf" in the documentation directory).
- * 
+ *
  * This file uses the steady_state_model-block to provide analytical steady state values.
- * To do so, the equations of the model have been transformed into a non-linear equation in 
+ * To do so, the equations of the model have been transformed into a non-linear equation in
  * labor h. Within the steady_state_model-block, a helper function is called that uses fsolve
- * to solve this non-linear equation. The use of the helper function is necessary to avoid 
- * interference of the MATLAB syntax with Dynare's preprocessor. A more complicated alternative 
- * that provides more flexibility in the type of commands executed and functions called is the use 
- * of an explicit steady state file. See the NK_baseline.mod in the Examples Folder.
- * 
- * This mod-file also shows how to use Dynare's capacities to generate TeX-files of the model equations. 
- * If you want to see the model equations belonging to this mod-file, run it using Dynare 
+ * to solve this non-linear equation. The use of the helper function is necessary to avoid
+ * interference of the MATLAB syntax with Dynare's preprocessor. A more complicated alternative
+ * that provides more flexibility in the type of commands executed and functions called is the use
+ * of an explicit steady state file. See the nk_baseline.mod in the stochastic_simulations folder.
+ *
+ * This mod-file also shows how to use Dynare's capacities to generate TeX-files of the model equations.
+ * If you want to see the model equations belonging to this mod-file, run it using Dynare
  * and then use a TeX-editor to compile the TeX-files generated.
  */
 
@@ -67,7 +67,7 @@ b = tau*a(-1)+rho*b(-1) + u;
 end;
 
 steady_state_model;
-h=example3_steady_state_helper(alpha,beta,delta,psi,theta);
+h=collard_2001_analytical_steady_state_helper(alpha,beta,delta,psi,theta);
 k=((1/beta-(1-delta))/alpha)^(1/(alpha-1))*h;
 y = k^alpha*h^(1-alpha);
 c=(1-alpha)*y/(theta*h^(1+psi));

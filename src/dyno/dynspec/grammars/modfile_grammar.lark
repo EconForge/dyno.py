@@ -3,7 +3,7 @@
 
 modfile: (var_statement | par_statement | varexo_statement | pred_statement | parinit_statement)*   \
     model_block \
-    (command_statement | steady_block | initval_block | steady_block | shocks_block )*
+    (command_statement | steady_block | initval_block | steady_block | shocks_block | parinit_statement)*
     
 
 varexo_statement: "varexo" (lsymbol ","?)* lsymbol ";"
@@ -20,11 +20,13 @@ latex_string: LATEX_STRING
 
 # TODO
 
-command_statement:  COMMAND ";"
-    | COMMAND "(" cname ")" ";"
-    | COMMAND (cname *) ";" 
-    | COMMAND "(" (cname "=" NUMBER ",")* cname "=" NUMBER ")" ";"
-    | COMMAND "(" (cname "=" NUMBER ",")* cname "=" NUMBER ")" (cname *) ";" 
+command_statement: COMMAND ";"
+    | COMMAND "(" [command_arg ("," command_arg)*] ")" (cname *) ";"
+    | COMMAND (cname *) ";"
+
+command_arg: cname "=" NUMBER -> cmd_opt_num
+    | cname "=" cname         -> cmd_opt_name
+    | cname                   -> cmd_opt_flag
 
 
 model_block.1: "model" ";" _list_of_equations _END_TOKEN ";"
@@ -36,11 +38,12 @@ _STEADY_CMD.2: "steady_state_model"
 
 initval_block.1: "initval" ";" _list_of_parassignments _END_TOKEN ";"
 
-shocks_block.1: "shocks" ";"  (setstdvar_stmt | setvar_stmt | setcovar_stmt)*  _END_TOKEN ";" 
+shocks_block.1: "shocks" ";"  (setstdvar_stmt | setvar_stmt | setcovar_stmt | setcorr_stmt)*  _END_TOKEN ";" 
 
 setstdvar_stmt: "var" symbol ";" "stderr" formula ";"
 setvar_stmt: "var" symbol "=" formula ";"
 setcovar_stmt: "var" symbol "," symbol "=" formula ";"
+setcorr_stmt: "corr" symbol "," symbol "=" formula ";"
 
 
 _list_of_equations: (lequation) (";"  lequation )* ";"
@@ -84,6 +87,7 @@ _ASSIGN.1: (":=" | "<-")
     | sum "+" product   -> add
     | sum "-" product   -> sub
     | "-" product         -> neg
+    | "+" product
 ?product: atom|pow
     | product "*" (atom|pow)  -> mul
     | product "/" (atom|pow)  -> div
@@ -116,7 +120,7 @@ variable: cname  "(" time_shift  ")" -> variable
 
 _END_TOKEN: "end"
 
-FUNCTION.1: "sin"|"cos"|"exp"|"log"|"steady_state"
+FUNCTION.1: /\b(sin|cos|exp|log|sqrt|abs|steady_state)\b/
 
 COMMAND.1: "steady"|"check"|"stoch_simul"|"steady_state_model"
 

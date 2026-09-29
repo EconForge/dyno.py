@@ -136,7 +136,14 @@ def simulate(
 
 def sim_to_nsim(irfs):
 
-    pdf = pd.concat(irfs).reset_index()
+    cleaned = {}
+    for k, df in irfs.items():
+        if "t" in df.columns:
+            cleaned[k] = df.drop(columns=["t"])
+        else:
+            cleaned[k] = df
+
+    pdf = pd.concat(cleaned).reset_index()
     ppdf = pdf.rename(columns={"level_0": "shock", "level_1": "t"})
 
     ppdf = ppdf.melt(id_vars=["shock", "t"])

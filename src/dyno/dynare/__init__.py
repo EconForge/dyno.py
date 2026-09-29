@@ -5,5 +5,25 @@ Dyno before being extracted into an independent, standalone package.
 """
 
 from .model import DynareModel
+from .macro import (
+    expand_macro,
+    macroexpand,
+    has_macro_directives,
+    MacroProcessor,
+    MacroEnvironment,
+    MacroError,
+    MacroSyntaxError,
+    MacroEvaluationError,
+)
 
-__all__ = ["DynareModel"]
+__all__ = [
+    "DynareModel",
+    "expand_macro",
+    "macroexpand",
+    "has_macro_directives",
+    "MacroProcessor",
+    "MacroEnvironment",
+    "MacroError",
+    "MacroSyntaxError",
+    "MacroEvaluationError",
+]

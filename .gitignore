@@ -16,3 +16,11 @@ temp*.yml
 site/
 .zensical/
 tests/output/
+_output/**
+demos/**
+**.m
+**.csv
+**.json
+**.db
+!examples/**/*.m
+!examples/**/*.csv

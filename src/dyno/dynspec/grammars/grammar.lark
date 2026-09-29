@@ -86,6 +86,7 @@ _AT: "@"
     | sum "+" product   -> add
     | sum "-" product   -> sub
     | "-" product         -> neg
+    | "+" product
 ?product: atom|pow
     | product "*" (atom|pow)  -> mul
     | product "/" (atom|pow)  -> div

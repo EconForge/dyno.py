@@ -1,4 +1,5 @@
 import os
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 from lark import Token, Lark
 import numpy as np
 from typing_extensions import Self
@@ -90,59 +91,229 @@ class ModFileTransformer(Transformer):
         return Tree("call", [Tree("name", [str(tree.children[0])]), *tree.children[1:]])
 
 
+def _extract_name(node: Any) -> str:
+    """Extract string identifier from a Lark Tree or Token."""
+    while hasattr(node, "children") and len(node.children) > 0:
+        node = node.children[0]
+    return str(getattr(node, "value", node))
+
+
+class SteadyBlockEvaluator(FormulaEvaluator):
+    """Evaluates formulas and assignments within a block at steady state.
+
+    Assignments are evaluated sequentially. Intermediate scratch variables
+    (e.g., k_H, y_H) are stored in `self.scratch` and are accessible to later
+    formulas in the block, but do NOT pollute parameters (`self.constants`).
+    Endogenous variables are stored in `self.steady_states`.
+    """
+
+    def __init__(
+        self,
+        constants: Optional[Dict[str, Any]] = None,
+        steady_states: Optional[Dict[str, Any]] = None,
+        endogenous: Optional[Union[Sequence[str], Set[str]]] = None,
+        function_table: Optional[Dict[str, Callable]] = None,
+    ):
+        super().__init__(
+            context={
+                "constants": dict(constants) if constants else {},
+                "steady_states": dict(steady_states) if steady_states else {},
+            },
+            function_table=dict(function_table) if function_table else {},
+            steady_state=True,
+            unknown_as_nan=True,
+        )
+        self.endogenous = set(endogenous) if endogenous is not None else None
+        self.scratch: Dict[str, Any] = {}
+
+    def constant(self, tree: Tree):
+        name = _extract_name(tree)
+        if name in self.scratch:
+            return self.scratch[name]
+        if name in self.steady_states:
+            return self.steady_states[name]
+        if name in self.constants:
+            return self.constants[name]
+        return self._undefined(f"Undefined value: {name}", tree)
+
+    def variable(self, tree: Tree):
+        name = _extract_name(tree.children[0])
+        if name in self.steady_states:
+            return self.steady_states[name]
+        if name in self.scratch:
+            return self.scratch[name]
+        if name in self.constants:
+            return self.constants[name]
+        return self._undefined(f"Undefined steady state for variable {name}[~]", tree)
+
+    def call(self, tree: Tree):
+        func_node = tree.children[0]
+        try:
+            if getattr(func_node, "data", None) == "name" and getattr(
+                func_node, "children", None
+            ):
+                func_name = str(func_node.children[0])
+            else:
+                func_name = str(func_node)
+        except Exception:
+            func_name = str(func_node)
+
+        if func_name in self.function_table:
+            args = [self.visit(c) for c in tree.children[1:]]
+            return self.function_table[func_name](*args)
+        elif func_name == "steady_state":
+            arg = tree.children[1]
+            if getattr(arg, "data", None) == "variable":
+                name = _extract_name(arg.children[0])
+            else:
+                name = _extract_name(arg)
+            if name in self.steady_states:
+                return self.steady_states[name]
+            return math.nan
+        else:
+            raise ValueError(f"Undefined function: {func_name}")
+
+    def parassignment(self, tree: Tree):
+        name = _extract_name(tree.children[0])
+        formula = tree.children[1]
+        value = self.visit(formula)
+        if self.endogenous is not None:
+            if name in self.endogenous:
+                self.steady_states[name] = value
+            else:
+                self.scratch[name] = value
+        else:
+            self.steady_states[name] = value
+        return value
+
+
+def evaluate_steady_block(
+    tree: Union[Tree, Sequence[Tree]],
+    constants: Optional[Dict[str, Any]] = None,
+    steady_states: Optional[Dict[str, Any]] = None,
+    endogenous: Optional[Union[Sequence[str], Set[str]]] = None,
+    function_table: Optional[Dict[str, Callable]] = None,
+) -> Dict[str, float]:
+    """Evaluate a block of assignments (e.g. steady_state_model, initval) at steady state.
+
+    Evaluates assignments sequentially without any side-effects on the passed `constants`
+    or other caller state. Intermediate scratch variables are resolved locally and discarded.
+    Returns a dictionary of evaluated steady-state values for endogenous variables.
+    """
+    evaluator = SteadyBlockEvaluator(
+        constants=constants,
+        steady_states=steady_states,
+        endogenous=endogenous,
+        function_table=function_table,
+    )
+
+    children: Sequence[Any]
+    if isinstance(tree, Tree):
+        if tree.data == "parassignment":
+            children = [tree]
+        else:
+            children = tree.children
+    elif isinstance(tree, (list, tuple)):
+        children = list(tree)
+    else:
+        raise TypeError(f"Expected Tree or sequence of Trees, got {type(tree)}")
+
+    for child in children:
+        if getattr(child, "data", None) == "parassignment":
+            evaluator.parassignment(child)
+        else:
+            evaluator.visit(child)
+
+    if endogenous is not None:
+        endo_set = set(endogenous)
+        return {
+            k: float(evaluator.steady_states[k])
+            for k in evaluator.steady_states
+            if k in endo_set
+        }
+    return {k: float(v) for k, v in evaluator.steady_states.items()}
+
+
+evaluate_steady_state_block = evaluate_steady_block
+evaluate_assignments_block = evaluate_steady_block
+
+
 class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 
-    def __init__(self, **calibration):
+    def __init__(self, symbols: Optional[Dict[str, Any]] = None, **calibration):
 
         super().__init__()
 
         self.steady_state = True  # variables are evaluatated at their steady state
-        self.steady_states = {}
-        self.constants = {}
-        self.covariances = {}
-        self.current_block = None
+        self.steady_states: Dict[str, Any] = {}
+        self.constants: Dict[str, Any] = {}
+        self.covariances: Dict[Any, Any] = {}
         self.unknown_as_nan = True
+        self.symbols: Dict[str, Any] = dict(symbols) if symbols else {}
 
         self.calibration = calibration
 
     def var_statement(self, tree):
+        if "endogenous" not in self.symbols:
+            self.symbols["endogenous"] = []
+        for child in tree.children:
+            name = _extract_name(child)
+            if name not in self.symbols["endogenous"]:
+                self.symbols["endogenous"].append(name)
         return tree
 
     def varexo_statement(self, tree):
+        if "exogenous" not in self.symbols:
+            self.symbols["exogenous"] = []
+        for child in tree.children:
+            name = _extract_name(child)
+            if name not in self.symbols["exogenous"]:
+                self.symbols["exogenous"].append(name)
         return tree
 
     def par_statement(self, tree):
+        if "parameters" not in self.symbols:
+            self.symbols["parameters"] = []
+        for child in tree.children:
+            name = _extract_name(child)
+            if name not in self.symbols["parameters"]:
+                self.symbols["parameters"].append(name)
         return tree
 
     def pred_statement(self, tree):
         return tree
 
     def initval_block(self, tree):
-
-        self.current_block = "initval"
-        res = [self.visit(ch) for ch in tree.children]
-        self.current_block = None
+        endogenous = self.symbols.get("endogenous", None)
+        res = evaluate_steady_block(
+            tree,
+            constants=self.constants,
+            steady_states=self.steady_states,
+            endogenous=endogenous,
+            function_table=self.function_table,
+        )
+        self.steady_states.update(res)
 
     def steady_block(self, tree):
-
-        self.current_block = "steady_block"
-        res = [self.visit(ch) for ch in tree.children]
-        self.current_block = None
+        endogenous = self.symbols.get("endogenous", None)
+        res = evaluate_steady_block(
+            tree,
+            constants=self.constants,
+            steady_states=self.steady_states,
+            endogenous=endogenous,
+            function_table=self.function_table,
+        )
+        self.steady_states.update(res)
 
     def parassignment(self, tree):
-        name = str(tree.children[0].children[0].children[0])
+        name = _extract_name(tree.children[0])
         formula = tree.children[1]
         value = self.visit(formula)
-        if self.current_block is None:
-            if name in self.calibration:
-                # override value in the model with calibraiton value
-                print("overriding parameter value:", name, "=", self.calibration[name])
-                value = self.calibration[name]
-            self.constants[name] = value
-        elif self.current_block == "initval":
-            self.steady_states[name] = value
-        elif self.current_block == "steady_block":
-            self.steady_states[name] = value
+        if name in self.calibration:
+            # override value in the model with calibraiton value
+            print("overriding parameter value:", name, "=", self.calibration[name])
+            value = self.calibration[name]
+        self.constants[name] = value
 
     def setvar_stmt(self, tree):
         name = str(tree.children[0].children[0].children[0])
@@ -156,6 +327,27 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
         formula = tree.children[1]
         value = self.visit(formula)
         self.covariances[(name, name)] = value**2
+        return tree
+
+    def setcovar_stmt(self, tree):
+        name1 = str(tree.children[0].children[0].children[0])
+        name2 = str(tree.children[1].children[0].children[0])
+        formula = tree.children[2]
+        value = self.visit(formula)
+        self.covariances[(name1, name2)] = value
+        self.covariances[(name2, name1)] = value
+        return tree
+
+    def setcorr_stmt(self, tree):
+        name1 = str(tree.children[0].children[0].children[0])
+        name2 = str(tree.children[1].children[0].children[0])
+        formula = tree.children[2]
+        value = self.visit(formula)
+        var1 = self.covariances.get((name1, name1), 0.0)
+        var2 = self.covariances.get((name2, name2), 0.0)
+        cov = value * math.sqrt(var1 * var2)
+        self.covariances[(name1, name2)] = cov
+        self.covariances[(name2, name1)] = cov
         return tree
 
     # Function calls
