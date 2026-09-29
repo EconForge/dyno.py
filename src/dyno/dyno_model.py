@@ -84,6 +84,16 @@ class DynoModel(AbstractModel):
         model = self
         results = RunResults(model=model)
 
+        invalid_shifts = getattr(self, "_invalid_shifts", None)
+        if invalid_shifts:
+            from .errors import SystemStructureError
+
+            shifts_str = ", ".join(invalid_shifts)
+            raise SystemStructureError(
+                f"Unsupported timing (only -1, 0, 1 so far): higher-order lead/lag detected ({shifts_str}). "
+                "Dyno solvers currently support shifts in [-1, 1]."
+            )
+
         if not commands and default_pipeline:
             # Default pipeline: residuals + solve + IRFs
             results.residuals = model.residuals
@@ -126,9 +136,7 @@ class DynoModel(AbstractModel):
                         from .simul import simulate
 
                         solve_options = {
-                            k: v
-                            for k, v in options.items()
-                            if k not in {"T", "irf", "periods"}
+                            k: v for k, v in options.items() if k in {"method"}
                         }
                         solution = results.solution
                         if solution is None or not hasattr(solution, "X"):
@@ -180,6 +188,9 @@ class DynoModel(AbstractModel):
         txt: str | None = None,
         yaml: str | None = None,
         strict: bool = False,
+        preprocess: bool = True,
+        include_paths: list[str] | None = None,
+        defines: dict[str, Any] | None = None,
         **kwargs,
     ) -> None:
         if yaml is not None:
@@ -189,12 +200,39 @@ class DynoModel(AbstractModel):
             if filename is None:
                 filename = "*anonymous*.yaml"
 
-        super().__init__(filename=filename, txt=txt, strict=strict, **kwargs)
+        super().__init__(
+            filename=filename,
+            txt=txt,
+            strict=strict,
+            preprocess=preprocess,
+            include_paths=include_paths,
+            defines=defines,
+            **kwargs,
+        )
 
-    def import_model(self: Self, txt: str, **kwargs) -> None:
+    def import_model(
+        self: Self,
+        txt: str,
+        preprocess: bool = True,
+        include_paths: list[str] | None = None,
+        defines: dict[str, Any] | None = None,
+        **kwargs,
+    ) -> None:
 
         try:
             if self.filename.endswith(".mod"):
+                if preprocess:
+                    from dyno.dynare.macro import expand_macro
+
+                    txt = expand_macro(
+                        txt,
+                        filepath=(
+                            self.filename if not self.filename.startswith("*") else None
+                        ),
+                        include_paths=include_paths,
+                        defines=defines,
+                        only_if_needed=True,
+                    )
                 self.symbolic = LModFile(content=txt, filename=self.filename)
             elif self.filename.endswith(".yaml") or self.filename.endswith(".yml"):
                 data = yaml.safe_load(txt)
@@ -261,11 +299,12 @@ class DynoModel(AbstractModel):
                     if abs(shift) > 1:
                         vname = str(subtree.children[0].children[0])
                         invalid_shifts.append(f"{vname}[t{shift:+d}]")
+        self._invalid_shifts = invalid_shifts
         if invalid_shifts:
             from .errors import SystemStructureError, UndefinedSymbolWarning
 
             shifts_str = ", ".join(invalid_shifts)
-            msg = f"Higher-order lead/lag detected ({shifts_str}). Dyno solvers currently support shifts in [-1, 1]."
+            msg = f"Unsupported timing (only -1, 0, 1 so far): higher-order lead/lag detected ({shifts_str}). Dyno solvers currently support shifts in [-1, 1]."
             if getattr(self, "strict", False):
                 raise SystemStructureError(msg)
             else:
