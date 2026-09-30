@@ -323,17 +323,50 @@ def model_representation_gui(directory: str | Path = "examples"):
             solara.AppBarTitle(str(path))
 
         solara.Style("""
+            html, body {
+                overflow: hidden !important;
+            }
             .v-navigation-drawer {
                 width: 280px !important;
+            }
+            .solara-content-main,
+            .solara-content-main .v-content__wrap,
+            .solara-content-main .v-content__wrap > div {
+                overflow: hidden !important;
             }
             .solara-content-main > div {
                 padding: 6px 12px !important;
             }
-            .v-card pre, .v-card code {
+            .v-card pre {
                 white-space: pre !important;
                 overflow-x: auto !important;
                 word-break: normal !important;
                 word-wrap: normal !important;
+            }
+            .v-application :not(pre) > code {
+                font-family: Menlo, 'DejaVu Sans Mono', Consolas, 'Courier New', monospace !important;
+                background-color: #f1f5f9 !important;
+                color: #0f172a !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 3px !important;
+                padding: 1px 5px !important;
+                display: inline !important;
+                vertical-align: baseline !important;
+                white-space: normal !important;
+                box-shadow: none !important;
+                font-size: 0.88em !important;
+                font-weight: 500 !important;
+            }
+            .v-application pre code {
+                background-color: transparent !important;
+                border: none !important;
+                padding: 0 !important;
+                font-size: inherit !important;
+            }
+            .v-application code:before,
+            .v-application code:after {
+                content: none !important;
+                letter-spacing: normal !important;
             }
             .v-card {
                 overflow-x: auto !important;
