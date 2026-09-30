@@ -93,39 +93,45 @@ class SymbolicModel:
         return "\n".join(lines)
 
     def equations_table_markdown(self):
-        """Return equations formatted as separate display-math blocks."""
+        """Return equations as a borderless three-column HTML table.
+
+        Columns: label (right-aligned, against the equation), equation, and
+        equation number (right-aligned, so numbers line up vertically). Each
+        equation is inline `$\\displaystyle ...$` math for the frontend to
+        typeset. The table is a single raw-HTML line, so markdown renderers
+        pass it through untouched.
+        """
+        import html
+
         from dyno.dynspec.latex import latex
 
-        def _latex_text_escape(text: str) -> str:
-            return (
-                text.replace("\\", r"\textbackslash{}")
-                .replace("{", r"\{")
-                .replace("}", r"\}")
-                .replace("_", r"\_")
-                .replace("%", r"\%")
-                .replace("$", r"\$")
-                .replace("&", r"\&")
-                .replace("#", r"\#")
-                .replace("^", r"\^")
-                .replace("~", r"\~{}")
-            )
-
-        lines: list[str] = []
-
+        cell = "border:none; background:transparent; padding:0.35em 0.5em;"
+        rows: list[str] = []
         for i, eq in enumerate(self.equations, start=1):
-            eq_latex = latex(eq)
             meta = getattr(getattr(eq, "meta", None), "statement_metadata", {})
-            label_text = r"\text{}"
+            label = ""
             if isinstance(meta, dict) and "label" in meta:
-                label_text = str(meta["label"])
-                label_text = _latex_text_escape(label_text)
-                label_text = r"\text{" + label_text + "}"
-
-            lines.append(
-                f"$$\\displaystyle {label_text} \\quad {eq_latex} \\quad ({i})$$"
+                label = html.escape(str(meta["label"]))
+            eq_latex = html.escape(latex(eq))
+            rows.append(
+                '<tr style="border:none; background:transparent;">'
+                f'<td style="{cell} text-align:right; white-space:nowrap;">{label}</td>'
+                f'<td style="{cell} text-align:left; width:100%;">'
+                f"$\\displaystyle {eq_latex}$</td>"
+                f'<td style="{cell} text-align:right; white-space:nowrap;">'
+                f"({i})</td></tr>"
             )
 
-        return "\n\n".join(lines)
+        # `table-layout:auto` overrides JupyterLab's `fixed`, which would
+        # squeeze the label column; the wrapper scrolls long equations
+        # sideways instead of pushing the numbers out of view.
+        return (
+            '<div style="overflow-x:auto;">'
+            '<table class="dyno-equations" style="border:none; '
+            'border-collapse:collapse; table-layout:auto; width:100%; '
+            'margin:0.5em 0;">'
+            f"<tbody>{''.join(rows)}</tbody></table></div>"
+        )
 
     def eval_residuals(self, context: dict | None = None) -> list:
 

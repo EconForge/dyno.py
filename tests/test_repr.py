@@ -107,7 +107,7 @@ x[t] = alpha * x[t-1] + e[t]
     assert "| **Exogenous** | 1 | `e` |" in md
     assert "| **Parameters** | 1 | `alpha` |" in md
     assert "## Equations" in md
-    assert r"$$\displaystyle \text{}" in md
+    assert r"$\displaystyle x_{t}" in md
     assert "(1)" in md
 
 
@@ -129,47 +129,29 @@ x[t] = alpha * x[t-1] + e[t] :: \"Productivity law\"
     assert "label:" not in md
 
 
-def test_model_markdown_equations_use_sequential_tags():
+def test_model_markdown_equations_are_numbered_rows_of_one_table():
     txt = """
 alpha := 0.9
 beta := 0.8
 x[~] := 0
 y[~] := 0
-x[t] = alpha * x[t-1]
+x[t] = alpha * x[t-1] :: "first law"
 y[t] = beta * y[t-1]
 """
 
     model = DynoModel(filename="two_equations.dyno", txt=txt)
 
-    md = model._markdown_()
+    table = model.symbolic.equations_table_markdown()
 
-    assert md.count("$$\\displaystyle") == 2
-    assert "$$\n$$" not in md
-    assert "(1)" in md
-    assert "(2)" in md
-
-
-def test_model_markdown_renders_each_equation_in_its_own_display_block():
-    txt = """
-alpha := 0.9
-beta := 0.8
-x[~] := 0
-y[~] := 0
-x[t] = alpha * x[t-1]
-y[t] = beta * y[t-1]
-"""
-
-    model = DynoModel(filename="equation_blocks.dyno", txt=txt)
-
-    md = model._markdown_()
-
-    equation_block_lines = [
-        line for line in md.splitlines() if line.startswith("$$\\displaystyle")
-    ]
-
-    assert len(equation_block_lines) == 2
-    assert equation_block_lines[0].endswith("(1)$$")
-    assert equation_block_lines[1].endswith("(2)$$")
+    # One raw-HTML line, so markdown renderers pass it through untouched.
+    assert "\n" not in table
+    assert table.count("<table") == 1
+    assert table.count("<tr") == 2
+    assert table.count("$\\displaystyle") == 2
+    # label | equation | number
+    assert re.search(r"first law</td><td[^>]*>\$\\displaystyle x_\{t\}", table)
+    assert re.search(r"<td[^>]*>\(1\)</td></tr>", table)
+    assert re.search(r"<td[^>]*>\(2\)</td></tr>", table)
 
 
 def test_runresults_markdown_accepts_series_simulation_entries():

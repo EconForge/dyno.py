@@ -9,6 +9,7 @@ import pandas as pd
 import tempita
 
 from dyno.errors import ParserError, SteadyStateError
+from dyno.svg_theme import theme_svg
 
 from typing import TYPE_CHECKING, Any
 
@@ -460,6 +461,22 @@ def style_eigenvalues_dataframe(
 # ---------------------------------------------------------------------------
 # RunResults — unified result container for all model execution paths
 # ---------------------------------------------------------------------------
+
+
+def _embed_svg(svg: str, output_type: str, alt: str) -> str:
+    """Embed an SVG chart in the markdown report.
+
+    With `output_type="myst"` dyno renders the report itself, so the SVG is
+    inlined (on one line, inside a `<div>`, so markdown passes it through)
+    and follows the page theme (see `dyno.svg_theme`). Other markdown
+    renderers get a self-contained `<img>`, in light colors.
+    """
+    if str(output_type).lower() == "myst":
+        return f'<div class="dyno-plot">{svg}</div>'
+    import base64
+
+    b64 = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+    return f'<img src="data:image/svg+xml;base64,{b64}" alt="{alt}" style="max-width:100%; height:auto;" />'
 
 
 class RunResults:
@@ -976,7 +993,7 @@ class RunResults:
                     )
 
         parts.append("</svg>")
-        return "".join(parts)
+        return theme_svg("".join(parts))
 
     def _repr_markdown_(self) -> str | None:
         if str(self.output_type).lower() == "text" and self.mime_bundle_repr is None:
@@ -1099,10 +1116,9 @@ class RunResults:
                 self.simulation, variables=plot_vars
             )
             if rendered_svg:
-                import base64
-
-                b64 = base64.b64encode(rendered_svg.encode("utf-8")).decode("ascii")
-                sim_svg = f'<img src="data:image/svg+xml;base64,{b64}" alt="Simulation charts" style="max-width:100%; height:auto;" />'
+                sim_svg = _embed_svg(
+                    rendered_svg, self.output_type, "Simulation charts"
+                )
 
         d: dict[str, Any] = {
             "model": model,

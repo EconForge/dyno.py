@@ -12,12 +12,14 @@ import pandas as pd
 from .model import AbstractModel
 from .report import (
     RunResults,
+    _embed_svg,
     _inline_styler_styles,
     style_calibration_dataframe,
     style_residuals_dataframe,
     style_eigenvalues_dataframe,
 )
 from .simul import SimulationResult
+from .svg_theme import theme_svg
 from .solver import PerturbationSolution, RecursiveDecisionRule
 from .typedefs import IRFType, UnitsType
 
@@ -1120,7 +1122,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
                         )
 
         parts.append("</svg>")
-        return "".join(parts)
+        return theme_svg("".join(parts))
 
     def _render_html_report(self) -> str:
         parts: list[str] = []
@@ -1756,10 +1758,9 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         if self._should_render_plot and sim_vc is not None:
             sim_svg = self._simulation_variants_to_html(sim_vc, **self._plot_options)
             if sim_svg:
-                import base64
-
-                b64 = base64.b64encode(sim_svg.encode("utf-8")).decode("ascii")
-                img_tag = f'<img src="data:image/svg+xml;base64,{b64}" alt="Simulation variant charts" style="max-width:100%; height:auto;" />'
+                img_tag = _embed_svg(
+                    sim_svg, self.output_type, "Simulation variant charts"
+                )
                 blocks.append(f"## Plot\n\n{img_tag}\n\n---")
 
         return "\n\n".join(blocks)
