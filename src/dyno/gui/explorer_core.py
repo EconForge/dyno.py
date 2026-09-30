@@ -200,11 +200,24 @@ def available_backends(path: Path) -> dict[str, type]:
     return backends
 
 
+def _is_hidden(path: Path, root: Path) -> bool:
+    try:
+        parts = path.relative_to(root).parts
+    except ValueError:
+        parts = path.parts
+    return any(part.startswith(".") for part in parts)
+
+
 def discover_models(directory: str | Path = "examples") -> list[Path]:
     root = Path(directory)
     if not root.is_dir():
         return []
-    paths = {p for pattern in ("*.dyno", "*.mod") for p in root.rglob(pattern)}
+    paths = {
+        p
+        for pattern in ("*.dyno", "*.mod")
+        for p in root.rglob(pattern)
+        if not _is_hidden(p, root)
+    }
     return sorted(p for p in paths if p.is_file())
 
 

@@ -29,6 +29,32 @@ def test_discover_models_missing_directory_returns_empty():
     assert discover_models("does/not/exist") == []
 
 
+def test_discover_models_ignores_hidden_files_and_directories(tmp_path: Path):
+    (tmp_path / "model1.dyno").write_text("model 1")
+    (tmp_path / "model2.mod").write_text("model 2")
+    (tmp_path / ".hidden.dyno").write_text("hidden dyno")
+    (tmp_path / ".hidden.mod").write_text("hidden mod")
+
+    hidden_dir = tmp_path / ".ipynb_checkpoints"
+    hidden_dir.mkdir()
+    (hidden_dir / "checkpoint.dyno").write_text("checkpoint dyno")
+
+    nested_hidden = tmp_path / "subdir" / ".cache"
+    nested_hidden.mkdir(parents=True)
+    (nested_hidden / "cache.mod").write_text("cache mod")
+
+    visible_subdir = tmp_path / "subdir" / "visible"
+    visible_subdir.mkdir(parents=True)
+    (visible_subdir / "submodel.dyno").write_text("submodel")
+
+    discovered = discover_models(tmp_path)
+    assert discovered == [
+        tmp_path / "model1.dyno",
+        tmp_path / "model2.mod",
+        visible_subdir / "submodel.dyno",
+    ]
+
+
 def test_available_backends_dyno_file_only_offers_dyno_model():
     backends = available_backends(RBC_DYNO)
     assert set(backends) == {"DynoModel"}
@@ -185,3 +211,32 @@ def test_render_markdown_myst_unknown_directive_shows_name_not_raw_syntax():
 def test_content_types_and_formats_are_stable():
     assert CONTENT_TYPES == ("representation", "report")
     assert OUTPUT_FORMATS == ("text", "html", "markdown")
+
+
+def test_render_variant_report_for_rbc_uppercase_dyno():
+    rbc_path = Path("examples/RBC.dyno")
+    source = rbc_path.read_text()
+    variant = ImportVariant("DynoModel", False)
+    for output_format in OUTPUT_FORMATS:
+        ok, kind, content, line = render_variant(
+            rbc_path, source, variant, "report", output_format
+        )
+        assert ok is True
+        assert kind == ("myst" if output_format == "markdown" else "html")
+        assert content.strip() != ""
+        assert line is None
+        if output_format == "markdown":
+            assert "{{" not in content
+
+
+def test_latex_power_does_not_produce_redundant_braces():
+    from dyno.dynspec.latex import latex
+
+    # Fractions with powers in denominator must not generate consecutive double braces '{{'
+    assert (
+        latex("khi*c[t]/(1-n[t])^eta")
+        == r"\frac{\chi \cdot c_{t}}{\left(1 - n_{t}\right)^{\eta}}"
+    )
+    assert "{{" not in latex("khi*c[t]/(1-n[t])^eta")
+    assert latex("k[t-1]^alpha") == r"k_{t-1}^{\alpha}"
+    assert latex("x^2") == r"x^{2}"

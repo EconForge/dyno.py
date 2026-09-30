@@ -35,18 +35,17 @@ and opens the app in your browser.
 - **Browse every example model** under `examples/` from the sidebar list,
   filterable by name, with `↑`/`↓` to jump between results without leaving
   the filter box.
-- **Edit the source live** in the main panel (with line numbers) and watch
-  every panel recompute as you type.
-- **Choose what to display**: the model's *representation* (`repr()`,
-  `_repr_html_()`, `_markdown_()`) or the *report* produced by
-  `model.run(default_pipeline=True)`.
-- **Compare frontends side by side**: text, HTML, and Markdown can all be
-  shown at once, stacked per import variant and aligned across variants.
-  Markdown is rendered with MyST-flavored syntax (admonitions, dropdowns,
-  math), matching the style used by `RunResults`' own report template.
-- **Compare import options**: toggle `DynoModel` vs. `DynareModel` (when a
-  `.mod` file supports both) and a shared `strict=True` switch, to see how
-  each combination handles the same source.
+- **Edit the source live** in the source panel (with line numbers) and watch
+  the preview recompute as you type.
+- **Top button bar**: switch quickly between *representation* (`repr()`,
+  `_repr_html_()`, `_markdown_()`) and *report* (`model.run()`), toggle
+  output formats (HTML, Markdown, plain text), select import backends
+  (`DynoModel` vs. `DynareModel`), or toggle `strict` mode.
+- **Streamlined preview pane**: displays the selected output format directly,
+  with MyST-flavored Markdown rendering (admonitions, dropdowns, math) matching
+  the style used by `RunResults`.
+- **Toggle source editor**: show or hide the source editor to give the preview
+  pane full width.
 - **Spot parse errors at their source line**: when an import or render step
   fails with a line number attached, that line is highlighted in the gutter.
 

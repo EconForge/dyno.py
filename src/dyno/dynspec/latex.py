@@ -144,8 +144,8 @@ class LatexTransformer(Transformer):
         # Base needs parentheses if it has lower precedence than pow
         base_str = self._get_string_with_parens(base, "pow", "left")
         exp_str = self._get_string(exponent)
-        # use braces around base and exponent
-        result = f"{{{base_str}}}^{{{exp_str}}}"
+        # use braces around exponent
+        result = f"{base_str}^{{{exp_str}}}"
         return self._with_precedence(result, "pow")
 
     def neg(self, children):

@@ -6,8 +6,9 @@ from typing import Any
 import numpy as np
 
 _ANSI_FRAGMENT_FORMAT = (
-    "<pre style=\"font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">"
-    '<code style="font-family:inherit">{code}</code></pre>'
+    "<pre style=\"font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace; "
+    'white-space:pre !important; overflow-x:auto !important; word-break:normal !important; word-wrap:normal !important;">'
+    '<code style="font-family:inherit; white-space:pre !important; word-break:normal !important;">{code}</code></pre>'
 )
 _MARKDOWN_FRAGMENT_FORMAT = '<div class="markdown-render">{code}</div>'
 
@@ -18,8 +19,8 @@ def ansi_to_html(ansi_text: str) -> str:
     from rich.text import Text
 
     compact_text = "\n".join(line.rstrip() for line in ansi_text.splitlines())
-    console = Console(record=True, force_terminal=True, width=90)
-    console.print(Text.from_ansi(compact_text))
+    console = Console(record=True, force_terminal=True, width=1000)
+    console.print(Text.from_ansi(compact_text), soft_wrap=True)
     return console.export_html(inline_styles=True, code_format=_ANSI_FRAGMENT_FORMAT)
 
 
