@@ -1,6 +1,6 @@
 [project]
 name = "dyno"
-version = "0.1.10"
+version = "0.1.11"
 requires-python = ">= 3.12,<3.14"
 dependencies = [
     "altair>=6.0.0,<7",
