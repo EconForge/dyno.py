@@ -628,7 +628,11 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
             return ""
         from .plots import plot_variants_plotext
 
-        opts = self._plot_options
+        opts = dict(self._plot_options)
+        if "vars" in opts and "variables" not in opts:
+            opts["variables"] = opts.pop("vars")
+        if "type" in opts and "units" not in opts:
+            opts["units"] = opts.pop("type")
         for key in ("variables", "shocks", "T", "units"):
             if kwargs.get(key) is None and key in opts:
                 kwargs[key] = opts[key]
@@ -766,13 +770,17 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
     ) -> str:
         from .plots import _prepare_variants_nsim
 
+        plot_vars = plot_opts.get("variables") or plot_opts.get("vars")
+        plot_shocks = plot_opts.get("shocks")
+        plot_T = plot_opts.get("T")
+        plot_units = plot_opts.get("units") or plot_opts.get("type")
         try:
             data = _prepare_variants_nsim(
                 sim_variants,
-                variables=plot_opts.get("variables"),
-                shocks=plot_opts.get("shocks"),
-                T=plot_opts.get("T"),
-                units=plot_opts.get("units"),
+                variables=plot_vars,
+                shocks=plot_shocks,
+                T=plot_T,
+                units=plot_units,
             ).copy()
         except Exception:
             return ""
@@ -801,12 +809,24 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         ]
         color_map = {v: palette[i % len(palette)] for i, v in enumerate(variants)}
 
+        unique_shocks = (
+            list(dict.fromkeys(data["shock"].astype(str)))
+            if "shock" in data.columns
+            else []
+        )
+        is_multi_shock = len(unique_shocks) > 1
+        dash_styles = ["", "6 3", "2 2", "6 2 2 2"]
+        shock_dash_map = {
+            s: dash_styles[i % len(dash_styles)] for i, s in enumerate(unique_shocks)
+        }
+        extra_top = 22 if is_multi_shock else 0
+
         panel_width = 260
         panel_height = 170
         cols = 2
         rows = max(1, (len(variables) + cols - 1) // cols)
         svg_width = cols * panel_width
-        svg_height = rows * panel_height + 28
+        svg_height = rows * panel_height + 28 + extra_top
 
         parts = [
             f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_width}" height="{svg_height}" viewBox="0 0 {svg_width} {svg_height}" role="img" aria-label="Simulation variant charts">'
@@ -826,13 +846,30 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
                 )
                 legend_x += 24 + max(36, len(safe_lbl) * 7)
 
+        if is_multi_shock:
+            shock_legend_x = 12
+            for s_lbl in unique_shocks:
+                dash_attr = (
+                    f' stroke-dasharray="{shock_dash_map[s_lbl]}"'
+                    if shock_dash_map[s_lbl]
+                    else ""
+                )
+                safe_s = html.escape(str(s_lbl))
+                parts.append(
+                    f'<line x1="{shock_legend_x}" y1="36" x2="{shock_legend_x + 18}" y2="36" stroke="#64748b"{dash_attr} stroke-width="2"/>'
+                )
+                parts.append(
+                    f'<text x="{shock_legend_x + 24}" y="40" font-size="12" fill="#64748b">shock: {safe_s}</text>'
+                )
+                shock_legend_x += 24 + max(48, (len(safe_s) + 7) * 7)
+
         for index, variable in enumerate(variables):
             subset = data[data["variable"].astype(str) == variable].copy()
             if subset.empty:
                 continue
 
             x0 = (index % cols) * panel_width
-            y0 = (index // cols) * panel_height + 28
+            y0 = (index // cols) * panel_height + 28 + extra_top
 
             left = x0 + 36
             top = y0 + 18
@@ -895,15 +932,29 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
                     if group_cols
                     else [(None, v_sub)]
                 )
-                for _, grp in groups:
+                for grp_key, grp in groups:
                     grp_sorted = grp.sort_values("t")
                     points = " ".join(
                         f"{sx(float(row.t)):.2f},{sy(float(row.value)):.2f}"
                         for row in grp_sorted.itertuples(index=False)
                     )
                     if points:
+                        dash_val = ""
+                        if is_multi_shock and isinstance(grp_key, tuple):
+                            if "shock" in group_cols:
+                                s_val = str(grp_key[group_cols.index("shock")])
+                                dash_val = shock_dash_map.get(s_val, "")
+                        elif (
+                            is_multi_shock
+                            and grp_key is not None
+                            and "shock" in group_cols
+                        ):
+                            dash_val = shock_dash_map.get(str(grp_key), "")
+                        dash_attr = (
+                            f' stroke-dasharray="{dash_val}"' if dash_val else ""
+                        )
                         parts.append(
-                            f'<polyline fill="none" stroke="{color}" stroke-width="2" points="{points}"/>'
+                            f'<polyline fill="none" stroke="{color}"{dash_attr} stroke-width="2" points="{points}"/>'
                         )
 
         parts.append("</svg>")
@@ -914,7 +965,38 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         base_model = next((r.model for r in self.items if r.model is not None), None)
         if base_model is not None and hasattr(base_model, "_repr_html_"):
             parts.append(base_model._repr_html_())
-        parts.append(super()._repr_html_() or "")
+
+        # Clean variants summary table
+        params = self.parameters
+        header_cols = "".join(
+            f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">{html.escape(p)}</th>'
+            for p in params
+        )
+        v_rows: list[str] = []
+        for idx, (label, spec) in enumerate(zip(self.labels, self.specs)):
+            param_cells = "".join(
+                f'<td style="padding:6px 10px;border:1px solid #e2e8f0;">{html.escape(_format_scalar(spec.get(p, "")))}</td>'
+                for p in params
+            )
+            v_rows.append(
+                f"<tr>"
+                f'<td style="padding:6px 10px;border:1px solid #e2e8f0;color:#64748b;">{idx}</td>'
+                f'<td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:600;">{html.escape(label)}</td>'
+                f"{param_cells}"
+                f"</tr>"
+            )
+        parts.append(
+            f'<div style="margin:8px 0;">'
+            f'<div style="font-weight:600;margin-bottom:6px;">Variants ({len(self)})</div>'
+            f'<table style="border-collapse:collapse;font-size:13px;">'
+            f"<thead><tr>"
+            f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">#</th>'
+            f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">Variant</th>'
+            f"{header_cols}"
+            f"</tr></thead>"
+            f"<tbody>{''.join(v_rows)}</tbody>"
+            f"</table></div>"
+        )
 
         # Check section: Residuals and Generalized Eigenvalues across variants
         check_parts: list[str] = []

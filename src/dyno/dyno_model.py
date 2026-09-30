@@ -215,9 +215,14 @@ class DynoModel(AbstractModel):
                 if results.simulation is not None:
                     from .plots import plot_simulation
 
-                    engine = options.get("engine", "altair")
-                    plot_opts = {k: v for k, v in options.items() if k != "engine"}
-                    results._plot_options = dict(options)  # type: ignore[attr-defined]
+                    plot_options = dict(options)
+                    if "vars" in plot_options and "variables" not in plot_options:
+                        plot_options["variables"] = plot_options.pop("vars")
+                    if "type" in plot_options and "units" not in plot_options:
+                        plot_options["units"] = plot_options.pop("type")
+                    engine = plot_options.get("engine", "altair")
+                    plot_opts = {k: v for k, v in plot_options.items() if k != "engine"}
+                    results._plot_options = dict(plot_options)  # type: ignore[attr-defined]
                     results.figure = plot_simulation(
                         results.simulation, engine=engine, **plot_opts
                     )

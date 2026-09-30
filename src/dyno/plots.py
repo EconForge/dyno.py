@@ -321,6 +321,11 @@ def plot_simulation(
     engine : {'plotly', 'altair', 'plotext'}, default 'plotly'
         Plotting backend.
     """
+    if variables is None and "vars" in kwargs:
+        variables = kwargs.pop("vars")
+    if units is None and "type" in kwargs:
+        units = kwargs.pop("type")
+
     if isinstance(sim, VariantCollection):
         return plot_variants(
             sim,
@@ -330,11 +335,6 @@ def plot_simulation(
             engine=engine,
             **kwargs,
         )
-
-    if variables is None and "vars" in kwargs:
-        variables = kwargs.pop("vars")
-    if units is None and "type" in kwargs:
-        units = kwargs.pop("type")
 
     if engine == "plotext":
         if isinstance(sim, SimulationResult) and units is not None:
@@ -485,11 +485,17 @@ def plot_variants_plotext(
     theme: str = "clear",
     marker: str | None = None,
     show: bool = False,
+    **kwargs: Any,
 ) -> str:
     """Render multi-variant simulation trajectories as an ASCII/ANSI plot using plotext."""
     import shutil
     import sys
     import numpy as np
+
+    if variables is None and "vars" in kwargs:
+        variables = kwargs.pop("vars")
+    if units is None and "type" in kwargs:
+        units = kwargs.pop("type")
 
     try:
         import plotext as plt

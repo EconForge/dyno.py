@@ -1,0 +1,48 @@
+# Deterministic RBC Model
+# Parameters
+alpha <- 0.36
+rho   <- 0.95
+tau   <- 0.025
+r     <- 1.01
+beta  <- 1/r
+delta <- 0.025
+psi   <- 0
+theta <- 2.95
+phi   <- 0.1
+
+T <- 40
+
+# Initial steady state
+y[~] <- 1.08068253095672
+c[~] <- 0.80359242014163
+h[~] <- 0.29175631001732
+k[~] <- 11.08360443260358
+a[~] <- 0
+b[~] <- 0
+e[~] <- 0
+u[~] <- 0
+
+# Dynamic equations
+c[t]*theta*h[t]^(1+psi) = (1-alpha)*y[t] :: "Labor Supply"
+k[t] = beta*(((exp(b[t])*c[t])/(exp(b[t+1])*c[t+1]))*(exp(b[t+1])*alpha*y[t+1]+(1-delta)*k[t]))
+y[t] = exp(a[t])*(k[t-1]^alpha)*(h[t]^(1-alpha))
+k[t] = exp(b[t])*(y[t]-c[t])+(1-delta)*k[t-1]
+a[t] = rho*a[t-1]+tau*b[t-1] + e[t]
+b[t] = tau*a[t-1]+rho*b[t-1] + u[t]
+
+# Initial Values
+k[0] <- k[~]*1.01
+
+# Exogenous Shocks specified at all dates
+∀ t, 0 <= t < 10 : e[t] <- 0.05/(t+1)
+∀ t, 10 <= t < T + 1 : e[t] <- 0.0
+
+u[0] <- 0.0
+∀ t, 1 <= t < 10 : u[t] <- e[t-1]*1/2
+∀ t, 10 <= t < T + 1 : u[t] <- 0.0
+
+@run: variants: {alpha: [0.33, 0.36, 0.40]}
+@run: steady
+@run: check
+@run: simulate
+@run: plot: {variables: [a, b, k, c]}
