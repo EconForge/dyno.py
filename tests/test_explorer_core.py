@@ -240,3 +240,13 @@ def test_latex_power_does_not_produce_redundant_braces():
     assert "{{" not in latex("khi*c[t]/(1-n[t])^eta")
     assert latex("k[t-1]^alpha") == r"k_{t-1}^{\alpha}"
     assert latex("x^2") == r"x^{2}"
+
+
+def test_render_markdown_myst_keeps_markdown_syntax_out_of_math():
+    html = render_markdown_myst(
+        "Inline $a_t * b_t$ and $c_t * d_t$.\n\n$$\\beta_t \\\\ x_{t+1}$$\n"
+    )
+    assert "$a_t * b_t$" in html
+    assert "$c_t * d_t$" in html
+    assert "$$\\beta_t \\\\ x_{t+1}$$" in html
+    assert "<em>" not in html

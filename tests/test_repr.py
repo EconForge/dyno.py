@@ -836,3 +836,34 @@ def test_report_has_dedicated_plot_section():
         < md.index("## Simulation")
         < md.index("## Plot")
     )
+
+
+def _myst_report():
+    path = "examples/rbc.dyno"
+    with open(path) as f:
+        txt = f.read()
+    return dsge_report(
+        txt=txt, filename=path, output_type="myst", notify_interface=False
+    )
+
+
+def test_runresults_mimebundle_myst_renders_markdown_to_html():
+    bundle = _myst_report()._repr_mimebundle_()
+
+    assert "text/markdown" in bundle
+    # The MyST `:::{note}` overview is rendered by dyno itself, not left for a
+    # frontend MyST renderer.
+    assert "Model Overview" in bundle["text/html"]
+    assert ":::" not in bundle["text/html"]
+
+
+def test_runresults_display_myst_emits_html():
+    results = _myst_report()
+    display_mock = Mock()
+
+    with _patch_fake_ipython(display_mock):
+        results.display()
+
+    shown = display_mock.call_args_list[0].args[0]
+    assert "Model Overview" in shown
+    assert ":::" not in shown

@@ -1786,6 +1786,10 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
             md = self._repr_markdown_()
             if md:
                 data["text/markdown"] = md
+                if output_mode == "myst":
+                    from dyno.myst import render_markdown_myst
+
+                    data["text/html"] = render_markdown_myst(md)
         if mode == "html" or (mode is None and default_html):
             data["text/html"] = self._render_html_report()
         if mode in {None, "text"}:
@@ -1813,7 +1817,11 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
             display({"text/plain": repr(self)}, raw=True)
         else:
             md = self._repr_markdown_()
-            if md:
+            if md and output_mode == "myst":
+                from dyno.myst import render_markdown_myst
+
+                display(HTML(render_markdown_myst(md)))
+            elif md:
                 display(Markdown(md))
             if self.figure is not None and not (
                 self._should_render_plot and self.simulation is not None

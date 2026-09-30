@@ -1310,6 +1310,15 @@ class RunResults:
             parts.append(f"<pre style='color:red'>{e['message']}</pre>")
         return "<br>".join(parts)
 
+    @staticmethod
+    def _render_myst_html(markdown: str) -> str:
+        """Render the MyST report to HTML ourselves, so it displays without a
+        frontend MyST renderer (e.g. on JupyterLite, where `jupyterlab-myst`
+        can't be installed)."""
+        from dyno.myst import render_markdown_myst
+
+        return render_markdown_myst(markdown)
+
     def _repr_html_(self) -> str | None:
         if self.output_type != "html":
             return None
@@ -1378,6 +1387,8 @@ class RunResults:
             markdown = self._repr_markdown_()
             if markdown:
                 data["text/markdown"] = markdown
+                if output_mode == "myst":
+                    data["text/html"] = self._render_myst_html(markdown)
 
         include_html = mode == "html" or (mode is None and default_html)
         if include_html:
@@ -1437,6 +1448,10 @@ class RunResults:
                 display(HTML(html_repr))
         elif output_mode == "text":
             display({"text/plain": repr(self)}, raw=True)
+        elif output_mode == "myst":
+            markdown = self._repr_markdown_()
+            if markdown:
+                display(HTML(self._render_myst_html(markdown)))
         else:
             markdown = self._repr_markdown_()
             if markdown:
@@ -2079,7 +2094,7 @@ def dsge_report(
     if notify_interface:
         _send_interface_notifications(results)
 
-    if str(output_type).lower() == "markdown":
+    if str(output_type).lower() in {"markdown", "myst"}:
         results.display()
 
     return results
