@@ -600,6 +600,18 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         return {}
 
     @property
+    def steady_stats(self) -> list[dict[str, Any] | None]:
+        return [getattr(r, "steady_stats", None) for r in self.items]
+
+    @property
+    def _should_render_steady(self) -> bool:
+        if not any(getattr(r, "steady_stats", None) is not None for r in self.items):
+            return False
+        if "steady" in self.muted_commands:
+            return any(getattr(r, "_should_render_steady", False) for r in self.items)
+        return True
+
+    @property
     def _should_render_check(self) -> bool:
         if "check" in self.muted_commands:
             return any(getattr(r, "_should_render_check", True) for r in self.items)
@@ -814,6 +826,16 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         else:
             lines.extend([f"variants ({len(self)}): {', '.join(self.labels)}", ""])
 
+        if self._should_render_steady:
+            lines.extend(["Steady-state calculation", "------------------------"])
+            for lbl, r in zip(self.labels, self.items):
+                if r._should_render_steady and r.steady_stats is not None:
+                    lines.append(f"[{lbl}]")
+                    for s_line in r._steady_summary_lines():
+                        if s_line and not s_line.startswith(("Steady-state", "---")):
+                            lines.append(f"  {s_line}")
+            lines.append("")
+
         if self._should_render_check:
             lines.extend(["Checks", "------"])
             for lbl, r in zip(self.labels, self.items):
@@ -894,6 +916,15 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
 
     def __str__(self) -> str:
         return self.to_text()
+
+    def to_markdown(self) -> str:
+        """Return the formatted Markdown report across variants."""
+        md = self._repr_markdown_()
+        return md if md is not None else ""
+
+    def to_html(self) -> str:
+        """Return the formatted HTML report across variants."""
+        return self._render_html_report()
 
     @staticmethod
     def _simulation_variants_to_html(
@@ -1132,6 +1163,79 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
             f"<tbody>{''.join(v_rows)}</tbody>"
             f"</table></div>"
         )
+
+        # Steady-state calculation section across variants
+        if self._should_render_steady:
+            st_rows: list[str] = []
+            for idx, (label, r) in enumerate(zip(self.labels, self.items)):
+                stats = getattr(r, "steady_stats", None)
+                if stats is None:
+                    continue
+                algo = html.escape(str(stats.get("algorithm", "hybr")))
+                conv = bool(stats.get("converged", False))
+                badge = (
+                    '<span style="color:#16a34a;font-weight:600;">Converged</span>'
+                    if conv
+                    else '<span style="color:#dc2626;font-weight:600;">Did not converge</span>'
+                )
+                iters = html.escape(str(stats.get("iterations", "")))
+                nfev = html.escape(str(stats.get("function_evaluations", "")))
+                max_res = stats.get("max_residual")
+                max_res_str = (
+                    f"{float(max_res):.3e}"
+                    if max_res is not None and np.isfinite(max_res)
+                    else "N/A"
+                )
+                tol = stats.get("tolerance")
+                tol_str = f"{float(tol):.3e}" if tol is not None else "N/A"
+
+                st_rows.append(
+                    f"<tr>"
+                    f'<td style="padding:6px 10px;border:1px solid #e2e8f0;color:#64748b;">{idx}</td>'
+                    f'<td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:600;">{html.escape(label)}</td>'
+                    f'<td style="padding:6px 10px;border:1px solid #e2e8f0;">{algo}</td>'
+                    f'<td style="padding:6px 10px;border:1px solid #e2e8f0;">{badge}</td>'
+                    f'<td style="padding:6px 10px;border:1px solid #e2e8f0;">{iters}</td>'
+                    f'<td style="padding:6px 10px;border:1px solid #e2e8f0;">{nfev}</td>'
+                    f'<td style="padding:6px 10px;border:1px solid #e2e8f0;">{html.escape(max_res_str)}</td>'
+                    f'<td style="padding:6px 10px;border:1px solid #e2e8f0;">{html.escape(tol_str)}</td>'
+                    f"</tr>"
+                )
+            if st_rows:
+                all_converged = all(
+                    bool(getattr(r, "steady_stats", {}).get("converged", False))
+                    for r in self.items
+                    if getattr(r, "steady_stats", None) is not None
+                )
+                border_color = "#86efac" if all_converged else "#fca5a5"
+                bg_header = "#f0fdf4" if all_converged else "#fef2f2"
+                text_color = "#166534" if all_converged else "#991b1b"
+                summary_title = (
+                    "Steady-state converged for all variants"
+                    if all_converged
+                    else "Steady-state did not converge for all variants"
+                )
+                parts.append(
+                    f'<div style="margin:12px 0;">'
+                    f"<h3>Steady-state calculation</h3>"
+                    f'<details style="border:1px solid {border_color};border-radius:6px;background:#ffffff;margin:8px 0;" open>'
+                    f'<summary style="background:{bg_header};color:{text_color};padding:8px 12px;font-weight:600;cursor:pointer;">{summary_title}</summary>'
+                    f'<div style="padding:10px 12px;overflow-x:auto;">'
+                    f'<table style="border-collapse:collapse;font-size:13px;">'
+                    f"<thead><tr>"
+                    f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">#</th>'
+                    f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">Variant</th>'
+                    f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">Algorithm</th>'
+                    f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">Status</th>'
+                    f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">Iterations</th>'
+                    f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">Function evals</th>'
+                    f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">Max residual</th>'
+                    f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">Tolerance</th>'
+                    f"</tr></thead>"
+                    f"<tbody>{''.join(st_rows)}</tbody>"
+                    f"</table></div>"
+                    f"</details></div>"
+                )
 
         # Check section: Residuals and Generalized Eigenvalues across variants
         if self._should_render_check:
@@ -1413,6 +1517,41 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
 
             blocks.append(f":::{{dropdown}} Equations\n{eq_content}\n:::")
             blocks.append("---")
+
+        # Steady-state calculation section
+        if self._should_render_steady:
+            st_lines = ["## Steady-state calculation\n"]
+            all_converged = all(
+                bool(getattr(r, "steady_stats", {}).get("converged", False))
+                for r in self.items
+                if getattr(r, "steady_stats", None) is not None
+            )
+            admonition = (
+                ":::{tip} Steady-state converged for all variants"
+                if all_converged
+                else ":::{warning} Steady-state did not converge for all variants"
+            )
+            st_lines.append(admonition)
+            st_lines.append(":class: dropdown")
+            for lbl, r in zip(self.labels, self.items):
+                stats = getattr(r, "steady_stats", None)
+                if stats is None:
+                    continue
+                conv_str = (
+                    "converged" if stats.get("converged") else "failed to converge"
+                )
+                max_res = stats.get("max_residual")
+                max_res_str = (
+                    f"{float(max_res):.3e}"
+                    if max_res is not None and np.isfinite(max_res)
+                    else "N/A"
+                )
+                st_lines.append(
+                    f"- **{lbl}**: algorithm `{stats.get('algorithm', 'hybr')}`, {conv_str}, "
+                    f"evals: {stats.get('function_evaluations', 'N/A')}, max res: `{max_res_str}`"
+                )
+            st_lines.append(":::\n---")
+            blocks.append("\n".join(st_lines))
 
         # 3. Check section (Residuals and Blanchard-Kahn / Eigenvalues)
         has_residuals = any(r.residuals is not None for r in self.items)

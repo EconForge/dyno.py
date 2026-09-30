@@ -38,8 +38,10 @@ template = tempita.Template(
 {[default sim_svg=None]}
 {[default params_df_html=None]}
 {[default steady_df_html=None]}
+{[default steady_stats=None]}
 {[default residuals_df_html=None]}
 {[default eigenvalues_df_html=None]}
+{[default should_render_steady=True]}
 {[default should_render_check=True]}
 {[default should_render_solution=True]}
 {[default should_render_simulation_tables=True]}
@@ -83,6 +85,37 @@ Steady state values
 {[ model.latex_equations() ]}
 {[endif]}
 :::     
+
+---
+{[endif]}
+
+{[if should_render_steady and steady_stats is not None]}
+
+## Steady-state calculation
+
+{[py: _st_ok = bool(steady_stats.get('converged', False))]}
+{[if _st_ok]}
+:::{tip} Steady-state converged
+{[else]}
+:::{warning} Steady-state did not converge
+{[endif]}
+:class: dropdown
+- **Algorithm**: `{[ steady_stats.get('algorithm', 'hybr') ]}`
+{[if steady_stats.get('iterations') is not None]}
+- **Iterations**: {[ steady_stats.get('iterations') ]}
+{[endif]}
+{[if steady_stats.get('function_evaluations') is not None]}
+- **Function evaluations**: {[ steady_stats.get('function_evaluations') ]}
+{[endif]}
+{[if steady_stats.get('jacobian_evaluations') is not None]}
+- **Jacobian evaluations**: {[ steady_stats.get('jacobian_evaluations') ]}
+{[endif]}
+- **Max residual**: `{[ f"{float(steady_stats.get('max_residual', 0.0)):.3e}" if steady_stats.get('max_residual') is not None else 'N/A' ]}`
+- **Tolerance**: `{[ f"{float(steady_stats.get('tolerance', 0.0)):.3e}" if steady_stats.get('tolerance') is not None else 'N/A' ]}`
+{[if steady_stats.get('message')]}
+- **Message**: {[ steady_stats.get('message') ]}
+{[endif]}
+:::
 
 ---
 {[endif]}
@@ -453,6 +486,9 @@ class RunResults:
         self.mime_bundle_repr: str | None = mime_bundle_repr
 
         # Pipeline outputs
+        self.steady_stats: dict[str, Any] | None = None
+        if model is not None and getattr(model, "steady_stats", None) is not None:
+            self.steady_stats = model.steady_stats
         self.residuals: np.ndarray | None = None
         self.solution: PerturbationSolution | Any | None = None
         self.simulation: SimulationResult | dict | pd.DataFrame | None = None
@@ -470,6 +506,23 @@ class RunResults:
         self._from_pipeline: bool = False
         self._plot_options: dict[str, Any] | None = None
         self.muted_commands: set[str] = set()
+
+    @property
+    def steady_info(self) -> dict[str, Any] | None:
+        """Alias for steady_stats."""
+        return self.steady_stats
+
+    @steady_info.setter
+    def steady_info(self, value: dict[str, Any] | None) -> None:
+        self.steady_stats = value
+
+    @property
+    def _should_render_steady(self) -> bool:
+        if self.steady_stats is None:
+            return False
+        if "steady" in self.muted_commands:
+            return not bool(self.steady_stats.get("converged", True))
+        return True
 
     def _is_check_error(self) -> bool:
         if self.residuals is not None:
@@ -1063,6 +1116,8 @@ class RunResults:
             "moments_df": moments_df,
             "moments_cond_df": moments_cond_df,
             "moments_uncond_df": moments_uncond_df,
+            "steady_stats": self.steady_stats,
+            "should_render_steady": self._should_render_steady,
             "should_render_check": self._should_render_check,
             "should_render_solution": self._should_render_solution,
             "should_render_simulation_tables": self._should_render_simulation_tables,
@@ -1104,10 +1159,85 @@ class RunResults:
 
         return data
 
+    def _steady_stats_to_html(self) -> str:
+        if self.steady_stats is None:
+            return ""
+        stats = self.steady_stats
+        algo = html.escape(str(stats.get("algorithm", "hybr")))
+        converged = bool(stats.get("converged", False))
+        status_badge = (
+            '<span style="color:#16a34a;font-weight:600;">Converged</span>'
+            if converged
+            else '<span style="color:#dc2626;font-weight:600;">Did not converge</span>'
+        )
+        max_res = stats.get("max_residual")
+        max_res_str = (
+            f"{float(max_res):.3e}"
+            if max_res is not None and np.isfinite(max_res)
+            else "N/A"
+        )
+        tol = stats.get("tolerance")
+        tol_str = f"{float(tol):.3e}" if tol is not None else "N/A"
+
+        rows: list[tuple[str, str]] = [
+            ("Algorithm", algo),
+            ("Status", status_badge),
+        ]
+        if stats.get("iterations") is not None:
+            rows.append(("Iterations", html.escape(str(stats["iterations"]))))
+        if stats.get("function_evaluations") is not None:
+            rows.append(
+                (
+                    "Function evaluations",
+                    html.escape(str(stats["function_evaluations"])),
+                )
+            )
+        if stats.get("jacobian_evaluations") is not None:
+            rows.append(
+                (
+                    "Jacobian evaluations",
+                    html.escape(str(stats["jacobian_evaluations"])),
+                )
+            )
+        rows.append(("Max residual", html.escape(max_res_str)))
+        rows.append(("Tolerance", html.escape(tol_str)))
+        if stats.get("message"):
+            rows.append(("Message", html.escape(str(stats["message"]))))
+
+        cells = "".join(
+            f'<tr><td style="padding:6px 12px;font-weight:600;color:#475569;border:1px solid #e2e8f0;background:#f8fafc;">{label}</td>'
+            f'<td style="padding:6px 12px;border:1px solid #e2e8f0;">{val}</td></tr>'
+            for label, val in rows
+        )
+
+        border_color = "#86efac" if converged else "#fca5a5"
+        bg_header = "#f0fdf4" if converged else "#fef2f2"
+        text_color = "#166534" if converged else "#991b1b"
+        summary_title = (
+            "Steady-state converged" if converged else "Steady-state did not converge"
+        )
+
+        return (
+            '<div style="margin:12px 0;">'
+            "<h3>Steady-state calculation</h3>"
+            f'<details style="border:1px solid {border_color};border-radius:6px;background:#ffffff;margin:8px 0;" open>'
+            f'<summary style="background:{bg_header};color:{text_color};padding:8px 12px;font-weight:600;cursor:pointer;">{summary_title}</summary>'
+            f'<div style="padding:10px 12px;overflow-x:auto;">'
+            f'<table style="border-collapse:collapse;font-size:13px;border:1px solid #cbd5e1;">'
+            f"<tbody>{cells}</tbody>"
+            f"</table>"
+            f"</div>"
+            f"</details>"
+            "</div>"
+        )
+
     def _render_html_report(self) -> str:
         parts: list[str] = []
         if self.model is not None and hasattr(self.model, "_repr_html_"):
             parts.append(self.model._repr_html_())
+
+        if self._should_render_steady:
+            parts.append(self._steady_stats_to_html())
 
         check_parts: list[str] = []
         if self._should_render_check:
@@ -1324,6 +1454,11 @@ class RunResults:
         if self.model is not None:
             print(repr(self.model))
 
+        if self._should_render_steady and self.steady_stats is not None:
+            algo = self.steady_stats.get("algorithm", "hybr")
+            conv = "converged" if self.steady_stats.get("converged") else "failed"
+            print(f"Steady-state calculation: {algo} ({conv})")
+
         if self.residuals is not None:
             r = self.residuals
             if abs(r).max() < 1e-6:
@@ -1373,6 +1508,41 @@ class RunResults:
         if column is None:
             return f"line {line}: "
         return f"line {line}:{column}: "
+
+    def _steady_summary_lines(self) -> list[str]:
+        if self.steady_stats is None:
+            return []
+        stats = self.steady_stats
+        algo = stats.get("algorithm", "hybr")
+        converged = bool(stats.get("converged", False))
+        status_str = "converged" if converged else "failed to converge"
+        max_res = stats.get("max_residual")
+        max_res_str = (
+            f"{float(max_res):.3e}"
+            if max_res is not None and np.isfinite(max_res)
+            else "N/A"
+        )
+        tol = stats.get("tolerance")
+        tol_str = f"{float(tol):.3e}" if tol is not None else "N/A"
+
+        lines = [
+            "Steady-state calculation",
+            "------------------------",
+            f"algorithm: {algo}",
+            f"status: {status_str}",
+        ]
+        if stats.get("iterations") is not None:
+            lines.append(f"iterations: {stats['iterations']}")
+        if stats.get("function_evaluations") is not None:
+            lines.append(f"function evaluations: {stats['function_evaluations']}")
+        if stats.get("jacobian_evaluations") is not None:
+            lines.append(f"jacobian evaluations: {stats['jacobian_evaluations']}")
+        lines.append(f"max residual: {max_res_str}")
+        lines.append(f"tolerance: {tol_str}")
+        if stats.get("message"):
+            lines.append(f"message: {stats['message']}")
+        lines.append("")
+        return lines
 
     def _residuals_summary_lines(self) -> list[str]:
         if self.residuals is None:
@@ -1618,6 +1788,9 @@ class RunResults:
                 ]
             )
 
+        if self._should_render_steady:
+            lines.extend(self._steady_summary_lines())
+
         if self._should_render_check:
             lines.extend(["Checks", "------"])
             lines.extend(self._residuals_summary_lines())
@@ -1683,6 +1856,15 @@ class RunResults:
         lines.extend(["Timing", "------", f"elapsed: {elapsed:.3f}s"])
 
         return "\n".join(lines)
+
+    def to_markdown(self) -> str:
+        """Return the formatted Markdown report."""
+        md = self._repr_markdown_()
+        return md if md is not None else ""
+
+    def to_html(self) -> str:
+        """Return the formatted HTML report."""
+        return self._render_html_report()
 
     def __str__(self) -> str:
         return self.to_text()
