@@ -343,3 +343,84 @@ def test_pipeline_plot_keyword_effect():
     assert "<svg" in (var_with_plot._repr_html_() or "")
     assert "data:image/svg+xml" in (var_with_plot._repr_markdown_() or "")
     assert "Simulation Plots" in str(var_with_plot)
+
+
+def test_variants_muted_commands_render():
+    base_eqs = """
+    a <- 0.5
+    x[~] <- 0.0
+    y[~] <- 0.0
+    e[t] <- N(0.0, 1.0)
+    x[t] = a * x[t-1] + e[t]
+    y[t] = 0.5 * x[t]
+    """
+
+    txt = (
+        "@run: variants: {a: [0.3, 0.7]}\n"
+        "@run: check;\n"
+        "@run: solve;\n"
+        "@run: simulate: {T: 10};\n"
+        "@run: plot: {variables: [x]}\n" + base_eqs
+    )
+    res = DynoModel(txt=txt).run()
+
+    # Muted check and solve and simulate
+    assert "check" in res.muted_commands
+    assert "solve" in res.muted_commands
+    assert "simulate" in res.muted_commands
+    assert not res._should_render_check
+    assert not res._should_render_solution
+    assert not res._should_render_simulation_tables
+    assert res._should_render_plot
+
+    # HTML
+    html_out = res._repr_html_() or ""
+    assert "Variants" in html_out
+    assert "<h3>Check</h3>" not in html_out
+    assert "<h3>Decision Rule</h3>" not in html_out
+    assert "<h3>Moments</h3>" not in html_out
+    assert "<h3>Simulation</h3>" in html_out
+    assert "<svg" in html_out
+
+    # Markdown
+    md_out = res._repr_markdown_() or ""
+    assert "**Variants:**" in md_out
+    assert "## Check" not in md_out
+    assert "## Solution" not in md_out
+    assert "## Simulation" not in md_out
+    assert "## Plot" in md_out
+
+    # Text
+    txt_out = res.to_text()
+    assert "Checks\n------" not in txt_out
+    assert "Solution:" not in txt_out
+    assert "Simulation Plots\n----------------" in txt_out
+
+
+def test_variants_muted_check_shows_on_error():
+    # If a variant produces bad residuals, check should still be rendered even if muted
+    base_eqs = """
+    a <- 0.5
+    x[~] <- 1.0  # Incorrect steady state: x = 0 is true steady state
+    y[~] <- 0.0
+    e[t] <- N(0.0, 1.0)
+    x[t] = a * x[t-1] + e[t]
+    y[t] = 0.5 * x[t]
+    """
+
+    txt = "@run: variants: {a: [0.3, 0.7]}\n" "@run: check;\n" + base_eqs
+    res = DynoModel(txt=txt).run()
+
+    assert "check" in res.muted_commands
+    # Because residuals are not zero, _should_render_check remains True
+    assert res._should_render_check
+
+    html_out = res._repr_html_() or ""
+    assert "<h3>Check</h3>" in html_out
+    assert "Residuals" in html_out
+
+    md_out = res._repr_markdown_() or ""
+    assert "## Check" in md_out
+
+    txt_out = res.to_text()
+    assert "Checks\n------" in txt_out

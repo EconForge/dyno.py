@@ -43,7 +43,7 @@ def test_variants_examples_run_and_structure(
     html_out = res._repr_html_()
     assert html_out is not None
     assert "<h3>Model:" in html_out
-    assert f"Variants ({len(expected_labels)})" in html_out
+    assert "Variants:" in html_out
     for lbl in expected_labels:
         assert lbl in html_out
     assert "<h3>Check</h3>" in html_out
@@ -54,7 +54,7 @@ def test_variants_examples_run_and_structure(
     md_out = res._repr_markdown_()
     assert md_out is not None
     assert ":::{note} Model Overview" in md_out
-    assert f"| **Variants** | {len(expected_labels)} |" in md_out
+    assert "**Variants:**" in md_out
     assert ":::{dropdown} Calibration" in md_out
     assert ":::{dropdown} Equations" in md_out
     assert "## Check" in md_out

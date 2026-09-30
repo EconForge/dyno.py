@@ -554,6 +554,11 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         self.mime_bundle_repr = self.items[0].mime_bundle_repr if self.items else None
         self._unified_figure = None
         self._figure_computed = False
+        self.muted_commands = (
+            set.union(*(getattr(r, "muted_commands", set()) for r in self.items))
+            if self.items
+            else set()
+        )
 
     @property
     def elapsed(self) -> float:
@@ -595,7 +600,27 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         return {}
 
     @property
+    def _should_render_check(self) -> bool:
+        if "check" in self.muted_commands:
+            return any(getattr(r, "_should_render_check", True) for r in self.items)
+        return True
+
+    @property
+    def _should_render_solution(self) -> bool:
+        if "solve" in self.muted_commands or "perturb" in self.muted_commands:
+            return any(getattr(r, "_should_render_solution", True) for r in self.items)
+        return True
+
+    @property
+    def _should_render_simulation_tables(self) -> bool:
+        if "simulate" in self.muted_commands or "simul" in self.muted_commands:
+            return False
+        return True
+
+    @property
     def _should_render_plot(self) -> bool:
+        if "plot" in self.muted_commands:
+            return False
         if self._figure_computed and self._unified_figure is not None:
             return True
         return any(getattr(r, "_should_render_plot", False) for r in self.items)
@@ -789,54 +814,60 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         else:
             lines.extend([f"variants ({len(self)}): {', '.join(self.labels)}", ""])
 
-        lines.extend(["Checks", "------"])
-        for lbl, r in zip(self.labels, self.items):
-            lines.append(f"[{lbl}]")
-            for r_line in r._residuals_summary_lines():
-                lines.append(f"  {r_line}")
-            for ev_line in r._eigenvalues_summary_lines():
-                lines.append(f"  {ev_line}")
-        lines.append("")
+        if self._should_render_check:
+            lines.extend(["Checks", "------"])
+            for lbl, r in zip(self.labels, self.items):
+                lines.append(f"[{lbl}]")
+                for r_line in r._residuals_summary_lines():
+                    lines.append(f"  {r_line}")
+                for ev_line in r._eigenvalues_summary_lines():
+                    lines.append(f"  {ev_line}")
+            lines.append("")
 
         lines.extend(["Outputs", "-------"])
-        sol_items = [r.solution for r in self.items if r.solution is not None]
-        if sol_items:
-            lines.append(f"Solution: computed ({len(sol_items)}/{len(self)} variants)")
-            first_sol = sol_items[0]
-            dr = getattr(first_sol, "decision_rule", first_sol)
-            x_shape = getattr(getattr(dr, "X", None), "shape", None)
-            y_shape = getattr(getattr(dr, "Y", None), "shape", None)
-            s_shape = getattr(getattr(dr, "Σ", None), "shape", None)
-            if x_shape is not None or y_shape is not None or s_shape is not None:
+        if self._should_render_solution:
+            sol_items = [r.solution for r in self.items if r.solution is not None]
+            if sol_items:
                 lines.append(
-                    f"  decision rule matrices: X{x_shape}, Y{y_shape}, Σ{s_shape}"
+                    f"Solution: computed ({len(sol_items)}/{len(self)} variants)"
                 )
-        else:
-            lines.append("Solution: not computed")
+                first_sol = sol_items[0]
+                dr = getattr(first_sol, "decision_rule", first_sol)
+                x_shape = getattr(getattr(dr, "X", None), "shape", None)
+                y_shape = getattr(getattr(dr, "Y", None), "shape", None)
+                s_shape = getattr(getattr(dr, "Σ", None), "shape", None)
+                if x_shape is not None or y_shape is not None or s_shape is not None:
+                    lines.append(
+                        f"  decision rule matrices: X{x_shape}, Y{y_shape}, Σ{s_shape}"
+                    )
+            else:
+                lines.append("Solution: not computed")
 
-        sim_results = [r for r in self.items if r.simulation is not None]
-        if sim_results:
-            sim_summary = sim_results[0]._simulation_summary_line().split("\n")
-            sim_summary[0] = (
-                f"{sim_summary[0]} ({len(sim_results)}/{len(self)} variants)"
-            )
-            lines.extend(sim_summary)
-        else:
-            lines.append("Simulation: not computed")
+        if self._should_render_simulation_tables:
+            sim_results = [r for r in self.items if r.simulation is not None]
+            if sim_results:
+                sim_summary = sim_results[0]._simulation_summary_line().split("\n")
+                sim_summary[0] = (
+                    f"{sim_summary[0]} ({len(sim_results)}/{len(self)} variants)"
+                )
+                lines.extend(sim_summary)
+            else:
+                lines.append("Simulation: not computed")
 
         if self.figure is not None:
             lines.append(f"Figure: available ({type(self.figure).__name__})")
         else:
             lines.append("Figure: not available")
 
-        moments_items = [r.moments for r in self.items if r.moments is not None]
-        if moments_items:
-            shape = getattr(moments_items[0], "shape", None)
-            lines.append(
-                f"Moments: available{f' (shape={shape})' if shape else ''} ({len(moments_items)}/{len(self)} variants)"
-            )
-        else:
-            lines.append("Moments: not available")
+        if self._should_render_simulation_tables:
+            moments_items = [r.moments for r in self.items if r.moments is not None]
+            if moments_items:
+                shape = getattr(moments_items[0], "shape", None)
+                lines.append(
+                    f"Moments: available{f' (shape={shape})' if shape else ''} ({len(moments_items)}/{len(self)} variants)"
+                )
+            else:
+                lines.append("Moments: not available")
         lines.append("")
 
         use_graphs = self._should_render_plot if graphs is None else graphs
@@ -1063,8 +1094,12 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
     def _render_html_report(self) -> str:
         parts: list[str] = []
         base_model = next((r.model for r in self.items if r.model is not None), None)
-        if base_model is not None and hasattr(base_model, "_repr_html_"):
-            parts.append(base_model._repr_html_())
+        if base_model is not None:
+            from dyno.model_render import model_repr_data, render_model_html
+
+            parts.append(
+                render_model_html(model_repr_data(base_model), variants=self.labels)
+            )
 
         # Clean variants summary table
         params = self.parameters
@@ -1087,7 +1122,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
             )
         parts.append(
             f'<div style="margin:8px 0;">'
-            f'<div style="font-weight:600;margin-bottom:6px;">Variants ({len(self)})</div>'
+            f'<div style="font-weight:600;margin-bottom:6px;">Variants</div>'
             f'<table style="border-collapse:collapse;font-size:13px;">'
             f"<thead><tr>"
             f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;text-align:left;">#</th>'
@@ -1099,155 +1134,160 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         )
 
         # Check section: Residuals and Generalized Eigenvalues across variants
-        check_parts: list[str] = []
-        if any(r.residuals is not None for r in self.items):
-            n_eq = max(
-                (
-                    np.asarray(r.residuals).size
-                    for r in self.items
-                    if r.residuals is not None
-                ),
-                default=0,
-            )
-            eq_headers = "".join(
-                f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:11px;color:#64748b;">eq {i + 1}</th>'
-                for i in range(n_eq)
-            )
-            res_rows: list[str] = []
-            for lbl, r in zip(self.labels, self.items):
-                if r.residuals is None:
-                    cells = "".join(
-                        '<td style="padding:6px 10px;border:1px solid #e2e8f0;color:#94a3b8;">—</td>'
-                        for _ in range(n_eq)
-                    )
-                else:
-                    flat = np.asarray(r.residuals, dtype=float).reshape(-1)
-                    cell_list: list[str] = []
-                    for val in flat:
-                        is_bad = abs(float(val)) >= 1e-6
-                        val_color = "#dc2626" if is_bad else "#0f172a"
-                        bg_color = "background:#fef2f2;" if is_bad else ""
-                        weight = "600" if is_bad else "400"
-                        cell_list.append(
-                            f'<td style="padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap;{bg_color}color:{val_color};font-weight:{weight};font-size:13px;">'
-                            f"{html.escape(f'{float(val):.6g}')}</td>"
-                        )
-                    cells = "".join(cell_list)
-                res_rows.append(
-                    f"<tr>"
-                    f'<td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:600;white-space:nowrap;">{html.escape(lbl)}</td>'
-                    f"{cells}</tr>"
+        if self._should_render_check:
+            check_parts: list[str] = []
+            if any(r.residuals is not None for r in self.items):
+                n_eq = max(
+                    (
+                        np.asarray(r.residuals).size
+                        for r in self.items
+                        if r.residuals is not None
+                    ),
+                    default=0,
                 )
-            check_parts.append(
-                '<div style="margin:10px 0 14px 0;">'
-                '<div style="font-weight:600;color:#0f172a;margin-bottom:6px;">Residuals</div>'
-                '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">'
-                f'<thead><tr><th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:11px;color:#64748b;">Variant</th>{eq_headers}</tr></thead>'
-                f"<tbody>{''.join(res_rows)}</tbody></table></div></div>"
-            )
-
-        if any(r.eigenvalues is not None for r in self.items):
-            n_ev = max(
-                (
-                    np.asarray(r.eigenvalues).size
-                    for r in self.items
-                    if r.eigenvalues is not None
-                ),
-                default=0,
-            )
-            ev_headers = "".join(
-                f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:11px;color:#64748b;">{i + 1}</th>'
-                for i in range(n_ev)
-            )
-            ev_rows: list[str] = []
-            for lbl, r in zip(self.labels, self.items):
-                bk = r.bk_check
-                if bk is True:
-                    bk_cell = '<span style="color:#059669;font-weight:600;">Met</span>'
-                elif bk is False:
-                    bk_cell = (
-                        '<span style="color:#dc2626;font-weight:600;">Not met</span>'
-                    )
-                else:
-                    bk_cell = "—"
-                if r.eigenvalues is None:
-                    cells = "".join(
-                        '<td style="padding:6px 10px;border:1px solid #e2e8f0;color:#94a3b8;">—</td>'
-                        for _ in range(n_ev)
-                    )
-                else:
-                    flat_ev = np.asarray(r.eigenvalues).reshape(-1)
-                    cell_list = []
-                    for val in flat_ev:
-                        if np.iscomplexobj(np.asarray([val])):
-                            formatted = str(val)
-                        else:
-                            formatted = f"{float(val):.6g}"
-                        cell_list.append(
-                            f'<td style="padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap;color:#0f172a;font-size:13px;">'
-                            f"{html.escape(formatted)}</td>"
-                        )
-                    cells = "".join(cell_list)
-                ev_rows.append(
-                    f"<tr>"
-                    f'<td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:600;white-space:nowrap;">{html.escape(lbl)}</td>'
-                    f'<td style="padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap;">{bk_cell}</td>'
-                    f"{cells}</tr>"
+                eq_headers = "".join(
+                    f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:11px;color:#64748b;">eq {i + 1}</th>'
+                    for i in range(n_eq)
                 )
-            check_parts.append(
-                '<div style="margin:10px 0 14px 0;">'
-                '<div style="font-weight:600;color:#0f172a;margin-bottom:6px;">Generalized Eigenvalues</div>'
-                '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">'
-                f'<thead><tr><th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:11px;color:#64748b;">Variant</th>'
-                f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:11px;color:#64748b;">Blanchard-Kahn</th>{ev_headers}</tr></thead>'
-                f"<tbody>{''.join(ev_rows)}</tbody></table></div></div>"
-            )
+                res_rows: list[str] = []
+                for lbl, r in zip(self.labels, self.items):
+                    if r.residuals is None:
+                        cells = "".join(
+                            '<td style="padding:6px 10px;border:1px solid #e2e8f0;color:#94a3b8;">—</td>'
+                            for _ in range(n_eq)
+                        )
+                    else:
+                        flat = np.asarray(r.residuals, dtype=float).reshape(-1)
+                        cell_list: list[str] = []
+                        for val in flat:
+                            is_bad = abs(float(val)) >= 1e-6
+                            val_color = "#dc2626" if is_bad else "#0f172a"
+                            bg_color = "background:#fef2f2;" if is_bad else ""
+                            weight = "600" if is_bad else "400"
+                            cell_list.append(
+                                f'<td style="padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap;{bg_color}color:{val_color};font-weight:{weight};font-size:13px;">'
+                                f"{html.escape(f'{float(val):.6g}')}</td>"
+                            )
+                        cells = "".join(cell_list)
+                    res_rows.append(
+                        f"<tr>"
+                        f'<td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:600;white-space:nowrap;">{html.escape(lbl)}</td>'
+                        f"{cells}</tr>"
+                    )
+                check_parts.append(
+                    '<div style="margin:10px 0 14px 0;">'
+                    '<div style="font-weight:600;color:#0f172a;margin-bottom:6px;">Residuals</div>'
+                    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">'
+                    f'<thead><tr><th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:11px;color:#64748b;">Variant</th>{eq_headers}</tr></thead>'
+                    f"<tbody>{''.join(res_rows)}</tbody></table></div></div>"
+                )
 
-        if check_parts:
-            parts.append("<h3>Check</h3>")
-            parts.extend(check_parts)
+            if any(r.eigenvalues is not None for r in self.items):
+                n_ev = max(
+                    (
+                        np.asarray(r.eigenvalues).size
+                        for r in self.items
+                        if r.eigenvalues is not None
+                    ),
+                    default=0,
+                )
+                ev_headers = "".join(
+                    f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:11px;color:#64748b;">{i + 1}</th>'
+                    for i in range(n_ev)
+                )
+                ev_rows: list[str] = []
+                for lbl, r in zip(self.labels, self.items):
+                    bk = r.bk_check
+                    if bk is True:
+                        bk_cell = (
+                            '<span style="color:#059669;font-weight:600;">Met</span>'
+                        )
+                    elif bk is False:
+                        bk_cell = '<span style="color:#dc2626;font-weight:600;">Not met</span>'
+                    else:
+                        bk_cell = "—"
+                    if r.eigenvalues is None:
+                        cells = "".join(
+                            '<td style="padding:6px 10px;border:1px solid #e2e8f0;color:#94a3b8;">—</td>'
+                            for _ in range(n_ev)
+                        )
+                    else:
+                        flat_ev = np.asarray(r.eigenvalues).reshape(-1)
+                        cell_list = []
+                        for val in flat_ev:
+                            if np.iscomplexobj(np.asarray([val])):
+                                formatted = str(val)
+                            else:
+                                formatted = f"{float(val):.6g}"
+                            cell_list.append(
+                                f'<td style="padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap;color:#0f172a;font-size:13px;">'
+                                f"{html.escape(formatted)}</td>"
+                            )
+                        cells = "".join(cell_list)
+                    ev_rows.append(
+                        f"<tr>"
+                        f'<td style="padding:6px 10px;border:1px solid #e2e8f0;font-weight:600;white-space:nowrap;">{html.escape(lbl)}</td>'
+                        f'<td style="padding:6px 10px;border:1px solid #e2e8f0;white-space:nowrap;">{bk_cell}</td>'
+                        f"{cells}</tr>"
+                    )
+                check_parts.append(
+                    '<div style="margin:10px 0 14px 0;">'
+                    '<div style="font-weight:600;color:#0f172a;margin-bottom:6px;">Generalized Eigenvalues</div>'
+                    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;">'
+                    f'<thead><tr><th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:11px;color:#64748b;">Variant</th>'
+                    f'<th style="padding:6px 10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:11px;color:#64748b;">Blanchard-Kahn</th>{ev_headers}</tr></thead>'
+                    f"<tbody>{''.join(ev_rows)}</tbody></table></div></div>"
+                )
+
+            if check_parts:
+                parts.append("<h3>Check</h3>")
+                parts.extend(check_parts)
 
         # Decision Rule section across variants
-        sol_blocks: list[str] = []
-        for idx, (lbl, r) in enumerate(zip(self.labels, self.items)):
-            if r.solution is not None and hasattr(r.solution, "coefficients_as_df"):
-                ss, df = r.solution.coefficients_as_df()
-                open_attr = " open" if idx == 0 else ""
-                sol_blocks.append(
-                    f'<details{open_attr} style="border:1px solid #e2e8f0;padding:8px 12px;margin:6px 0;border-radius:4px;">'
-                    f'<summary style="font-weight:600;cursor:pointer;">{html.escape(lbl)}</summary>'
-                    f'<div style="margin-top:8px;">'
-                    f"<h4>Steady-state</h4>{ss.to_html(index=False)}"
-                    f"<h4>Jacobian</h4>{df.to_html()}"
-                    f"</div></details>"
-                )
-        if sol_blocks:
-            parts.append("<h3>Decision Rule</h3>")
-            parts.append("".join(sol_blocks))
+        if self._should_render_solution:
+            sol_blocks: list[str] = []
+            for idx, (lbl, r) in enumerate(zip(self.labels, self.items)):
+                if r.solution is not None and hasattr(r.solution, "coefficients_as_df"):
+                    ss, df = r.solution.coefficients_as_df()
+                    open_attr = " open" if idx == 0 else ""
+                    sol_blocks.append(
+                        f'<details{open_attr} style="border:1px solid #e2e8f0;padding:8px 12px;margin:6px 0;border-radius:4px;">'
+                        f'<summary style="font-weight:600;cursor:pointer;">{html.escape(lbl)}</summary>'
+                        f'<div style="margin-top:8px;">'
+                        f"<h4>Steady-state</h4>{ss.to_html(index=False)}"
+                        f"<h4>Jacobian</h4>{df.to_html()}"
+                        f"</div></details>"
+                    )
+            if sol_blocks:
+                parts.append("<h3>Decision Rule</h3>")
+                parts.append("".join(sol_blocks))
 
         # Moments & Simulation section
         sim_vc = self.simulation
         if sim_vc is not None:
-            moment_blocks: list[str] = []
-            for idx, (lbl, r) in enumerate(zip(self.labels, self.items)):
-                cond_df, uncond_df = r._moments_dataframes()
-                if cond_df is not None or uncond_df is not None:
-                    open_attr = " open" if idx == 0 else ""
-                    inner = []
-                    if uncond_df is not None:
-                        inner.append(
-                            f"<h4>Unconditional Moments</h4>{uncond_df.to_html()}"
+            if self._should_render_simulation_tables:
+                moment_blocks: list[str] = []
+                for idx, (lbl, r) in enumerate(zip(self.labels, self.items)):
+                    cond_df, uncond_df = r._moments_dataframes()
+                    if cond_df is not None or uncond_df is not None:
+                        open_attr = " open" if idx == 0 else ""
+                        inner = []
+                        if uncond_df is not None:
+                            inner.append(
+                                f"<h4>Unconditional Moments</h4>{uncond_df.to_html()}"
+                            )
+                        if cond_df is not None:
+                            inner.append(
+                                f"<h4>Conditional Moments</h4>{cond_df.to_html()}"
+                            )
+                        moment_blocks.append(
+                            f'<details{open_attr} style="border:1px solid #e2e8f0;padding:8px 12px;margin:6px 0;border-radius:4px;">'
+                            f'<summary style="font-weight:600;cursor:pointer;">{html.escape(lbl)}</summary>'
+                            f'<div style="margin-top:8px;">{"".join(inner)}</div></details>'
                         )
-                    if cond_df is not None:
-                        inner.append(f"<h4>Conditional Moments</h4>{cond_df.to_html()}")
-                    moment_blocks.append(
-                        f'<details{open_attr} style="border:1px solid #e2e8f0;padding:8px 12px;margin:6px 0;border-radius:4px;">'
-                        f'<summary style="font-weight:600;cursor:pointer;">{html.escape(lbl)}</summary>'
-                        f'<div style="margin-top:8px;">{"".join(inner)}</div></details>'
-                    )
-            if moment_blocks:
-                parts.append("<h3>Moments</h3>")
-                parts.append("".join(moment_blocks))
+                if moment_blocks:
+                    parts.append("<h3>Moments</h3>")
+                    parts.append("".join(moment_blocks))
 
             if self._should_render_plot:
                 sim_html = self._simulation_variants_to_html(
@@ -1377,7 +1417,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         # 3. Check section (Residuals and Blanchard-Kahn / Eigenvalues)
         has_residuals = any(r.residuals is not None for r in self.items)
         has_eigenvalues = any(r.eigenvalues is not None for r in self.items)
-        if has_residuals or has_eigenvalues:
+        if self._should_render_check and (has_residuals or has_eigenvalues):
             check_lines = ["## Check", ""]
 
             if has_residuals:
@@ -1448,44 +1488,47 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
             blocks.append("\n".join(check_lines))
 
         # 4. Solution section (Recursive Decision Rule tabbed by variant)
-        sol_entries = [
-            (lbl, r.solution.coefficients_as_df())
-            for lbl, r in zip(self.labels, self.items)
-            if r.solution is not None and hasattr(r.solution, "coefficients_as_df")
-        ]
-        if sol_entries:
-            sol_lines = [
-                "## Solution",
-                "",
-                ":::::{dropdown} Recursive Decision Rule",
-                "",
-                r"$$y_t = \overline{y} + A (y_{t-1} - \overline{y}) + B \varepsilon_t$$",
-                r"$$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$",
-                "",
-                "::::{tab-set}",
+        if self._should_render_solution:
+            sol_entries = [
+                (lbl, r.solution.coefficients_as_df())
+                for lbl, r in zip(self.labels, self.items)
+                if r.solution is not None and hasattr(r.solution, "coefficients_as_df")
             ]
-            for lbl, jacs in sol_entries:
-                sol_lines.extend(
-                    [
-                        f":::{{tab-item}} {lbl}",
-                        ":sync: variant",
-                        "",
-                        "### Steady-state",
-                        "",
-                        RunResults._to_html_table(jacs[0]),
-                        "",
-                        "### Jacobian",
-                        "",
-                        RunResults._to_html_table(jacs[1]),
-                        "",
-                        ":::",
-                    ]
-                )
-            sol_lines.extend(["::::", "", ":::::", "", "---"])
-            blocks.append("\n".join(sol_lines))
+            if sol_entries:
+                sol_lines = [
+                    "## Solution",
+                    "",
+                    ":::::{dropdown} Recursive Decision Rule",
+                    "",
+                    r"$$y_t = \overline{y} + A (y_{t-1} - \overline{y}) + B \varepsilon_t$$",
+                    r"$$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$",
+                    "",
+                    "::::{tab-set}",
+                ]
+                for lbl, jacs in sol_entries:
+                    sol_lines.extend(
+                        [
+                            f":::{{tab-item}} {lbl}",
+                            ":sync: variant",
+                            "",
+                            "### Steady-state",
+                            "",
+                            RunResults._to_html_table(jacs[0]),
+                            "",
+                            "### Jacobian",
+                            "",
+                            RunResults._to_html_table(jacs[1]),
+                            "",
+                            ":::",
+                        ]
+                    )
+                sol_lines.extend(["::::", "", ":::::", "", "---"])
+                blocks.append("\n".join(sol_lines))
 
         # 5. Simulation section (Moments + IRFs tabbed by variant + optional plot)
-        if any(r.simulation is not None for r in self.items):
+        if self._should_render_simulation_tables and any(
+            r.simulation is not None for r in self.items
+        ):
             sim_lines = ["## Simulation", ""]
 
             cond_entries: list[tuple[str, pd.DataFrame]] = []

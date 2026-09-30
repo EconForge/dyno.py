@@ -218,18 +218,31 @@ def render_model_html(
     cell_style = "padding:6px 10px; border:1px solid #e2e8f0;"
     header_style = "padding:6px 10px; border:1px solid #e2e8f0; background:#f8fafc;"
 
-    variants_row = ""
+    variants_block = ""
     if variants:
-        v_badges = ", ".join(f"<code>{html.escape(v)}</code>" for v in variants)
-        variants_row = f"""    <tr>
-      <td style="{cell_style}"><strong>Variants</strong></td>
-      <td style="{cell_style} text-align:right;">{len(variants)}</td>
-      <td style="{cell_style}">{v_badges}</td>
-    </tr>\n"""
+        v_badges = " ".join(
+            f'<code style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:4px; font-weight:600; font-size:12px; margin-right:4px;">{html.escape(v)}</code>'
+            for v in variants
+        )
+        variants_block = f'<p style="margin:4px 0 10px 0; font-size:13px;"><strong style="color:#0f172a;">Variants:</strong> {v_badges}</p>'
 
     return f"""
+<style>
+.jupyterlab-dyno .jp-OutputArea-output,
+.jupyterlab-dyno .jp-MarkdownOutput {{
+    overflow-y: visible !important;
+}}
+.jupyterlab-dyno .myst-fm-block,
+.jupyterlab-dyno #skip-to-frontmatter,
+.jupyterlab-dyno .myst-fm-block-title,
+.jp-OutputArea-output .myst-fm-block,
+.jp-OutputArea-output #skip-to-frontmatter,
+.jp-OutputArea-output .myst-fm-block-title {{
+    display: none !important;
+}}
+</style>
 <h3>Model: {html.escape(data['name'])}</h3>
-{file_line}<table style="border-collapse:collapse; border:1px solid #e2e8f0; font-size:13px; margin:8px 0;">
+{file_line}{variants_block}<table style="border-collapse:collapse; border:1px solid #e2e8f0; font-size:13px; margin:8px 0;">
   <thead>
     <tr>
       <th style="{header_style} text-align:left;">Component</th>
@@ -238,7 +251,7 @@ def render_model_html(
     </tr>
   </thead>
   <tbody>
-{variants_row}    <tr>
+    <tr>
       <td style="{cell_style}"><strong>Equations</strong></td>
       <td style="{cell_style} text-align:right;">{data.get('equations_count', 0)}</td>
       <td style="{cell_style}"></td>
@@ -287,12 +300,18 @@ def render_model_overview_markdown(
     resolved_filename = filename or data.get("filename")
 
     if model_name and resolved_filename:
-        lines.append(f"**Model:** {model_name}  ")
+        lines.append(f"**Name:** {model_name}  ")
         lines.append(f"**File:** `{resolved_filename}`")
     elif model_name:
         lines.append(f"**Model:** {model_name}")
     elif resolved_filename:
         lines.append(f"**File:** `{resolved_filename}`")
+
+    if variants:
+        v_list = ", ".join(f"`{v}`" for v in variants)
+        if len(lines) > 1:
+            lines[-1] += "  "
+        lines.append(f"**Variants:** {v_list}")
 
     endo_str = _format_symbols(data.get("endogenous", []))
     exo_str = _format_symbols(data.get("exogenous", []))
@@ -303,14 +322,6 @@ def render_model_overview_markdown(
             "",
             "| Component | Count | Symbols |",
             "|:---|---:|:---|",
-        ]
-    )
-    if variants:
-        v_list = ", ".join(f"`{v}`" for v in variants)
-        lines.append(f"| **Variants** | {len(variants)} | {v_list} |")
-
-    lines.extend(
-        [
             f"| **Equations** | {data.get('equations_count', 0)} | |",
             f"| **Endogenous** | {len(data.get('endogenous', []))} | {endo_str} |",
             f"| **Exogenous** | {len(data.get('exogenous', []))} | {exo_str} |",
@@ -320,6 +331,25 @@ def render_model_overview_markdown(
     )
     if data.get("has_uninitialized"):
         lines.extend(["", "`^` uninitialized (steady-state) value: defaults to `nan`"])
+    lines.extend(
+        [
+            "",
+            "<style>",
+            ".jupyterlab-dyno .jp-OutputArea-output,",
+            ".jupyterlab-dyno .jp-MarkdownOutput {",
+            "    overflow-y: visible !important;",
+            "}",
+            ".jupyterlab-dyno .myst-fm-block,",
+            ".jupyterlab-dyno #skip-to-frontmatter,",
+            ".jupyterlab-dyno .myst-fm-block-title,",
+            ".jp-OutputArea-output .myst-fm-block,",
+            ".jp-OutputArea-output #skip-to-frontmatter,",
+            ".jp-OutputArea-output .myst-fm-block-title {",
+            "    display: none !important;",
+            "}",
+            "</style>",
+        ]
+    )
     return "\n".join(lines)
 
 
