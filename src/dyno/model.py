@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from math import nan
 import os
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, cast
 
 import numpy as np
 import pandas as pd
@@ -49,6 +49,7 @@ class AbstractModel(ABC):
     __steady_state__: dict[str, float] | None
     strict: bool
     _invalid_shifts: list[str] | None
+    _steady_stats: dict[str, Any] | None = None
 
     def __init__(
         self: Self,
@@ -367,7 +368,18 @@ class AbstractModel(ABC):
             self._eigenvalues = None
         return self
 
-    def steady(self: Self, tol: float = 1e-10, maxiter: int = 100) -> Self:
+    @property
+    def steady_stats(self: Self) -> dict[str, Any] | None:
+        """Convergence statistics and algorithm details from the most recent steady-state calculation."""
+        return getattr(self, "_steady_stats", None)
+
+    def steady(
+        self: Self,
+        tol: float = 1e-10,
+        maxiter: int = 100,
+        method: str = "hybr",
+        **options: Any,
+    ) -> Self:
         invalid_shifts = getattr(self, "_invalid_shifts", None)
         if invalid_shifts:
             from .errors import SystemStructureError
@@ -378,9 +390,27 @@ class AbstractModel(ABC):
                 "Dyno solvers currently support shifts in [-1, 1]."
             )
 
+        if "tol" in options:
+            tol = float(options.pop("tol"))
+        if "maxiter" in options:
+            maxiter = int(options.pop("maxiter"))
+        if "method" in options:
+            method = str(options.pop("method"))
+
         endogenous = self.symbols["endogenous"]
         if len(endogenous) == 0:
-            return self.copy()
+            res = self.copy()
+            res._steady_stats = {
+                "algorithm": method,
+                "converged": True,
+                "iterations": 0,
+                "function_evaluations": 0,
+                "jacobian_evaluations": 0,
+                "max_residual": 0.0,
+                "tolerance": float(tol),
+                "message": "No endogenous variables to solve.",
+            }
+            return res
 
         y0, _ = self.__steady_state_vectors__
         guess = np.nan_to_num(np.asarray(y0, dtype=float), nan=1.0)
@@ -403,17 +433,49 @@ class AbstractModel(ABC):
             A, B, C = jac[1], jac[2], jac[3]
             return A + B + C
 
-        sol = root(_fun, guess, jac=_jac, method="hybr", options={"maxfev": maxiter})
+        solver_options = {"maxfev": maxiter}
+        if "options" in options and isinstance(options["options"], dict):
+            solver_options.update(options.pop("options"))
+        solver_options.update(options)
 
-        solved = _candidate(np.asarray(sol.x, dtype=float))
+        sol: Any = root(
+            _fun,
+            guess,
+            jac=_jac,
+            method=cast(Any, method),
+            options=solver_options,
+        )
+
+        solved: Self = _candidate(np.asarray(sol.x, dtype=float))
         residuals = np.asarray(solved.residuals, dtype=float)
 
-        if (
-            (not sol.success)
-            or (not np.isfinite(residuals).all())
-            or (np.max(np.abs(residuals)) > tol)
-        ):
-            raise SteadyStateError(residuals)
+        converged = bool(
+            sol.success
+            and np.isfinite(residuals).all()
+            and (np.max(np.abs(residuals)) <= tol)
+        )
+        iterations = getattr(sol, "nit", None)
+        if iterations is None:
+            iterations = getattr(sol, "nfev", None)
+
+        stats = {
+            "algorithm": method,
+            "converged": converged,
+            "iterations": iterations,
+            "function_evaluations": getattr(sol, "nfev", None),
+            "jacobian_evaluations": getattr(sol, "njev", None),
+            "max_residual": (
+                float(np.max(np.abs(residuals)))
+                if np.isfinite(residuals).all()
+                else float("nan")
+            ),
+            "tolerance": float(tol),
+            "message": str(getattr(sol, "message", "")),
+        }
+        solved._steady_stats = stats
+
+        if not converged:
+            raise SteadyStateError(residuals, steady_stats=stats)
 
         return solved
 

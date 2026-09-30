@@ -156,8 +156,9 @@ class DynareModel(AbstractModel):
                 options = cmd.get("options", {})
                 try:
                     if name == "steady":
-                        model = model.steady()
+                        model = model.steady(**options)
                         results.model = model
+                        results.steady_stats = getattr(model, "steady_stats", None)
                     elif name == "check":
                         results.residuals = model.residuals
                         model = model.check()
@@ -174,6 +175,7 @@ class DynareModel(AbstractModel):
                         results.simulation = dr.irfs(type=irf_type, T=horizon)
                 except SteadyStateError as e:
                     results.residuals = e.residuals
+                    results.steady_stats = getattr(e, "steady_stats", None)
                     results.add_warning(str(e))
                     break
 

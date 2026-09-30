@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 
 class DynoError(Exception):
@@ -125,8 +125,13 @@ class DynareParserError(ParserError):
 
 class SteadyStateError(DynoError):
 
-    def __init__(self, residuals) -> None:
+    def __init__(
+        self,
+        residuals: Any,
+        steady_stats: dict[str, Any] | None = None,
+    ) -> None:
         self.residuals = residuals
+        self.steady_stats = steady_stats
         message = f"Steady state values don't satisfy model equations. Max residual is {max(abs(r) for r in residuals)}"
         self.details = f"Residuals: {residuals}"
         super().__init__(message)

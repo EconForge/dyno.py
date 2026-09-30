@@ -138,8 +138,16 @@ class DynoModel(AbstractModel):
                     m.metadata["run"] = remaining
                 return model_variants.run(default_pipeline=default_pipeline)  # type: ignore[return-value]
             elif name == "steady":
-                model = model.steady(**options)
-                results.model = model
+                from .errors import SteadyStateError
+
+                try:
+                    model = model.steady(**options)
+                    results.model = model
+                    results.steady_stats = getattr(model, "steady_stats", None)
+                except SteadyStateError as e:
+                    results.residuals = e.residuals
+                    results.steady_stats = getattr(e, "steady_stats", None)
+                    results.add_warning(str(e))
             elif name == "resid":
                 results.residuals = model.residuals
             elif name == "check":
