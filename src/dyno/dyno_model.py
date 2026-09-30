@@ -8,8 +8,11 @@ from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
 
 from dyno.dynspec.grammar import parser, str_expression
 from dyno.dynspec.analyze import FormulaEvaluator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from dyno.report import RunResults
 
 import numpy as np
 from scipy.optimize import root
@@ -27,6 +30,7 @@ class DynoModel(AbstractModel):
         if raw is None:
             raw = self.metadata.get("dynare_commands", [])
 
+        items: list[Any]
         if isinstance(raw, str):
             items = [raw]
         elif isinstance(raw, dict):
@@ -39,33 +43,51 @@ class DynoModel(AbstractModel):
         commands: list[dict[str, Any]] = []
         for item in items:
             if isinstance(item, str):
-                commands.append({"command": item, "options": {}})
+                mute = False
+                if item.endswith(";"):
+                    mute = True
+                    item = item[:-1].rstrip()
+                commands.append({"command": item, "options": {}, "mute": mute})
             elif isinstance(item, dict):
+                mute = bool(item.get("mute", False))
                 if "command" in item:
                     command = item.get("command")
                     if not isinstance(command, str):
                         raise TypeError(
                             "run command dictionaries must define a string 'command'"
                         )
+                    if command.endswith(";"):
+                        mute = True
+                        command = command[:-1].rstrip()
                     options = item.get("options", {})
                     if not isinstance(options, dict):
                         raise TypeError("run command 'options' must be a dictionary")
-                    commands.append({"command": command, "options": options})
-                elif len(item) == 1:
-                    command, options = next(iter(item.items()))
-                    if not isinstance(command, str):
-                        raise TypeError("run command keys must be strings")
-                    if options is None:
-                        options = {}
-                    if not isinstance(options, dict):
-                        raise TypeError(
-                            "compact run command options must be a dictionary or null"
-                        )
-                    commands.append({"command": command, "options": options})
-                else:
-                    raise TypeError(
-                        "run command dictionaries must use either {'command': ...} or a single-key form like {'simul': {...}}"
+                    commands.append(
+                        {"command": command, "options": options, "mute": mute}
                     )
+                else:
+                    non_mute_keys = [k for k in item if k != "mute"]
+                    if len(non_mute_keys) == 1:
+                        command = non_mute_keys[0]
+                        options = item[command]
+                        if not isinstance(command, str):
+                            raise TypeError("run command keys must be strings")
+                        if command.endswith(";"):
+                            mute = True
+                            command = command[:-1].rstrip()
+                        if options is None:
+                            options = {}
+                        if not isinstance(options, dict):
+                            raise TypeError(
+                                "compact run command options must be a dictionary or null"
+                            )
+                        commands.append(
+                            {"command": command, "options": options, "mute": mute}
+                        )
+                    else:
+                        raise TypeError(
+                            "run command dictionaries must use either {'command': ...} or a single-key form like {'simul': {...}}"
+                        )
             else:
                 raise TypeError("run commands must be strings or dictionaries")
 
@@ -84,6 +106,9 @@ class DynoModel(AbstractModel):
         model = self
         results = RunResults(model=model)
         results._from_pipeline = True
+        results.muted_commands = {
+            str(c["command"]).lower() for c in commands if c.get("mute")
+        }
 
         invalid_shifts = getattr(self, "_invalid_shifts", None)
         if invalid_shifts:
@@ -118,11 +143,17 @@ class DynoModel(AbstractModel):
             elif name == "resid":
                 results.residuals = model.residuals
             elif name == "check":
+                from .errors import SteadyStateError
+
                 results.residuals = model.residuals
                 check_options = {"compute_eigenvalues": True, **options}
-                model = model.check(**check_options)
-                results.model = model
-                results.eigenvalues = getattr(model, "_eigenvalues", None)
+                try:
+                    model = model.check(**check_options)
+                    results.model = model
+                    results.eigenvalues = getattr(model, "_eigenvalues", None)
+                except SteadyStateError as e:
+                    results.residuals = e.residuals
+                    results.add_warning(str(e))
             elif name in {"solve", "perturb"}:
                 solution = model.solve(**options)
                 results.solution = solution

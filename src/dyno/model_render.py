@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 from math import nan
 from typing import Any
 
@@ -38,6 +39,7 @@ def markdown_to_html(markdown_text: str) -> str:
 
 def model_repr_data(model: Any) -> dict[str, Any]:
     name = model.name if model.name is not None else "Unnamed"
+    filename = getattr(model, "filename", None)
     constants = model.context.get("constants", {})
     steady_states = model.context.get("steady_states", {})
     equations_count = len(getattr(model.symbolic, "equations", []))
@@ -79,6 +81,7 @@ def model_repr_data(model: Any) -> dict[str, Any]:
 
     return {
         "name": name,
+        "filename": filename,
         "equations_count": equations_count,
         "endogenous": endogenous,
         "exogenous": exogenous,
@@ -181,70 +184,148 @@ def render_model_text(data: dict[str, Any]) -> str:
         return base
 
 
-def render_model_html(data: dict[str, Any]) -> str:
+def render_model_html(
+    data: dict[str, Any],
+    filename: str | None = None,
+    *,
+    variants: list[str] | None = None,
+) -> str:
+    resolved_filename = filename or data.get("filename")
+
     def _html_list(items: list[tuple[str, bool]]) -> str:
         if len(items) == 0:
             return "&lt;none&gt;"
         formatted: list[str] = []
         for name, is_uninitialized in items:
+            badge = f"<code>{html.escape(name)}</code>"
             if is_uninitialized:
-                formatted.append(
-                    f'<span style="color:#d97706">{name}<sup>^</sup></span>'
-                )
-            else:
-                formatted.append(name)
+                badge += '<sup style="color:#d97706">^</sup>'
+            formatted.append(badge)
         return ", ".join(formatted)
 
-    footnote = (
-        '<p><span style="color:#d97706">^</span> uninitialized (steady-state) value: defaults to nan</p>'
-        if data["has_uninitialized"]
+    file_line = (
+        f'<p style="margin:4px 0 10px 0; color:#475569; font-size:13px;"><strong>File:</strong> <code>{html.escape(resolved_filename)}</code></p>'
+        if resolved_filename
         else ""
     )
 
+    footnote = (
+        '<p style="margin-top:6px; font-size:12px; color:#64748b;"><span style="color:#d97706">^</span> uninitialized (steady-state) value: defaults to nan</p>'
+        if data.get("has_uninitialized")
+        else ""
+    )
+
+    cell_style = "padding:6px 10px; border:1px solid #e2e8f0;"
+    header_style = "padding:6px 10px; border:1px solid #e2e8f0; background:#f8fafc;"
+
+    variants_row = ""
+    if variants:
+        v_badges = ", ".join(f"<code>{html.escape(v)}</code>" for v in variants)
+        variants_row = f"""    <tr>
+      <td style="{cell_style}"><strong>Variants</strong></td>
+      <td style="{cell_style} text-align:right;">{len(variants)}</td>
+      <td style="{cell_style}">{v_badges}</td>
+    </tr>\n"""
+
     return f"""
-<h3>Model: {data['name']}</h3>
-<table>
+<h3>Model: {html.escape(data['name'])}</h3>
+{file_line}<table style="border-collapse:collapse; border:1px solid #e2e8f0; font-size:13px; margin:8px 0;">
+  <thead>
+    <tr>
+      <th style="{header_style} text-align:left;">Component</th>
+      <th style="{header_style} text-align:right;">Count</th>
+      <th style="{header_style} text-align:left;">Symbols</th>
+    </tr>
+  </thead>
   <tbody>
-    <tr><td>equations</td><td>{data['equations_count']}</td><td></td></tr>
-    <tr><td>variables</td><td>{len(data['endogenous']) + len(data['exogenous'])}</td><td></td></tr>
-    <tr><td>&nbsp;&nbsp;endogenous</td><td>{len(data['endogenous'])}</td><td>{_html_list(data['endogenous'])}</td></tr>
-    <tr><td>&nbsp;&nbsp;exogenous</td><td>{len(data['exogenous'])}</td><td>{_html_list(data['exogenous'])}</td></tr>
-    <tr><td>constants</td><td>{len(data['parameters'])}</td><td>{_html_list(data['parameters'])}</td></tr>
+{variants_row}    <tr>
+      <td style="{cell_style}"><strong>Equations</strong></td>
+      <td style="{cell_style} text-align:right;">{data.get('equations_count', 0)}</td>
+      <td style="{cell_style}"></td>
+    </tr>
+    <tr>
+      <td style="{cell_style}"><strong>Endogenous</strong></td>
+      <td style="{cell_style} text-align:right;">{len(data.get('endogenous', []))}</td>
+      <td style="{cell_style}">{_html_list(data.get('endogenous', []))}</td>
+    </tr>
+    <tr>
+      <td style="{cell_style}"><strong>Exogenous</strong></td>
+      <td style="{cell_style} text-align:right;">{len(data.get('exogenous', []))}</td>
+      <td style="{cell_style}">{_html_list(data.get('exogenous', []))}</td>
+    </tr>
+    <tr>
+      <td style="{cell_style}"><strong>Parameters</strong></td>
+      <td style="{cell_style} text-align:right;">{len(data.get('parameters', []))}</td>
+      <td style="{cell_style}">{_html_list(data.get('parameters', []))}</td>
+    </tr>
   </tbody>
 </table>
 {footnote}
 """
 
 
-def render_model_markdown(data: dict[str, Any], filename: str) -> str:
-    def _md_list(items: list[tuple[str, bool]]) -> str:
-        if len(items) == 0:
-            return "<none>"
-        out: list[str] = []
-        for name, is_uninitialized in items:
-            if is_uninitialized:
-                out.append(f"{name}^")
+def render_model_overview_markdown(
+    data: dict[str, Any],
+    filename: str | None = None,
+    *,
+    variants: list[str] | None = None,
+) -> str:
+    """Render a structured overview card with model components, dimensions, and symbols."""
+
+    def _format_symbols(items: list[Any]) -> str:
+        parts: list[str] = []
+        for item in items:
+            if isinstance(item, tuple):
+                name, is_uninit = item
+                parts.append(f"`{name}^`" if is_uninit else f"`{name}`")
             else:
-                out.append(name)
-        return ", ".join(out)
+                parts.append(f"`{item}`")
+        return ", ".join(parts)
 
-    variables_count = len(data["endogenous"]) + len(data["exogenous"])
+    lines = [":::{note} Model Overview"]
+    model_name = data.get("name")
+    resolved_filename = filename or data.get("filename")
 
-    lines = [
-        f"# Model: {data['name']}",
-        f"- *filename*: {filename}",
-        "",
-        "|  | Count | Names |",
-        "|---|---:|---|",
-        f"| equations | {data['equations_count']} |  |",
-        f"| variables | {variables_count} |  |",
-        f"|   endogenous | {len(data['endogenous'])} | {_md_list(data['endogenous'])} |",
-        f"|   exogenous | {len(data['exogenous'])} | {_md_list(data['exogenous'])} |",
-        f"| constants | {len(data['parameters'])} | {_md_list(data['parameters'])} |",
-    ]
+    if model_name and resolved_filename:
+        lines.append(f"**Model:** {model_name}  ")
+        lines.append(f"**File:** `{resolved_filename}`")
+    elif model_name:
+        lines.append(f"**Model:** {model_name}")
+    elif resolved_filename:
+        lines.append(f"**File:** `{resolved_filename}`")
 
-    if data["has_uninitialized"]:
+    endo_str = _format_symbols(data.get("endogenous", []))
+    exo_str = _format_symbols(data.get("exogenous", []))
+    params_str = _format_symbols(data.get("parameters", []))
+
+    lines.extend(
+        [
+            "",
+            "| Component | Count | Symbols |",
+            "|:---|---:|:---|",
+        ]
+    )
+    if variants:
+        v_list = ", ".join(f"`{v}`" for v in variants)
+        lines.append(f"| **Variants** | {len(variants)} | {v_list} |")
+
+    lines.extend(
+        [
+            f"| **Equations** | {data.get('equations_count', 0)} | |",
+            f"| **Endogenous** | {len(data.get('endogenous', []))} | {endo_str} |",
+            f"| **Exogenous** | {len(data.get('exogenous', []))} | {exo_str} |",
+            f"| **Parameters** | {len(data.get('parameters', []))} | {params_str} |",
+            ":::",
+        ]
+    )
+    if data.get("has_uninitialized"):
         lines.extend(["", "`^` uninitialized (steady-state) value: defaults to `nan`"])
+    return "\n".join(lines)
+
+
+def render_model_markdown(data: dict[str, Any], filename: str | None = None) -> str:
+    overview = render_model_overview_markdown(data, filename)
+    lines = [overview]
 
     equations_table = data.get("equations_table")
     if isinstance(equations_table, str) and equations_table.strip() != "":

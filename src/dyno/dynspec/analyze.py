@@ -663,20 +663,47 @@ class AssignmentEvaluator(FormulaEvaluator):
         """Handle top-level @key: value declarations."""
         key = str(tree.children[0])  # NAME token
         raw = str(tree.children[1])  # METADATA_SCALAR token
+        raw_stripped = raw.strip()
+        mute = False
+        if raw_stripped.endswith(";"):
+            mute = True
+            raw_stripped = raw_stripped[:-1].rstrip()
         try:
             import yaml
 
-            value = yaml.safe_load(raw.strip())
+            value = yaml.safe_load(raw_stripped)
         except Exception:
-            value = raw.strip()
-        if key == "run" and key in self.metadata:
-            current = self.metadata[key]
-            if isinstance(current, list):
-                current.append(value)
+            value = raw_stripped
+
+        if key == "run":
+            if mute:
+                if isinstance(value, str):
+                    value = {"command": value, "options": {}, "mute": True}
+                elif isinstance(value, dict):
+                    if "command" in value:
+                        value = dict(value)
+                        value["mute"] = True
+                    else:
+                        non_mute_keys = [k for k in value if k != "mute"]
+                        if len(non_mute_keys) == 1:
+                            cmd_k = non_mute_keys[0]
+                            opts = value[cmd_k] or {}
+                            value = {"command": cmd_k, "options": opts, "mute": True}
+                        else:
+                            value = dict(value)
+                            value["mute"] = True
+            if key in self.metadata:
+                current = self.metadata[key]
+                if isinstance(current, list):
+                    current.append(value)
+                else:
+                    self.metadata[key] = [current, value]
             else:
-                self.metadata[key] = [current, value]
+                self.metadata[key] = value
         else:
             self.metadata[key] = value
+            if mute:
+                self.metadata[f"_muted_{key}"] = True
         return value
 
     def assignment_block(self, tree):

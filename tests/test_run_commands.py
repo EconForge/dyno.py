@@ -89,3 +89,143 @@ check;
     assert isinstance(results, RunResults)
     assert results.residuals is not None
     assert results.eigenvalues == getattr(results.model, "_eigenvalues", None)
+
+
+def test_dyno_run_check_semicolon_mutes_check_section_when_clean():
+    txt = """
+@name: TinyClean
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+
+@run: steady
+@run: check;
+@run: solve
+"""
+    model = DynoModel(txt=txt)
+    assert "check" in model._normalize_run_commands()[1]["command"]
+    assert model._normalize_run_commands()[1]["mute"] is True
+
+    results = model.run()
+    assert results.residuals is not None
+    assert results.eigenvalues is not None
+    assert "check" in results.muted_commands
+    assert results._should_render_check is False
+
+    # HTML
+    html = results._render_html_report()
+    assert "<h3>Check</h3>" not in html
+
+    # Markdown
+    md = results._repr_markdown_()
+    assert md is not None
+    assert "## Check" not in md
+
+    # Text summary
+    txt_rep = results.to_text()
+    assert "Checks" not in txt_rep
+
+
+def test_dyno_run_check_without_semicolon_displays_check_section():
+    txt = """
+@name: TinyCleanNoMute
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+
+@run: steady
+@run: check
+@run: solve
+"""
+    model = DynoModel(txt=txt)
+    assert model._normalize_run_commands()[1]["mute"] is False
+
+    results = model.run()
+    assert results._should_render_check is True
+
+    # HTML
+    html = results._render_html_report()
+    assert "<h3>Check</h3>" in html
+
+    # Markdown
+    md = results._repr_markdown_()
+    assert md is not None
+    assert "## Check" in md
+
+    # Text summary
+    txt_rep = results.to_text()
+    assert "Checks" in txt_rep
+
+
+def test_dyno_run_check_semicolon_displays_when_residuals_non_zero():
+    txt = """
+@name: TinyDirty
+alpha := 0.9
+x[~] := 5.0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+
+@run: check;
+"""
+    model = DynoModel(txt=txt)
+    results = model.run()
+
+    # Even though check is muted, residuals are non-zero, so it should NOT be hidden
+    assert results._should_render_check is True
+
+    html = results._render_html_report()
+    assert "<h3>Check</h3>" in html
+
+    md = results._repr_markdown_()
+    assert md is not None
+    assert "## Check" in md
+
+    txt_rep = results.to_text()
+    assert "Checks" in txt_rep
+
+
+def test_dyno_run_options_with_semicolon_parses_yaml_and_mutes():
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+
+@run: simul: {T: 20};
+@run: solve;
+"""
+    model = DynoModel(txt=txt)
+    cmds = model._normalize_run_commands()
+
+    assert cmds[0]["command"] == "simul"
+    assert cmds[0]["options"] == {"T": 20}
+    assert cmds[0]["mute"] is True
+
+    assert cmds[1]["command"] == "solve"
+    assert cmds[1]["mute"] is True
+
+    results = model.run()
+    assert results._should_render_solution is False
+    assert results._should_render_simulation_tables is False
+
+    md = results._repr_markdown_()
+    assert md is not None
+    assert "## Solution" not in md
+    assert "## Simulation" not in md
+
+
+def test_dyno_metadata_general_semicolon_stripping():
+    txt = """
+@name: MyModel;
+@version: 2;
+alpha := 0.5
+x[~] := 0
+x[t] = alpha * x[t-1]
+"""
+    model = DynoModel(txt=txt)
+    assert model.metadata["name"] == "MyModel"
+    assert model.metadata["version"] == 2
+    assert model.metadata.get("_muted_name") is True
+    assert model.metadata.get("_muted_version") is True

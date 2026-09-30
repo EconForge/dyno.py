@@ -10,7 +10,13 @@ import numpy as np
 import pandas as pd
 
 from .model import AbstractModel
-from .report import RunResults
+from .report import (
+    RunResults,
+    _inline_styler_styles,
+    style_calibration_dataframe,
+    style_residuals_dataframe,
+    style_eigenvalues_dataframe,
+)
 from .simul import SimulationResult
 from .solver import PerturbationSolution, RecursiveDecisionRule
 from .typedefs import IRFType, UnitsType
@@ -639,6 +645,100 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
 
         return plot_variants_plotext(sim_vc, **kwargs)
 
+    def parameters_dataframe(
+        self, orientation: str = "horizontal"
+    ) -> pd.DataFrame | None:
+        from math import nan
+
+        base_model = next((r.model for r in self.items if r.model is not None), None)
+        if base_model is None:
+            return None
+        params_all = base_model.symbols.get("parameters", [])
+        param_rows = {}
+        for lbl, r in zip(self.labels, self.items):
+            m = r.model or base_model
+            c_dict = m.context.get("constants", {})
+            param_rows[lbl] = [c_dict.get(p, nan) for p in params_all]
+        df = pd.DataFrame.from_dict(param_rows, orient="index", columns=params_all)
+        return df if orientation == "horizontal" else df.T
+
+    def steady_state_dataframe(
+        self, orientation: str = "horizontal"
+    ) -> pd.DataFrame | None:
+        from math import nan
+
+        base_model = next((r.model for r in self.items if r.model is not None), None)
+        if base_model is None:
+            return None
+        vars_all = base_model.symbols.get("variables", [])
+        steady_rows = {}
+        for lbl, r in zip(self.labels, self.items):
+            m = r.model or base_model
+            s_dict = m.context.get("steady_states", {})
+            steady_rows[lbl] = [s_dict.get(v, nan) for v in vars_all]
+        df = pd.DataFrame.from_dict(steady_rows, orient="index", columns=vars_all)
+        return df if orientation == "horizontal" else df.T
+
+    def residuals_dataframe(
+        self, orientation: str = "horizontal"
+    ) -> pd.DataFrame | None:
+        if not any(r.residuals is not None for r in self.items):
+            return None
+
+        res_rows: dict[str, list[float]] = {}
+        n_eq = 0
+        for lbl, r in zip(self.labels, self.items):
+            if r.residuals is not None:
+                arr = list(np.asarray(r.residuals, dtype=float).reshape(-1))
+                n_eq = max(n_eq, len(arr))
+                res_rows[lbl] = arr
+            else:
+                res_rows[lbl] = []
+        eq_labels = [f"eq {i + 1}" for i in range(n_eq)]
+        for lbl in res_rows:
+            if len(res_rows[lbl]) < n_eq:
+                res_rows[lbl].extend([np.nan] * (n_eq - len(res_rows[lbl])))
+        df = pd.DataFrame.from_dict(res_rows, orient="index", columns=eq_labels)
+        return df if orientation == "horizontal" else df.T
+
+    def eigenvalues_dataframe(
+        self, orientation: str = "horizontal"
+    ) -> pd.DataFrame | None:
+        if not any(r.eigenvalues is not None for r in self.items):
+            return None
+
+        ev_rows: dict[str, list[Any]] = {}
+        n_ev = 0
+        for lbl, r in zip(self.labels, self.items):
+            if r.eigenvalues is not None:
+                arr = list(np.asarray(r.eigenvalues).reshape(-1))
+                n_ev = max(n_ev, len(arr))
+                ev_rows[lbl] = arr
+            else:
+                ev_rows[lbl] = []
+        ev_labels = [str(i + 1) for i in range(n_ev)]
+        for lbl in ev_rows:
+            if len(ev_rows[lbl]) < n_ev:
+                ev_rows[lbl].extend([np.nan] * (n_ev - len(ev_rows[lbl])))
+        df = pd.DataFrame.from_dict(ev_rows, orient="index", columns=ev_labels)
+        return df if orientation == "horizontal" else df.T
+
+    @property
+    def parameters_df(self) -> pd.DataFrame | None:
+        return self.parameters_dataframe()
+
+    @property
+    def steady_state_df(self) -> pd.DataFrame | None:
+        return self.steady_state_dataframe()
+
+    @property
+    def residuals_df(self) -> pd.DataFrame | None:
+        return self.residuals_dataframe()
+
+    @property
+    def eigenvalues_df(self) -> pd.DataFrame | None:
+        return self.eigenvalues_dataframe()
+
     def to_text(
         self,
         *,
@@ -1210,41 +1310,53 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
             vars_endo = base_model.symbols.get("endogenous", [])
             params_all = base_model.symbols.get("parameters", [])
 
-            n_equations = len(getattr(base_model, "equations", []))
+            from dyno.model_render import (
+                model_repr_data,
+                render_model_overview_markdown,
+            )
+
+            overview = render_model_overview_markdown(
+                model_repr_data(base_model),
+                base_model.filename,
+                variants=self.labels,
+            )
             header_lines = [
-                f"# Report: {base_model.name}",
-                "",
-                f"- *filename*:  {base_model.filename}",
-                f"- *name*:  {base_model.name}",
-                f"- *variants* ({len(self)}):  {variants_list}",
-                f"- *variables* ({len(vars_all)}):      {fmt_list(vars_all)}",
-                f"    - *exogenous* ({len(vars_exo)}):  {fmt_list(vars_exo)}",
-                f"    -  *endogenous* (**{len(vars_endo)}**):  {fmt_list(vars_endo)}",
-                f"- *equations*({n_equations})",
-                f"- *{len(params_all)} parameters*:    {fmt_list(params_all)}",
+                overview,
             ]
             blocks.append("\n".join(header_lines))
 
             # Calibration dropdown: comparative tables across variants
-            param_cols: dict[str, list[Any]] = {}
-            steady_cols: dict[str, list[Any]] = {}
-            for lbl, r in zip(self.labels, self.items):
-                m = r.model or base_model
-                c_dict = m.context.get("constants", {})
-                s_dict = m.context.get("steady_states", {})
-                param_cols[lbl] = [c_dict.get(p, nan) for p in params_all]
-                steady_cols[lbl] = [s_dict.get(v, nan) for v in vars_all]
+            params_df = self.parameters_dataframe(orientation="horizontal")
+            steady_df = self.steady_state_dataframe(orientation="horizontal")
 
-            params_df = pd.DataFrame(param_cols, index=params_all)
-            steady_df = pd.DataFrame(steady_cols, index=vars_all)
+            calib_items = []
+            if params_df is not None:
+                calib_items.extend(
+                    [
+                        "Parameter values",
+                        _inline_styler_styles(
+                            style_calibration_dataframe(
+                                params_df, hide_index=False
+                            ).to_html()
+                        ),
+                    ]
+                )
+            if steady_df is not None:
+                calib_items.extend(
+                    [
+                        "Steady state values",
+                        _inline_styler_styles(
+                            style_calibration_dataframe(
+                                steady_df, hide_index=False
+                            ).to_html()
+                        ),
+                    ]
+                )
 
             calib_block = "\n".join(
                 [
                     ":::{dropdown} Calibration",
-                    "Parameter values",
-                    RunResults._to_html_table(params_df),
-                    "Steady state values",
-                    RunResults._to_html_table(steady_df),
+                    *calib_items,
                     ":::",
                 ]
             )
@@ -1279,20 +1391,19 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
                     if res_ok
                     else ":::{warning} Residuals are not zero"
                 )
-                res_cols: dict[str, Any] = {}
-                n_eq = 0
-                for lbl, r in zip(self.labels, self.items):
-                    if r.residuals is not None:
-                        arr = np.asarray(r.residuals, dtype=float).reshape(-1)
-                        n_eq = max(n_eq, len(arr))
-                        res_cols[lbl] = arr
-                eq_index = [f"eq {i + 1}" for i in range(n_eq)]
-                res_df = pd.DataFrame(res_cols, index=eq_index)
+                res_df = self.residuals_dataframe(orientation="horizontal")
+                res_html = (
+                    _inline_styler_styles(
+                        style_residuals_dataframe(res_df, hide_index=False).to_html()
+                    )
+                    if res_df is not None
+                    else ""
+                )
                 check_lines.extend(
                     [
                         admonition,
                         ":class: dropdown",
-                        RunResults._to_html_table(res_df),
+                        res_html,
                         ":::",
                         "",
                     ]
@@ -1307,17 +1418,27 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
                     if bk_all
                     else ":::{warning} Blanchard-Kahn conditions are not met"
                 )
-                ev_cols: dict[str, Any] = {}
-                for lbl, r in zip(self.labels, self.items):
-                    if r.eigenvalues is not None:
-                        ev_cols[lbl] = np.asarray(r.eigenvalues).reshape(-1)
-                ev_df = pd.DataFrame(ev_cols)
+                ev_df = self.eigenvalues_dataframe(orientation="horizontal")
+                n_eq = (
+                    len(base_model.symbols.get("endogenous", []))
+                    if base_model and "endogenous" in getattr(base_model, "symbols", {})
+                    else (len(ev_df.columns) // 2 if ev_df is not None else None)
+                )
+                ev_html = (
+                    _inline_styler_styles(
+                        style_eigenvalues_dataframe(
+                            ev_df, n_eq=n_eq, hide_index=False
+                        ).to_html()
+                    )
+                    if ev_df is not None
+                    else ""
+                )
                 check_lines.extend(
                     [
                         admonition,
                         ":class: dropdown",
                         "Sorted by modulus:",
-                        RunResults._to_html_table(ev_df),
+                        ev_html,
                         ":::",
                         "",
                     ]
@@ -1445,20 +1566,19 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
                     else:
                         sim_lines.append(RunResults._to_html_table(sim))
                 sim_lines.append(":::")
-            sim_lines.extend(["::::", "", "::::::"])
-
-            sim_vc = self.simulation
-            if self._should_render_plot and sim_vc is not None:
-                sim_svg = self._simulation_variants_to_html(
-                    sim_vc, **self._plot_options
-                )
-                if sim_svg:
-                    sim_lines.extend(["", sim_svg])
-
-            if base_model is not None and base_model.checks.get("deterministic", False):
-                sim_lines.append("---")
-
+            sim_lines.extend(["::::", "", "::::::", "---"])
             blocks.append("\n".join(sim_lines))
+
+        # Plot
+        sim_vc = self.simulation
+        if self._should_render_plot and sim_vc is not None:
+            sim_svg = self._simulation_variants_to_html(sim_vc, **self._plot_options)
+            if sim_svg:
+                import base64
+
+                b64 = base64.b64encode(sim_svg.encode("utf-8")).decode("ascii")
+                img_tag = f'<img src="data:image/svg+xml;base64,{b64}" alt="Simulation variant charts" style="max-width:100%; height:auto;" />'
+                blocks.append(f"## Plot\n\n{img_tag}\n\n---")
 
         return "\n\n".join(blocks)
 
@@ -1513,7 +1633,9 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
             md = self._repr_markdown_()
             if md:
                 display(Markdown(md))
-            if self.figure is not None:
+            if self.figure is not None and not (
+                self._should_render_plot and self.simulation is not None
+            ):
                 display(self.figure)
 
     def console_display(self) -> None:

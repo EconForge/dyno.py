@@ -37,10 +37,10 @@ and opens the app in your browser.
   the filter box.
 - **Edit the source live** in the source panel (with line numbers) and watch
   the preview recompute as you type.
-- **Top button bar**: switch quickly between *representation* (`repr()`,
-  `_repr_html_()`, `_markdown_()`) and *report* (`model.run()`), toggle
-  output formats (HTML, Markdown, plain text), select import backends
-  (`DynoModel` vs. `DynareModel`), or toggle `strict` mode.
+- **Top button bar**: toggle output formats (Markdown by default, HTML,
+  plain text), select import backends (`DynoModel` vs. `DynareModel`), or toggle
+  `strict` mode. The preview always renders the model's full report
+  (`model.run(default_pipeline=True)`).
 - **Streamlined preview pane**: displays the selected output format directly,
   with MyST-flavored Markdown rendering (admonitions, dropdowns, math) matching
   the style used by `RunResults`.

@@ -277,7 +277,7 @@ def test_variants_pipeline_run_results_variants():
 
     md_out = res._repr_markdown_()
     assert md_out is not None
-    assert "# Report:" in md_out
+    assert ":::{note} Model Overview" in md_out
     assert ":::{dropdown} Calibration" in md_out
     assert ":::{dropdown} Equations" in md_out
     assert "## Check" in md_out
@@ -285,9 +285,11 @@ def test_variants_pipeline_run_results_variants():
     assert "## Solution" in md_out
     assert ":::::{dropdown} Recursive Decision Rule" in md_out
     assert "## Simulation" in md_out
+    assert "## Plot" in md_out
+    assert md_out.index("## Simulation") < md_out.index("## Plot")
     assert ":::::{dropdown} IRFS" in md_out
     assert ":::{tab-item} a=0.2" in md_out
-    assert "<svg" in md_out
+    assert "data:image/svg+xml" in md_out
     bundle = res._repr_mimebundle_()
     assert "text/markdown" in bundle
     assert "text/html" in bundle
@@ -309,7 +311,7 @@ def test_pipeline_plot_keyword_effect():
     ).run()
     assert res_no_plot.figure is None
     assert "<svg" not in (res_no_plot._repr_html_() or "")
-    assert "<svg" not in (res_no_plot._repr_markdown_() or "")
+    assert "data:image/svg+xml" not in (res_no_plot._repr_markdown_() or "")
     assert "Simulation Plots" not in str(res_no_plot)
 
     # 2. Univariant with @run: plot -> plot rendered in HTML, Markdown, and Text
@@ -319,7 +321,7 @@ def test_pipeline_plot_keyword_effect():
     ).run()
     assert res_with_plot.figure is not None
     assert "<svg" in (res_with_plot._repr_html_() or "")
-    assert "<svg" in (res_with_plot._repr_markdown_() or "")
+    assert "data:image/svg+xml" in (res_with_plot._repr_markdown_() or "")
     assert "Simulation Plots" in str(res_with_plot)
 
     # 3. Variants without @run: plot -> no plot in HTML, Markdown, or Text
@@ -329,7 +331,7 @@ def test_pipeline_plot_keyword_effect():
     ).run()
     assert var_no_plot.figure is None
     assert "<svg" not in (var_no_plot._repr_html_() or "")
-    assert "<svg" not in (var_no_plot._repr_markdown_() or "")
+    assert "data:image/svg+xml" not in (var_no_plot._repr_markdown_() or "")
     assert "Simulation Plots" not in str(var_no_plot)
 
     # 4. Variants with @run: plot -> plot rendered in HTML, Markdown, and Text
@@ -339,5 +341,5 @@ def test_pipeline_plot_keyword_effect():
     ).run()
     assert var_with_plot.figure is not None
     assert "<svg" in (var_with_plot._repr_html_() or "")
-    assert "<svg" in (var_with_plot._repr_markdown_() or "")
+    assert "data:image/svg+xml" in (var_with_plot._repr_markdown_() or "")
     assert "Simulation Plots" in str(var_with_plot)

@@ -53,13 +53,15 @@ def test_variants_examples_run_and_structure(
     # Markdown report
     md_out = res._repr_markdown_()
     assert md_out is not None
-    assert "# Report:" in md_out
-    assert f"- *variants* ({len(expected_labels)}):" in md_out
+    assert ":::{note} Model Overview" in md_out
+    assert f"| **Variants** | {len(expected_labels)} |" in md_out
     assert ":::{dropdown} Calibration" in md_out
     assert ":::{dropdown} Equations" in md_out
     assert "## Check" in md_out
     assert "## Simulation" in md_out
-    assert "<svg" in md_out
+    assert "## Plot" in md_out
+    assert md_out.index("## Simulation") < md_out.index("## Plot")
+    assert "data:image/svg+xml" in md_out
 
     if not is_deterministic:
         assert "## Solution" in md_out
@@ -117,6 +119,8 @@ def test_variants_and_single_report_parity():
     assert "## Solution" in (res_var._repr_markdown_() or "")
     assert "## Simulation" in (res_single._repr_markdown_() or "")
     assert "## Simulation" in (res_var._repr_markdown_() or "")
+    assert "## Plot" in (res_single._repr_markdown_() or "")
+    assert "## Plot" in (res_var._repr_markdown_() or "")
 
 
 def test_multi_shock_svg_dash_styling():

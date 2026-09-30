@@ -78,13 +78,13 @@ x[t] = a + y[t-1]
 
     html = model._repr_html_()
 
-    assert "<table>" in html
-    assert "<th>" not in html
-    assert "<td>equations</td>" in html
-    assert "endogenous" in html
-    assert "exogenous" in html
-    assert "constants" in html
-    assert "<sup>^</sup>" in html
+    assert "<table" in html
+    assert "Component" in html
+    assert "Equations" in html
+    assert "Endogenous" in html
+    assert "Exogenous" in html
+    assert "Parameters" in html
+    assert ">^</sup>" in html
     assert "uninitialized" in html
 
 
@@ -100,6 +100,12 @@ x[t] = alpha * x[t-1] + e[t]
 
     md = model._markdown_()
 
+    assert ":::{note} Model Overview" in md
+    assert "**File:** `rbc_like.dyno`" in md
+    assert "| **Equations** | 1 | |" in md
+    assert "| **Endogenous** | 1 | `x` |" in md
+    assert "| **Exogenous** | 1 | `e` |" in md
+    assert "| **Parameters** | 1 | `alpha` |" in md
     assert "## Equations" in md
     assert r"$$\displaystyle \text{}" in md
     assert "(1)" in md
@@ -213,6 +219,25 @@ x[t] = alpha * x[t-1] + e[t]
 
     assert "Simulation Graph" not in md
     assert "dummy-figure-md" not in md
+
+
+def test_runresults_markdown_model_overview_card():
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+"""
+    model = DynoModel(filename="test_model.dyno", txt=txt)
+    results = RunResults(model=model)
+    md = results._repr_markdown_()
+    assert md is not None
+    assert ":::{note} Model Overview" in md
+    assert "**File:** `test_model.dyno`" in md
+    assert "| **Equations** | 1 | |" in md
+    assert "| **Endogenous** | 1 | `x` |" in md
+    assert "| **Exogenous** | 1 | `e` |" in md
+    assert "| **Parameters** | 1 | `alpha` |" in md
 
 
 def test_runresults_html_includes_figure_html():
@@ -688,3 +713,126 @@ def test_dsge_report_supports_preprocessor_option_variations():
             notify_interface=False,
         )
         assert create_mock.call_args[1].get("modfile_preprocessor") == "dynare"
+
+
+def test_runresults_dataframe_properties_and_orientations():
+    from dyno.report import (
+        style_residuals_dataframe,
+        style_eigenvalues_dataframe,
+        style_calibration_dataframe,
+    )
+
+    model = DynoModel(filename="examples/RBC.dyno")
+    res = model.run()
+
+    # Properties return DataFrames
+    assert isinstance(res.parameters_df, pd.DataFrame)
+    assert isinstance(res.steady_state_df, pd.DataFrame)
+    assert isinstance(res.residuals_df, pd.DataFrame)
+    assert isinstance(res.eigenvalues_df, pd.DataFrame)
+
+    # Horizontal orientation (default)
+    assert res.parameters_df.shape[0] == 1
+    assert "beta" in res.parameters_df.columns
+    assert res.steady_state_df.shape[0] == 1
+    assert "k" in res.steady_state_df.columns
+    assert res.residuals_df.shape[0] == 1
+    assert "eq 1" in res.residuals_df.columns
+    assert res.eigenvalues_df.shape[0] == 1
+    assert "1" in res.eigenvalues_df.columns
+
+    # Vertical orientation
+    df_p_v = res.parameters_dataframe(orientation="vertical")
+    assert df_p_v is not None
+    assert df_p_v.shape[1] == 1
+    assert "beta" in df_p_v.index
+
+    # Markdown representation contains DataFrame tables
+    md = res._repr_markdown_()
+    assert md is not None
+    assert ":::{dropdown} Calibration" in md
+    assert "<table" in md
+    assert "## Check" in md
+
+
+def test_dataframe_highlighting_helpers():
+    from dyno.report import (
+        _inline_styler_styles,
+        style_residuals_dataframe,
+        style_eigenvalues_dataframe,
+        style_calibration_dataframe,
+    )
+
+    # Residuals: problematic (>= 1e-6) highlighted in red (#fef2f2)
+    df_res = pd.DataFrame([{"eq 1": 0.0, "eq 2": 1.5e-4, "eq 3": -1.0}])
+    res_html = _inline_styler_styles(style_residuals_dataframe(df_res).to_html())
+    assert "#fef2f2" in res_html
+    assert "#dc2626" in res_html
+    assert 'style="' in res_html
+
+    # Eigenvalues: with n_eq=2, problematic are >1 for i<=2, and <=1 for i>2
+    df_ev = pd.DataFrame([{"1": 0.5, "2": 1.25, "3": 0.85, "4": 2.5}])
+    ev_html = _inline_styler_styles(
+        style_eigenvalues_dataframe(df_ev, n_eq=2).to_html()
+    )
+    assert "#fef2f2" in ev_html
+    assert "#dc2626" in ev_html
+    assert "border-right: 2px solid #94a3b8" in ev_html
+
+    # Calibration: nan highlighted in red (#fef2f2)
+    df_cal = pd.DataFrame([{"a": 1.0, "b": np.nan}])
+    cal_html = _inline_styler_styles(style_calibration_dataframe(df_cal).to_html())
+    assert "#fef2f2" in cal_html
+
+
+def test_runresults_variants_dataframe_properties_and_orientations():
+    model = DynoModel(filename="examples/variants/rbc_stochastic_forced.dyno")
+    res = model.run()
+
+    # Properties return DataFrames
+    assert isinstance(res.parameters_df, pd.DataFrame)
+    assert isinstance(res.steady_state_df, pd.DataFrame)
+    assert isinstance(res.residuals_df, pd.DataFrame)
+    assert isinstance(res.eigenvalues_df, pd.DataFrame)
+
+    # Horizontal (default): rows are variants, columns are parameters/variables/equations/eigenvalues
+    assert len(res.parameters_df) == 2
+    assert "rho" in res.parameters_df.columns
+    assert len(res.steady_state_df) == 2
+    assert "k" in res.steady_state_df.columns
+    assert len(res.residuals_df) == 2
+    assert "eq 1" in res.residuals_df.columns
+    assert len(res.eigenvalues_df) == 2
+    assert "1" in res.eigenvalues_df.columns
+
+    # Vertical: transpose
+    df_v = res.parameters_dataframe(orientation="vertical")
+    assert df_v is not None
+    assert df_v.shape == (res.parameters_df.shape[1], 2)
+
+
+def test_report_has_dedicated_plot_section():
+    txt = """
+    @run: check
+    @run: solve
+    @run: simulate: {T: 15}
+    @run: plot: {engine: plotly}
+
+    a <- 0.5
+    x[~] <- 0.0
+    e[t] <- N(0.0, 1.0)
+    x[t] = a * x[t-1] + e[t]
+    """
+    model = DynoModel(txt=txt)
+    res = model.run()
+    md = res._repr_markdown_() or ""
+    assert "## Check" in md
+    assert "## Solution" in md
+    assert "## Simulation" in md
+    assert "## Plot" in md
+    assert (
+        md.index("## Check")
+        < md.index("## Solution")
+        < md.index("## Simulation")
+        < md.index("## Plot")
+    )

@@ -5,6 +5,7 @@ import time
 import os
 import re
 import numpy as np
+import pandas as pd
 import tempita
 
 from dyno.errors import ParserError, SteadyStateError
@@ -35,6 +36,13 @@ template = tempita.Template(
 {[default moments_uncond_df=None]}
 {[default moments_cond_df=None]}
 {[default sim_svg=None]}
+{[default params_df_html=None]}
+{[default steady_df_html=None]}
+{[default residuals_df_html=None]}
+{[default eigenvalues_df_html=None]}
+{[default should_render_check=True]}
+{[default should_render_solution=True]}
+{[default should_render_simulation_tables=True]}
                             
 
 {[if len(parser_errors)>0]}      
@@ -59,26 +67,13 @@ template = tempita.Template(
 
 {[if model is not None]}
 
-# Report: {[model.name]}
-         
-
-- *filename*:  {[model.filename]}
-- *name*:  {[model.name]}
-- *variables* ({[ len(model.symbols['variables']) ]}):      {[str.join(", ", map('`{}`'.format,model.symbols['variables']))]}
-    - *exogenous* ({[ len(model.symbols['exogenous']) ]}):  {[str.join(", ", map('`{}`'.format,model.symbols['exogenous']))]}
-    -  *endogenous* (**{[ len(model.symbols['endogenous']) ]}**):  {[str.join(", ", map('`{}`'.format,model.symbols['endogenous']))]}
-- *equations*({[ len(model.equations) ]})
-- *{[ len(model.symbols['parameters']) ]} parameters*:    {[str.join(", ", map('`{}`'.format,model.symbols['parameters']))]}
+{[model_overview_markdown]}
 
 :::{dropdown} Calibration
 Parameter values
-```{code} python
-{[ str(model.context['constants']) ]}
-```
+{[ params_df_html ]}
 Steady state values
-```{code} python
-{[ steady_values ]}
-```
+{[ steady_df_html ]}
 :::
 
 :::{dropdown} Equations                    
@@ -92,7 +87,7 @@ Steady state values
 ---
 {[endif]}
 
-{[if residuals is not None or eigenvalues is not None]}
+{[if should_render_check and (residuals is not None or eigenvalues is not None)]}
 
 ## Check
 
@@ -104,9 +99,7 @@ Steady state values
 :::{warning} Residuals are not zero
 {[endif]}
 :class: dropdown
-```{code} python
-{[ str(residuals) ]}
-```
+{[ residuals_df_html ]}
 :::
 {[endif]}
 
@@ -119,9 +112,7 @@ Steady state values
 {[endif]}
 :class: dropdown
 Sorted by modulus:
-```{code} python
-{[eigenvalues]}
-```
+{[ eigenvalues_df_html ]}
 :::
 {[endif]}
 
@@ -132,7 +123,7 @@ Sorted by modulus:
 
 
 
-{[if dr is not None]}
+{[if should_render_solution and dr is not None]}
                     
 ## Solution
                          
@@ -156,7 +147,7 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 {[endif]}
                             
 
-{[if sim is not None and model.checks['deterministic']==False]}
+{[if should_render_simulation_tables and sim is not None and model.checks['deterministic']==False]}
 
 ## Simulation
 
@@ -191,12 +182,7 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 
 ::::::
 
-{[if sim_svg is not None]}
-
-{[sim_svg]}
-
-{[endif]}
-              
+---
 {[endif]}
                             
 
@@ -235,12 +221,16 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 
 ::::::
 
+---                   
+{[endif]}
+                            
 {[if sim_svg is not None]}
+
+## Plot
 
 {[sim_svg]}
 
-{[endif]}
----                   
+---
 {[endif]}
                             
 
@@ -254,6 +244,184 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 """,
     delimiters=("{[", "]}"),
 )
+
+
+# ---------------------------------------------------------------------------
+# DataFrame styling helpers for reports & representations
+# ---------------------------------------------------------------------------
+
+
+def _format_table_value(v: Any, fmt_spec: str = "{:.6g}") -> str:
+    if v is None:
+        return "—"
+    try:
+        if isinstance(v, (float, np.floating)) and np.isnan(v):
+            return "—"
+    except Exception:
+        pass
+    if isinstance(v, (int, np.integer)):
+        return str(v)
+    if isinstance(v, (float, np.floating)):
+        if np.isinf(v):
+            return "inf" if v > 0 else "-inf"
+        return fmt_spec.format(float(v))
+    if isinstance(v, (complex, np.complexfloating)):
+        c = complex(v)
+        if c.imag == 0:
+            return fmt_spec.format(c.real)
+        sign = "+" if c.imag >= 0 else "-"
+        return f"{fmt_spec.format(c.real)} {sign} {fmt_spec.format(abs(c.imag))}j"
+    return str(v)
+
+
+def _inline_styler_styles(html_str: str) -> str:
+    style_match = re.search(r"<style[^>]*>(.*?)</style>", html_str, re.DOTALL)
+    if not style_match:
+        return html_str
+    css_content = style_match.group(1)
+    rule_pattern = re.compile(r"([^{]+)\{([^}]+)\}")
+    id_to_style: dict[str, str] = {}
+    for match in rule_pattern.finditer(css_content):
+        selectors, declarations = match.groups()
+        cleaned_style = re.sub(r"\s+", " ", declarations).strip()
+        for sel in selectors.split(","):
+            sel_id = sel.strip().lstrip("#")
+            if sel_id:
+                if sel_id in id_to_style:
+                    id_to_style[sel_id] = id_to_style[sel_id] + "; " + cleaned_style
+                else:
+                    id_to_style[sel_id] = cleaned_style
+
+    def replace_tag(tag_match: re.Match[str]) -> str:
+        tag = tag_match.group(0)
+        id_m = re.search(r'id=["\']([^"\']+)["\']', tag)
+        if id_m:
+            elem_id = id_m.group(1)
+            if elem_id in id_to_style:
+                style_val = id_to_style[elem_id]
+                if 'style="' in tag:
+                    tag = tag.replace('style="', f'style="{style_val}; ')
+                elif "style='" in tag:
+                    tag = tag.replace("style='", f"style='{style_val}; ")
+                else:
+                    tag = tag[:-1] + f' style="{style_val}">'
+        return tag
+
+    return re.sub(r"<(?:td|th)\b[^>]*>", replace_tag, html_str)
+
+
+def style_dataframe(df: pd.DataFrame, *, hide_index: bool = False) -> Any:
+    s = df.style.format(lambda v: _format_table_value(v, "{:.6g}"))
+    if hide_index:
+        s = s.hide(axis="index")
+    return s
+
+
+def style_calibration_dataframe(df: pd.DataFrame, *, hide_index: bool = False) -> Any:
+    def highlight(val: Any) -> str:
+        try:
+            if isinstance(val, (float, np.floating)) and np.isnan(val):
+                return "background-color: #fef2f2; color: #dc2626; font-weight: 600;"
+        except Exception:
+            if val is None:
+                return "background-color: #fef2f2; color: #dc2626; font-weight: 600;"
+        return ""
+
+    s = df.style.map(highlight).format(lambda v: _format_table_value(v, "{:.6g}"))
+    if hide_index:
+        s = s.hide(axis="index")
+    return s
+
+
+def style_residuals_dataframe(
+    df: pd.DataFrame, *, tol: float = 1e-6, hide_index: bool = False
+) -> Any:
+    def highlight(val: Any) -> str:
+        try:
+            f = float(val)
+            if np.isnan(f) or abs(f) >= tol:
+                return "background-color: #fef2f2; color: #dc2626; font-weight: 600;"
+        except (ValueError, TypeError):
+            pass
+        return ""
+
+    s = df.style.map(highlight).format(lambda v: _format_table_value(v, "{:.4e}"))
+    if hide_index:
+        s = s.hide(axis="index")
+    return s
+
+
+def style_eigenvalues_dataframe(
+    df: pd.DataFrame, *, n_eq: int | None = None, hide_index: bool = False
+) -> Any:
+    if n_eq is None:
+        if len(df.columns) > 1 or (len(df) == 1 and len(df.columns) > 0):
+            n_eq = len(df.columns) // 2
+        else:
+            n_eq = len(df.index) // 2
+
+    is_horizontal = len(df.columns) >= len(df.index)
+
+    def highlight_eigenvalues(data: pd.DataFrame) -> pd.DataFrame:
+        styles = pd.DataFrame("", index=data.index, columns=data.columns)
+        if is_horizontal:
+            for col_idx, col in enumerate(data.columns):
+                i = col_idx + 1  # 1-indexed
+                border = (
+                    "border-right: 2px solid #94a3b8;" if (n_eq and i == n_eq) else ""
+                )
+                for row in data.index:
+                    val = data.loc[row, col]
+                    try:
+                        mod = abs(complex(val))
+                        if np.isnan(mod):
+                            styles.loc[row, col] = (
+                                f"background-color: #fef2f2; color: #dc2626; font-weight: 600; {border}".strip()
+                            )
+                        elif (n_eq and i <= n_eq and mod > 1.0) or (
+                            n_eq and i > n_eq and mod <= 1.0
+                        ):
+                            styles.loc[row, col] = (
+                                f"background-color: #fef2f2; color: #dc2626; font-weight: 600; {border}".strip()
+                            )
+                        elif border:
+                            styles.loc[row, col] = border
+                    except Exception:
+                        if border:
+                            styles.loc[row, col] = border
+        else:
+            for row_idx, row in enumerate(data.index):
+                i = row_idx + 1  # 1-indexed
+                border = (
+                    "border-bottom: 2px solid #94a3b8;" if (n_eq and i == n_eq) else ""
+                )
+                for col in data.columns:
+                    val = data.loc[row, col]
+                    try:
+                        mod = abs(complex(val))
+                        if np.isnan(mod):
+                            styles.loc[row, col] = (
+                                f"background-color: #fef2f2; color: #dc2626; font-weight: 600; {border}".strip()
+                            )
+                        elif (n_eq and i <= n_eq and mod > 1.0) or (
+                            n_eq and i > n_eq and mod <= 1.0
+                        ):
+                            styles.loc[row, col] = (
+                                f"background-color: #fef2f2; color: #dc2626; font-weight: 600; {border}".strip()
+                            )
+                        elif border:
+                            styles.loc[row, col] = border
+                    except Exception:
+                        if border:
+                            styles.loc[row, col] = border
+        return styles
+
+    s = df.style.apply(highlight_eigenvalues, axis=None).format(
+        lambda v: _format_table_value(v, "{:.4g}")
+    )
+    if hide_index:
+        s = s.hide(axis="index")
+    return s
 
 
 # ---------------------------------------------------------------------------
@@ -301,9 +469,70 @@ class RunResults:
         self.elapsed: float | None = None
         self._from_pipeline: bool = False
         self._plot_options: dict[str, Any] | None = None
+        self.muted_commands: set[str] = set()
+
+    def _is_check_error(self) -> bool:
+        if self.residuals is not None:
+            try:
+                if np.max(np.abs(self.residuals)) >= 1e-6:
+                    return True
+            except Exception:
+                pass
+        if self.eigenvalues is not None:
+            try:
+                evs_mod = np.abs(self.eigenvalues)
+                n = len(evs_mod) // 2
+                if n > 0:
+                    bk_met = bool(evs_mod[n - 1] < 1 < evs_mod[n])
+                    if not bk_met:
+                        return True
+            except Exception:
+                pass
+        for e in self.errors:
+            msg = str(e.get("message", "")).lower()
+            if any(
+                term in msg for term in ("check", "residual", "eigenvalue", "blanchard")
+            ):
+                return True
+        for w in self.warnings:
+            msg = str(w.get("message", "")).lower()
+            if any(
+                term in msg for term in ("check", "residual", "eigenvalue", "blanchard")
+            ):
+                return True
+        return False
+
+    @property
+    def _should_render_check(self) -> bool:
+        if "check" in self.muted_commands:
+            return self._is_check_error()
+        return True
+
+    def _is_solution_error(self) -> bool:
+        if self.solution is None:
+            return True
+        for e in self.errors:
+            msg = str(e.get("message", "")).lower()
+            if "solve" in msg or "solution" in msg:
+                return True
+        return False
+
+    @property
+    def _should_render_solution(self) -> bool:
+        if "solve" in self.muted_commands or "perturb" in self.muted_commands:
+            return self._is_solution_error()
+        return True
+
+    @property
+    def _should_render_simulation_tables(self) -> bool:
+        if "simulate" in self.muted_commands or "simul" in self.muted_commands:
+            return False
+        return True
 
     @property
     def _should_render_plot(self) -> bool:
+        if "plot" in self.muted_commands:
+            return False
         if self._from_pipeline:
             return self.figure is not None
         return self.simulation is not None or self.figure is not None
@@ -359,10 +588,92 @@ class RunResults:
     @staticmethod
     def _to_html_table(value: Any) -> str:
         if hasattr(value, "to_html"):
-            return value.to_html()
+            return _inline_styler_styles(value.to_html())
         if hasattr(value, "to_frame"):
-            return value.to_frame().to_html()
+            return _inline_styler_styles(value.to_frame().to_html())
         return f"<pre>{value}</pre>"
+
+    def parameters_dataframe(
+        self, orientation: str = "horizontal"
+    ) -> pd.DataFrame | None:
+        if self.model is None:
+            return None
+        import pandas as pd
+
+        c_dict = self.model.context.get("constants", {})
+        params = self.model.symbols.get("parameters", list(c_dict.keys()))
+        row = {p: c_dict.get(p, np.nan) for p in params}
+        df = pd.DataFrame([row], index=[getattr(self.model, "name", None) or "Value"])
+        return df if orientation == "horizontal" else df.T
+
+    def steady_state_dataframe(
+        self, orientation: str = "horizontal"
+    ) -> pd.DataFrame | None:
+        if self.model is None:
+            return None
+        import pandas as pd
+
+        s_dict = self.model.context.get("steady_states", {})
+        variables = self.model.symbols.get("variables", list(s_dict.keys()))
+        row = {v: s_dict.get(v, np.nan) for v in variables}
+        df = pd.DataFrame([row], index=[getattr(self.model, "name", None) or "Value"])
+        return df if orientation == "horizontal" else df.T
+
+    def residuals_dataframe(
+        self, orientation: str = "horizontal"
+    ) -> pd.DataFrame | None:
+        if self.residuals is None:
+            return None
+        import pandas as pd
+
+        if isinstance(self.residuals, pd.Series):
+            arr = self.residuals.values
+            eq_labels = list(self.residuals.index.astype(str))
+        else:
+            arr = np.asarray(self.residuals, dtype=float).reshape(-1)
+            eq_labels = [f"eq {i + 1}" for i in range(len(arr))]
+        df = pd.DataFrame(
+            [arr],
+            index=[getattr(self.model, "name", None) or "Value"],
+            columns=eq_labels,
+        )
+        return df if orientation == "horizontal" else df.T
+
+    def eigenvalues_dataframe(
+        self, orientation: str = "horizontal"
+    ) -> pd.DataFrame | None:
+        if self.eigenvalues is None:
+            return None
+        import pandas as pd
+
+        if isinstance(self.eigenvalues, pd.Series):
+            arr = self.eigenvalues.values
+            ev_labels = list(self.eigenvalues.index.astype(str))
+        else:
+            arr = np.asarray(self.eigenvalues).reshape(-1)
+            ev_labels = [str(i + 1) for i in range(len(arr))]
+        df = pd.DataFrame(
+            [arr],
+            index=[getattr(self.model, "name", None) or "Value"],
+            columns=ev_labels,
+        )
+        return df if orientation == "horizontal" else df.T
+
+    @property
+    def parameters_df(self) -> pd.DataFrame | None:
+        return self.parameters_dataframe()
+
+    @property
+    def steady_state_df(self) -> pd.DataFrame | None:
+        return self.steady_state_dataframe()
+
+    @property
+    def residuals_df(self) -> pd.DataFrame | None:
+        return self.residuals_dataframe()
+
+    @property
+    def eigenvalues_df(self) -> pd.DataFrame | None:
+        return self.eigenvalues_dataframe()
 
     @staticmethod
     def _figure_to_html(figure: Any) -> str:
@@ -658,14 +969,57 @@ class RunResults:
         }
 
         model = self.model
+        params_df_html: str | None = None
+        steady_df_html: str | None = None
         if model is not None:
-            steady_values = str(
-                {
-                    v: model.context["steady_states"].get(v, nan)
-                    for v in model.symbols["variables"]
-                }
+            from dyno.model_render import (
+                model_repr_data,
+                render_model_overview_markdown,
             )
-            context["steady_values"] = steady_values
+
+            p_df = self.parameters_dataframe(orientation="horizontal")
+            if p_df is not None:
+                params_df_html = _inline_styler_styles(
+                    style_calibration_dataframe(p_df, hide_index=True).to_html()
+                )
+
+            s_df = self.steady_state_dataframe(orientation="horizontal")
+            if s_df is not None:
+                steady_df_html = _inline_styler_styles(
+                    style_calibration_dataframe(s_df, hide_index=True).to_html()
+                )
+
+            context["model_overview_markdown"] = render_model_overview_markdown(
+                model_repr_data(model), model.filename
+            )
+
+        residuals_df_html: str | None = None
+        if self.residuals is not None:
+            r_df = self.residuals_dataframe(orientation="horizontal")
+            if r_df is not None:
+                residuals_df_html = _inline_styler_styles(
+                    style_residuals_dataframe(r_df, hide_index=True).to_html()
+                )
+
+        eigenvalues_df_html: str | None = None
+        if self.eigenvalues is not None:
+            ev_df = self.eigenvalues_dataframe(orientation="horizontal")
+            if ev_df is not None:
+                n_eq = (
+                    len(self.model.symbols.get("endogenous", []))
+                    if self.model and "endogenous" in getattr(self.model, "symbols", {})
+                    else len(ev_df.columns) // 2
+                )
+                eigenvalues_df_html = _inline_styler_styles(
+                    style_eigenvalues_dataframe(
+                        ev_df, n_eq=n_eq, hide_index=True
+                    ).to_html()
+                )
+
+        context["params_df_html"] = params_df_html
+        context["steady_df_html"] = steady_df_html
+        context["residuals_df_html"] = residuals_df_html
+        context["eigenvalues_df_html"] = eigenvalues_df_html
 
         dr = self.solution
         if dr is not None:
@@ -678,7 +1032,8 @@ class RunResults:
 
         sim_svg: str | None = None
         if (
-            self._from_pipeline
+            self._should_render_plot
+            and self._from_pipeline
             and self.figure is not None
             and self.simulation is not None
         ):
@@ -691,7 +1046,10 @@ class RunResults:
                 self.simulation, variables=plot_vars
             )
             if rendered_svg:
-                sim_svg = rendered_svg
+                import base64
+
+                b64 = base64.b64encode(rendered_svg.encode("utf-8")).decode("ascii")
+                sim_svg = f'<img src="data:image/svg+xml;base64,{b64}" alt="Simulation charts" style="max-width:100%; height:auto;" />'
 
         d: dict[str, Any] = {
             "model": model,
@@ -705,6 +1063,9 @@ class RunResults:
             "moments_df": moments_df,
             "moments_cond_df": moments_cond_df,
             "moments_uncond_df": moments_uncond_df,
+            "should_render_check": self._should_render_check,
+            "should_render_solution": self._should_render_solution,
+            "should_render_simulation_tables": self._should_render_simulation_tables,
         }
         d.update(context)
 
@@ -749,47 +1110,54 @@ class RunResults:
             parts.append(self.model._repr_html_())
 
         check_parts: list[str] = []
-        if self.residuals is not None:
-            eq_labels: list[str] | None = None
-            if self.model is not None and hasattr(self.model, "symbolic"):
-                try:
-                    eq_labels = [
-                        f"eq {i + 1}" for i in range(len(self.model.symbolic.equations))
-                    ]
-                except Exception:
-                    pass
-            check_parts.append(
-                self._vector_to_horizontal_html(
-                    self.residuals,
-                    title="Residuals",
-                    tol=1e-6,
-                    labels=eq_labels,
+        if self._should_render_check:
+            if self.residuals is not None:
+                eq_labels: list[str] | None = None
+                if self.model is not None and hasattr(self.model, "symbolic"):
+                    try:
+                        eq_labels = [
+                            f"eq {i + 1}"
+                            for i in range(len(self.model.symbolic.equations))
+                        ]
+                    except Exception:
+                        pass
+                check_parts.append(
+                    self._vector_to_horizontal_html(
+                        self.residuals,
+                        title="Residuals",
+                        tol=1e-6,
+                        labels=eq_labels,
+                    )
                 )
-            )
-        if self.eigenvalues is not None:
-            check_parts.append(
-                self._vector_to_horizontal_html(
-                    self.eigenvalues,
-                    title="Generalized Eigenvalues",
+            if self.eigenvalues is not None:
+                check_parts.append(
+                    self._vector_to_horizontal_html(
+                        self.eigenvalues,
+                        title="Generalized Eigenvalues",
+                    )
                 )
-            )
-        if check_parts:
-            parts.append("<h3>Check</h3>")
-            parts.extend(check_parts)
+            if check_parts:
+                parts.append("<h3>Check</h3>")
+                parts.extend(check_parts)
 
-        if self.solution is not None and hasattr(self.solution, "_repr_html_"):
+        if (
+            self._should_render_solution
+            and self.solution is not None
+            and hasattr(self.solution, "_repr_html_")
+        ):
             parts.append(self.solution._repr_html_())
 
         if self.simulation is not None:
-            moments_cond_df, moments_uncond_df = self._moments_dataframes()
-            if moments_cond_df is not None or moments_uncond_df is not None:
-                parts.append("<h3>Moments</h3>")
-                if moments_uncond_df is not None:
-                    parts.append("<h4>Unconditional Moments</h4>")
-                    parts.append(moments_uncond_df.to_html())
-                if moments_cond_df is not None:
-                    parts.append("<h4>Conditional Moments</h4>")
-                    parts.append(moments_cond_df.to_html())
+            if self._should_render_simulation_tables:
+                moments_cond_df, moments_uncond_df = self._moments_dataframes()
+                if moments_cond_df is not None or moments_uncond_df is not None:
+                    parts.append("<h3>Moments</h3>")
+                    if moments_uncond_df is not None:
+                        parts.append("<h4>Unconditional Moments</h4>")
+                        parts.append(moments_uncond_df.to_html())
+                    if moments_cond_df is not None:
+                        parts.append("<h4>Conditional Moments</h4>")
+                        parts.append(moments_cond_df.to_html())
             if self._should_render_plot:
                 plot_vars = (
                     (self._plot_options or {}).get("variables")
@@ -944,7 +1312,9 @@ class RunResults:
             if markdown:
                 display(Markdown(markdown))
 
-        if self.figure is not None:
+        if self.figure is not None and (
+            not self._from_pipeline or self.simulation is None
+        ):
             display(self.figure)
 
     def console_display(self) -> None:
@@ -1248,26 +1618,31 @@ class RunResults:
                 ]
             )
 
-        lines.extend(["Checks", "------"])
-        lines.extend(self._residuals_summary_lines())
-        lines.extend(self._eigenvalues_summary_lines())
-        lines.append("")
+        if self._should_render_check:
+            lines.extend(["Checks", "------"])
+            lines.extend(self._residuals_summary_lines())
+            lines.extend(self._eigenvalues_summary_lines())
+            lines.append("")
 
         lines.extend(["Outputs", "-------"])
-        lines.append(
-            "Solution: computed"
-            if self.solution is not None
-            else "Solution: not computed"
-        )
-        if self.solution is not None and getattr(self.solution, "decision_rule", None):
-            dr = self.solution.decision_rule
-            x_shape = getattr(getattr(dr, "X", None), "shape", None)
-            y_shape = getattr(getattr(dr, "Y", None), "shape", None)
-            s_shape = getattr(getattr(dr, "Σ", None), "shape", None)
+        if self._should_render_solution:
             lines.append(
-                f"  decision rule matrices: X{x_shape}, Y{y_shape}, Σ{s_shape}"
+                "Solution: computed"
+                if self.solution is not None
+                else "Solution: not computed"
             )
-        lines.extend(self._simulation_summary_line().split("\n"))
+            if self.solution is not None and getattr(
+                self.solution, "decision_rule", None
+            ):
+                dr = self.solution.decision_rule
+                x_shape = getattr(getattr(dr, "X", None), "shape", None)
+                y_shape = getattr(getattr(dr, "Y", None), "shape", None)
+                s_shape = getattr(getattr(dr, "Σ", None), "shape", None)
+                lines.append(
+                    f"  decision rule matrices: X{x_shape}, Y{y_shape}, Σ{s_shape}"
+                )
+        if self._should_render_simulation_tables:
+            lines.extend(self._simulation_summary_line().split("\n"))
         if self.figure is not None:
             lines.append(f"Figure: available ({type(self.figure).__name__})")
         else:

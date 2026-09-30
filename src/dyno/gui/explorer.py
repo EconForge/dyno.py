@@ -14,8 +14,6 @@ import hashlib
 from pathlib import Path
 
 from .explorer_core import (
-    CONTENT_TYPES,
-    OUTPUT_FORMATS,
     ImportVariant,
     available_backends,
     default_backends,
@@ -65,8 +63,7 @@ def model_representation_gui(directory: str | Path = "examples"):
 
     selected_file = solara.reactive(file_labels[0])
     source_text = solara.reactive(files[0].read_text())
-    content_type = solara.reactive(CONTENT_TYPES[0])
-    selected_format = solara.reactive("html")
+    selected_format = solara.reactive("markdown")
     show_source = solara.reactive(True)
     initial_backends = default_backends(files[0])
     selected_backend = solara.reactive(initial_backends[0])
@@ -258,20 +255,6 @@ def model_representation_gui(directory: str | Path = "examples"):
                         style="text-transform:none;",
                     )
                     rv.Divider(vertical=True, class_="mx-1 my-1")
-                    with solara.ToggleButtonsSingle(value=content_type, dense=True):
-                        solara.Button(
-                            "Representation",
-                            value="representation",
-                            text=True,
-                            style="text-transform:none;",
-                        )
-                        solara.Button(
-                            "Report",
-                            value="report",
-                            text=True,
-                            style="text-transform:none;",
-                        )
-                    rv.Divider(vertical=True, class_="mx-1 my-1")
                     with solara.ToggleButtonsSingle(value=selected_format, dense=True):
                         solara.Button(
                             "HTML",
@@ -363,7 +346,7 @@ def model_representation_gui(directory: str | Path = "examples"):
 
         variant = ImportVariant(selected_backend.value, strict_mode.value)
         ok, kind, content, line = render_variant(
-            path, source_text.value, variant, content_type.value, selected_format.value
+            path, source_text.value, variant, "report", selected_format.value
         )
         error_lines = {line} if (not ok and line is not None) else set()
 
