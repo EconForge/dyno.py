@@ -60,7 +60,7 @@ def model_representation_gui(directory: str | Path = "examples"):
 
     selected_file = solara.reactive(file_labels[0])
     source_text = solara.reactive(files[0].read_text())
-    content_type = solara.reactive(CONTENT_TYPES[0])
+    content_type = solara.reactive(CONTENT_TYPES[1])
     selected_formats: solara.Reactive[list[str]] = solara.reactive(["html"])
     show_source = solara.reactive(True)
     selected_backends: solara.Reactive[list[str]] = solara.reactive(
@@ -244,16 +244,12 @@ def model_representation_gui(directory: str | Path = "examples"):
 
         with solara.Head():
             solara.Title(f"Dyno: {path}")
-
+        solara.Style("""
+            .v-navigation-drawer {
+                width: 700px !important;
+            }
+        """)
         with solara.Sidebar():
-            solara.HTML(
-                tag="style",
-                unsafe_innerHTML=(
-                    ".v-navigation-drawer {"
-                    "min-width:260px !important; max-width:300px !important;"
-                    "}"
-                ),
-            )
             # `solara.Column` is itself a flex column (`display:flex; flex-direction:column`),
             # so nesting one bounded to the sidebar's own height turns the inner
             # "model list" column into a proper flex item that can scroll on its

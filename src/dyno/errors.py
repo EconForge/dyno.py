@@ -11,6 +11,10 @@ class UndefinedSymbolWarning(UserWarning):
     """Warning raised when a model references undefined parameters or variables."""
 
 
+class ConvergenceWarning(UserWarning):
+    """Warning raised when a numerical solver fails to converge."""
+
+
 class UndefinedSymbolError(DynoError):
     """Raised when an operation requires symbols that are not defined."""
 

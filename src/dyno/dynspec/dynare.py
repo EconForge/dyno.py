@@ -244,6 +244,10 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
 
         super().__init__()
 
+        func_table = calibration.pop("function_table", None)
+        if func_table:
+            self.function_table.update(func_table)
+
         self.steady_state = True  # variables are evaluatated at their steady state
         self.steady_states: Dict[str, Any] = {}
         self.constants: Dict[str, Any] = {}
@@ -252,6 +256,13 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
         self.symbols: Dict[str, Any] = dict(symbols) if symbols else {}
 
         self.calibration = calibration
+        params = set(self.symbols.get("parameters", []))
+        endo = set(self.symbols.get("endogenous", []))
+        for k, v in self.calibration.items():
+            if k in params or (k not in endo):
+                self.constants[k] = v
+            if k in endo:
+                self.steady_states[k] = v
 
     def var_statement(self, tree):
         if "endogenous" not in self.symbols:
@@ -310,8 +321,6 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
         formula = tree.children[1]
         value = self.visit(formula)
         if name in self.calibration:
-            # override value in the model with calibraiton value
-            print("overriding parameter value:", name, "=", self.calibration[name])
             value = self.calibration[name]
         self.constants[name] = value
 

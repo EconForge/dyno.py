@@ -16,3 +16,8 @@ c[~] <- aa*k[~]^alph-delt*k[~]
 
 # Exogenous shock
 x[1] <- 1.2
+
+@run: steady
+@run: check
+@run: simulate: {T: 50}
+@run: plot

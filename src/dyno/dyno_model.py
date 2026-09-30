@@ -83,6 +83,7 @@ class DynoModel(AbstractModel):
         commands = self._normalize_run_commands()
         model = self
         results = RunResults(model=model)
+        results._from_pipeline = True
 
         invalid_shifts = getattr(self, "_invalid_shifts", None)
         if invalid_shifts:
@@ -95,68 +96,133 @@ class DynoModel(AbstractModel):
             )
 
         if not commands and default_pipeline:
-            # Default pipeline: residuals + solve + IRFs
-            results.residuals = model.residuals
-            if model.is_deterministic:
-                from .solver import deterministic_solve
+            commands = [
+                {"command": "resid", "options": {}},
+                {"command": "analyze", "options": {"T": 40}},
+            ]
 
-                sim = deterministic_solve(model, T=40)
-                results.simulation = {"Perfect Foresight": sim}
-            else:
-                dr = model.solve()
-                results.solution = dr
-                results.eigenvalues = dr.evs
-                results.moments = dr.moments()[1]
-                results.simulation = dr.irfs(type="deviation", T=40)
-        else:
-            for cmd in commands:
-                name = str(cmd["command"]).lower()
-                options = cmd.get("options", {})
+        for idx, cmd in enumerate(commands):
+            name = str(cmd["command"]).lower()
+            options = cmd.get("options", {})
 
-                if name == "steady":
-                    model = model.steady(**options)
-                    results.model = model
-                elif name in {"check", "resid"}:
-                    results.residuals = model.residuals
-                    check_options = {"compute_eigenvalues": True, **options}
-                    model = model.check(**check_options)
-                    results.model = model
-                    results.eigenvalues = getattr(model, "_eigenvalues", None)
-                elif name in {"solve", "perturb"}:
-                    solution = model.solve(**options)
-                    results.solution = solution
-                    results.eigenvalues = getattr(solution, "evs", None)
-                elif name in {"simul", "simulate", "stoch_simul"}:
-                    if model.is_deterministic:
-                        from .solver import deterministic_solve
+            if name == "variants":
+                model_variants = model.variants(**options)
+                remaining = commands[idx + 1 :]
+                for m in model_variants:
+                    m.metadata = dict(m.metadata)
+                    m.metadata["run"] = remaining
+                return model_variants.run(default_pipeline=default_pipeline)  # type: ignore[return-value]
+            elif name == "steady":
+                model = model.steady(**options)
+                results.model = model
+            elif name == "resid":
+                results.residuals = model.residuals
+            elif name == "check":
+                results.residuals = model.residuals
+                check_options = {"compute_eigenvalues": True, **options}
+                model = model.check(**check_options)
+                results.model = model
+                results.eigenvalues = getattr(model, "_eigenvalues", None)
+            elif name in {"solve", "perturb"}:
+                solution = model.solve(**options)
+                results.solution = solution
+                results.eigenvalues = getattr(solution, "evs", None)
+            elif name in {"simul", "simulate"}:
+                mode = options.get("mode", "random" if name == "simul" else "auto")
+                if model.is_deterministic or mode in {"transition", "deterministic"}:
+                    from .solver import deterministic_solve
 
-                        sim = deterministic_solve(model, **options)
-                        results.simulation = {"Perfect Foresight": sim}
-                    else:
-                        from .simul import simulate
-
-                        solve_options = {
-                            k: v for k, v in options.items() if k in {"method"}
-                        }
-                        solution = results.solution
-                        if solution is None or not hasattr(solution, "X"):
-                            solution = model.solve(**solve_options)
-                            results.solution = solution
-                        results.eigenvalues = getattr(solution, "evs", None)
-                        if name == "stoch_simul":
-                            irf_type = options.get("type", "deviation")
-                            horizon = int(
-                                options.get("irf", options.get("periods", 40))
-                            )
-                            results.moments = solution.moments()[1]
-                            results.simulation = solution.irfs(type=irf_type, T=horizon)
-                        else:
-                            horizon = int(options.get("T", 40))
-                            results.simulation = simulate(solution, T=horizon)
+                    det_opts = {k: v for k, v in options.items() if k != "mode"}
+                    sim = deterministic_solve(model, **det_opts)
+                    results.simulation = sim
+                    if hasattr(sim, "attrs") and not sim.attrs.get("converged", True):
+                        results.add_warning(
+                            f"Deterministic / perfect foresight simulation did not converge after "
+                            f"{sim.attrs.get('iterations', '?')} iterations "
+                            f"(maximum residual: {sim.attrs.get('residual', float('nan')):.2e}). "
+                            "The computed solution is incorrect."
+                        )
                 else:
-                    raise NotImplementedError(
-                        f"Unsupported DynoModel.run command: {name}"
+                    solve_options = {
+                        k: v for k, v in options.items() if k in {"method"}
+                    }
+                    solution = results.solution
+                    if solution is None or not hasattr(solution, "X"):
+                        solution = model.solve(**solve_options)
+                        results.solution = solution
+                    results.eigenvalues = getattr(solution, "evs", None)
+                    horizon = int(
+                        options.get("T", options.get("irf", options.get("periods", 40)))
                     )
+                    units = options.get("units", options.get("type", "deviation"))
+                    n_draws = int(options.get("N", 1))
+                    sim_options = {
+                        k: v
+                        for k, v in options.items()
+                        if k in {"shocks", "initial_states"}
+                    }
+                    results.simulation = solution.simulate(
+                        T=horizon,
+                        mode=mode,
+                        N=n_draws,
+                        units=units,
+                        **sim_options,
+                    )
+            elif name in {"analyze", "stoch_simul"}:
+                from .plots import plot_irfs
+
+                if model.is_deterministic:
+                    from .solver import deterministic_solve
+
+                    det_opts = {
+                        k: v
+                        for k, v in options.items()
+                        if k not in {"irf", "periods", "type"}
+                    }
+                    if "T" not in det_opts:
+                        det_opts["T"] = int(
+                            options.get("irf", options.get("periods", 40))
+                        )
+                    sim = deterministic_solve(model, **det_opts)
+                    results.simulation = sim
+                    if hasattr(sim, "attrs") and not sim.attrs.get("converged", True):
+                        results.add_warning(
+                            f"Deterministic / perfect foresight simulation did not converge after "
+                            f"{sim.attrs.get('iterations', '?')} iterations "
+                            f"(maximum residual: {sim.attrs.get('residual', float('nan')):.2e}). "
+                            "The computed solution is incorrect."
+                        )
+                    results._plot_options = {"engine": "altair"}  # type: ignore[attr-defined]
+                    results.figure = plot_irfs(results.simulation)
+                else:
+                    solve_options = {
+                        k: v for k, v in options.items() if k in {"method"}
+                    }
+                    solution = results.solution
+                    if solution is None or not hasattr(solution, "X"):
+                        solution = model.solve(**solve_options)
+                        results.solution = solution
+                    results.eigenvalues = getattr(solution, "evs", None)
+                    irf_type = options.get("units", options.get("type", "deviation"))
+                    horizon = int(
+                        options.get("T", options.get("irf", options.get("periods", 40)))
+                    )
+                    results.moments = solution.moments()[1]
+                    results.simulation = solution.irfs(type=irf_type, T=horizon)
+                    results._plot_options = {"engine": "altair"}  # type: ignore[attr-defined]
+                    results.figure = plot_irfs(results.simulation)
+            elif name == "plot":
+                if results.simulation is not None:
+                    from .plots import plot_simulation
+
+                    engine = options.get("engine", "altair")
+                    plot_opts = {k: v for k, v in options.items() if k != "engine"}
+                    results._plot_options = dict(options)  # type: ignore[attr-defined]
+                    results.figure = plot_simulation(
+                        results.simulation, engine=engine, **plot_opts
+                    )
+            else:
+                raise NotImplementedError(f"Unsupported DynoModel.run command: {name}")
 
         # Add line-level warnings for non-zero residuals
         r = results.residuals
@@ -165,11 +231,6 @@ class DynoModel(AbstractModel):
             for i in inds:
                 tree = model.symbolic.equations[i]
                 results.add_warning(str(r[i]), line=tree.meta.line)
-
-        if results.simulation is not None and isinstance(results.simulation, dict):
-            from .plots import plot_irfs
-
-            results.figure = plot_irfs(results.simulation)
 
         results.finish()
         return results
@@ -318,10 +379,12 @@ class DynoModel(AbstractModel):
 
     def recalibrate(self: Self, **calib):
         m = self.copy()
+        prev_metadata = copy.deepcopy(getattr(self.symbolic, "metadata", {}))
         previous = getattr(self, "_calibration_overrides", {})
         merged = previous | calib
         m.symbolic.context = {}
         m.symbolic.process_assignments(**merged)
+        m.symbolic.metadata = prev_metadata | getattr(m.symbolic, "metadata", {})
         m._set_context()
         m._set_exogenous()
         m._calibration_overrides = merged
@@ -345,13 +408,24 @@ class DynoModel(AbstractModel):
 
         for i, name in enumerate(endogenous):
             cc["variables"][name] = {
-                -1: cc["steady_states"].get(name, math.nan),
-                0: cc["steady_states"].get(name, math.nan),
-                1: cc["steady_states"].get(name, math.nan),
+                -1: y0[i],
+                0: y1[i],
+                1: y2[i],
             }
 
         for i, name in enumerate(exogenous):
-            cc["variables"][name] = {0: 0.0}
+            exo_val = (
+                e[i]
+                if (i < len(e) and not math.isnan(e[i]))
+                else cc["steady_states"].get(name, 0.0)
+            )
+            if isinstance(exo_val, float) and math.isnan(exo_val):
+                exo_val = 0.0
+            cc["variables"][name] = {
+                -1: exo_val,
+                0: exo_val,
+                1: exo_val,
+            }
 
         from dyno.dynspec.analyze import EquationsEvaluator
 
@@ -382,7 +456,18 @@ class DynoModel(AbstractModel):
             }
 
         for i, name in enumerate(exogenous):
-            cc["variables"][name] = {0: DN(e[i], {(name, 0): 1})}
+            exo_val = (
+                e[i]
+                if (i < len(e) and not math.isnan(e[i]))
+                else cc["steady_states"].get(name, 0.0)
+            )
+            if isinstance(exo_val, float) and math.isnan(exo_val):
+                exo_val = 0.0
+            cc["variables"][name] = {
+                -1: DN(exo_val, {(name, 0): 1}),
+                0: DN(exo_val, {(name, 0): 1}),
+                1: DN(exo_val, {(name, 0): 1}),
+            }
 
         from dyno.dynspec.analyze import EquationsEvaluator
 

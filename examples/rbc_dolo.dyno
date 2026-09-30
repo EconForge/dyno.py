@@ -45,3 +45,9 @@ e_z[t] <- N(0, sig_z^2)
     chi*n[t]^eta*c[t]^sigma - w[t]
     1 - beta*(c[t]/c[t+1])^sigma*(1-delta+rk[t+1])
 }
+
+@run: steady
+@run: check
+@run: solve
+@run: simulate: {T: 40}
+@run: plot

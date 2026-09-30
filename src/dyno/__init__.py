@@ -10,6 +10,13 @@ from .dyno_model import DynoModel
 from . import dynare
 from .dynare import DynareModel
 from .report import DynoRunResults, DynareRunResults, Report, RunResults
+from .variants import (
+    ModelVariants,
+    RunResultsVariants,
+    SimulationVariants,
+    SolutionVariants,
+    VariantCollection,
+)
 from .cli import dynare as dynare_cli
 
 

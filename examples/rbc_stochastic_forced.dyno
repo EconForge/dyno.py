@@ -1,8 +1,9 @@
+# Stochastic RBC Model with Forced Initial Dynamics and Non-Steady-State Capital
 # Parameters
 alpha <- 0.36
 rho   <- 0.95
 tau   <- 0.025
-r <- 1.01
+r     <- 1.01
 beta  <- 1/r
 delta <- 0.025
 psi   <- 0
@@ -30,7 +31,6 @@ y[t] = exp(a[t])*(k[t-1]^alpha)*(h[t]^(1-alpha))
 k[t] = exp(b[t])*(y[t]-c[t])+(1-delta)*k[t-1]
 a[t] = rho*a[t-1]+tau*b[t-1] + e[t]
 b[t] = tau*a[t-1]+rho*b[t-1] + u[t]
-
 
 # Initial Values
 k[0] <- k[~]*1.01

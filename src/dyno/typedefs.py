@@ -6,9 +6,12 @@ from typing import Literal, Callable, Any, NotRequired
 
 TVector = NDArray[np.floating[Any]]  # 1-D intent
 TMatrix = NDArray[np.floating[Any]]  # 2-D intent
+TTensor = NDArray[np.floating[Any]]  # 3-D intent
 
 Solver = Literal["ti", "qz"]
-IRFType = Literal["level", "log-deviation", "deviation"]
+IRFType = Literal["level", "log-deviation", "deviation", "percent"]
+UnitsType = Literal["level", "deviation", "percent", "log-deviation"]
+SimulateMode = Literal["auto", "irf", "random", "transition", "deterministic"]
 
 DynamicFunction = Callable[[TVector, TVector, TVector, TVector, TVector, TVector], None]
 

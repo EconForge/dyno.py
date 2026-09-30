@@ -38,3 +38,33 @@ def test_all(tol=1e-9):
     assert (
         err_ti < tol
     ), "Time Iteration did not find a solution (residual = {}).".format(err_ti)
+
+
+def test_deterministic_solve_non_convergence_warning():
+    import pytest
+    from dyno import DynoModel, deterministic_solve
+    from dyno.errors import ConvergenceWarning
+
+    model = DynoModel("examples/rbc_deterministic.dyno")
+
+    # With maxit=2, the solver should fail to converge and emit ConvergenceWarning
+    with pytest.warns(ConvergenceWarning, match="incorrect"):
+        traj = deterministic_solve(model, maxit=2)
+
+    assert traj.attrs["converged"] is False
+    assert traj.attrs["iterations"] == 2
+    assert "residual" in traj.attrs
+    assert traj.attrs["residual"] > 0
+
+
+def test_dynomodel_run_warns_on_deterministic_non_convergence():
+    from dyno import DynoModel
+
+    model = DynoModel("examples/rbc_deterministic.dyno")
+    # run default_pipeline triggers deterministic_solve(T=40)
+    results = model.run(default_pipeline=True)
+    assert any(
+        "did not converge" in w.get("message", "")
+        and "incorrect" in w.get("message", "")
+        for w in results.warnings
+    )

@@ -143,6 +143,13 @@ class DynareModel(AbstractModel):
 
                 sim = deterministic_solve(model, T=40)
                 results.simulation = {"Perfect Foresight": sim}
+                if hasattr(sim, "attrs") and not sim.attrs.get("converged", True):
+                    results.add_warning(
+                        f"Deterministic / perfect foresight simulation did not converge after "
+                        f"{sim.attrs.get('iterations', '?')} iterations "
+                        f"(maximum residual: {sim.attrs.get('residual', float('nan')):.2e}). "
+                        "The computed solution is incorrect."
+                    )
         else:
             for cmd in commands:
                 name = str(cmd.get("command", "")).lower()

@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from dyno.model import AbstractModel
+    from dyno.simul import SimulationResult
     from dyno.solver import PerturbationSolution
     import pandas as pd
 
@@ -33,6 +34,7 @@ template = tempita.Template(
 {[default moments=None]}
 {[default moments_uncond_df=None]}
 {[default moments_cond_df=None]}
+{[default sim_svg=None]}
                             
 
 {[if len(parser_errors)>0]}      
@@ -188,6 +190,12 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 ::::
 
 ::::::
+
+{[if sim_svg is not None]}
+
+{[sim_svg]}
+
+{[endif]}
               
 {[endif]}
                             
@@ -226,6 +234,12 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 ::::
 
 ::::::
+
+{[if sim_svg is not None]}
+
+{[sim_svg]}
+
+{[endif]}
 ---                   
 {[endif]}
                             
@@ -272,8 +286,8 @@ class RunResults:
 
         # Pipeline outputs
         self.residuals: np.ndarray | None = None
-        self.solution: PerturbationSolution | None = None
-        self.simulation: dict | pd.DataFrame | None = None
+        self.solution: PerturbationSolution | Any | None = None
+        self.simulation: SimulationResult | dict | pd.DataFrame | None = None
         self.figure: Any | None = None
         self.eigenvalues: np.ndarray | None = None
         self.moments: np.ndarray | None = None
@@ -285,6 +299,14 @@ class RunResults:
         # Timing
         self._t_start: float = time.time()
         self.elapsed: float | None = None
+        self._from_pipeline: bool = False
+        self._plot_options: dict[str, Any] | None = None
+
+    @property
+    def _should_render_plot(self) -> bool:
+        if self._from_pipeline:
+            return self.figure is not None
+        return self.simulation is not None or self.figure is not None
 
     # -- Diagnostic helpers --------------------------------------------------
 
@@ -446,12 +468,12 @@ class RunResults:
         return conditional_df, unconditional_df
 
     @staticmethod
-    def _simulation_to_html(simulation: Any) -> str:
+    def _simulation_to_html(simulation: Any, variables: list[str] | None = None) -> str:
         import pandas as pd
 
-        from dyno.simul import sim_to_nsim
+        from dyno.simul import SimulationResult, sim_to_nsim
 
-        if isinstance(simulation, dict):
+        if isinstance(simulation, (SimulationResult, dict)):
             data = sim_to_nsim(simulation).copy()
         elif hasattr(simulation, "melt"):
             data = simulation.copy()
@@ -473,7 +495,13 @@ class RunResults:
         if data.empty:
             return ""
 
-        variables = list(dict.fromkeys(data["variable"].astype(str)))
+        all_variables = list(dict.fromkeys(data["variable"].astype(str)))
+        if variables is not None:
+            variables_list = [str(v) for v in variables if str(v) in all_variables]
+        else:
+            variables_list = all_variables
+        if not variables_list:
+            return ""
         shocks = list(dict.fromkeys(data["shock"].astype(str)))
         colors = [
             "#0f766e",
@@ -488,7 +516,7 @@ class RunResults:
         panel_width = 260
         panel_height = 170
         cols = 2
-        rows = max(1, (len(variables) + cols - 1) // cols)
+        rows = max(1, (len(variables_list) + cols - 1) // cols)
         svg_width = cols * panel_width
         svg_height = rows * panel_height + 28
 
@@ -510,7 +538,7 @@ class RunResults:
                 )
                 legend_x += 24 + max(36, len(safe_shock) * 7)
 
-        for index, variable in enumerate(variables):
+        for index, variable in enumerate(variables_list):
             subset = data[data["variable"].astype(str) == variable].copy()
             subset = subset.sort_values(["shock", "t"])
             if subset.empty:
@@ -648,12 +676,30 @@ class RunResults:
         moments_cond_df, moments_uncond_df = self._moments_dataframes()
         moments_df = moments_uncond_df
 
+        sim_svg: str | None = None
+        if (
+            self._from_pipeline
+            and self.figure is not None
+            and self.simulation is not None
+        ):
+            plot_vars = (
+                (self._plot_options or {}).get("variables")
+                if isinstance(self._plot_options, dict)
+                else None
+            )
+            rendered_svg = self._simulation_to_html(
+                self.simulation, variables=plot_vars
+            )
+            if rendered_svg:
+                sim_svg = rendered_svg
+
         d: dict[str, Any] = {
             "model": model,
             "residuals": self.residuals,
             "dr": dr,
             "sim": self.simulation,
             "fig": self.figure,
+            "sim_svg": sim_svg,
             "eigenvalues": self.eigenvalues,
             "moments": self.moments,
             "moments_df": moments_df,
@@ -744,11 +790,22 @@ class RunResults:
                 if moments_cond_df is not None:
                     parts.append("<h4>Conditional Moments</h4>")
                     parts.append(moments_cond_df.to_html())
-            sim_html = self._simulation_to_html(self.simulation)
-            if sim_html:
-                parts.append("<h3>Simulation</h3>")
-                parts.append(sim_html)
-        elif self.figure is not None:
+            if self._should_render_plot:
+                plot_vars = (
+                    (self._plot_options or {}).get("variables")
+                    if isinstance(self._plot_options, dict)
+                    else None
+                )
+                sim_html = self._simulation_to_html(
+                    self.simulation, variables=plot_vars
+                )
+                if sim_html:
+                    parts.append("<h3>Simulation</h3>")
+                    parts.append(sim_html)
+                elif self.figure is not None:
+                    parts.append("<h3>Simulation</h3>")
+                    parts.append(self._figure_to_html(self.figure))
+        elif self.figure is not None and self._should_render_plot:
             parts.append("<h3>Simulation</h3>")
             parts.append(self._figure_to_html(self.figure))
         for e in self.errors:
@@ -917,6 +974,9 @@ class RunResults:
                 print(f"IRFs: {len(self.simulation)} shock(s)")
             else:
                 print(f"Simulation: computed")
+            plot_txt = self.plot_text(color=True)
+            if plot_txt:
+                print(plot_txt)
 
         for e in self.errors:
             print(f"ERROR: {e['message']}")
@@ -1066,7 +1126,94 @@ class RunResults:
             lines.append(f"  - ... {len(entries) - max_entries} more")
         return lines
 
-    def __str__(self) -> str:
+    def plot_text(
+        self,
+        *,
+        cols: int = 2,
+        width: int | None = None,
+        height: int | None = None,
+        variables: list[str] | None = None,
+        color: bool | None = None,
+        theme: str = "clear",
+        marker: str | None = None,
+        show: bool = False,
+    ) -> str:
+        """Render simulation / IRF graphs as text using plotext.
+
+        Parameters
+        ----------
+        cols : int, default 2
+            Number of subplot columns.
+        width : int | None, optional
+            Total width in characters. If None, detected from terminal or defaults to 80.
+        height : int | None, optional
+            Total height in lines. If None, automatically scaled to rows * 10.
+        variables : list[str] | None, optional
+            List of variable names to plot. If None, plots all variables in simulation.
+        color : bool | None, optional
+            Whether to retain ANSI color codes. If None, detected from stdout.
+        theme : str, default "clear"
+            Plotext theme.
+        marker : str | None, optional
+            Marker style (e.g. "hd", "braille", "sd", "dot").
+        show : bool, default False
+            If True, prints the plot to stdout.
+
+        Returns
+        -------
+        str
+            The rendered text plot.
+        """
+        if self.simulation is None:
+            return ""
+        from dyno.plots import plot_simulation_plotext
+
+        if variables is None and isinstance(self._plot_options, dict):
+            variables = self._plot_options.get("variables")
+
+        return plot_simulation_plotext(
+            self.simulation,
+            cols=cols,
+            width=width,
+            height=height,
+            variables=variables,
+            color=color,
+            theme=theme,
+            marker=marker,
+            show=show,
+        )
+
+    def to_text(
+        self,
+        *,
+        graphs: bool | None = None,
+        color: bool | None = None,
+        width: int | None = None,
+        height: int | None = None,
+        cols: int = 2,
+        variables: list[str] | None = None,
+        marker: str | None = None,
+    ) -> str:
+        """Return the formatted plain-text diagnostic and results summary.
+
+        Parameters
+        ----------
+        graphs : bool | None, optional
+            Whether to include plotext ASCII/ANSI graphs of simulations/IRFs.
+            If None, renders graphs when `_should_render_plot` is True.
+        color : bool | None, optional
+            Whether to include ANSI colors in graphs. If None, detected from stdout.
+        width : int | None, optional
+            Width for graph rendering.
+        height : int | None, optional
+            Height for graph rendering.
+        cols : int, default 2
+            Columns for graph layout.
+        variables : list[str] | None, optional
+            Subset of variables to plot.
+        marker : str | None, optional
+            Marker style (e.g. "hd", "braille", "sd").
+        """
         if self.elapsed is None:
             self.finish()
 
@@ -1074,7 +1221,7 @@ class RunResults:
 
         if self.model is not None:
             symbols = getattr(self.model, "symbols", {})
-            variables = list(symbols.get("variables", []))
+            variables_all = list(symbols.get("variables", []))
             endogenous = list(symbols.get("endogenous", []))
             exogenous = list(symbols.get("exogenous", []))
             parameters = list(symbols.get("parameters", []))
@@ -1089,7 +1236,7 @@ class RunResults:
                     f"deterministic: {deterministic}",
                     (
                         "symbols: "
-                        f"variables={len(variables)}, "
+                        f"variables={len(variables_all)}, "
                         f"endogenous={len(endogenous)}, "
                         f"exogenous={len(exogenous)}, "
                         f"parameters={len(parameters)}"
@@ -1132,6 +1279,26 @@ class RunResults:
             lines.append("Moments: not available")
         lines.append("")
 
+        use_graphs = self._should_render_plot if graphs is None else graphs
+        if use_graphs and self.simulation is not None:
+            sim_plot = self.plot_text(
+                cols=cols,
+                width=width,
+                height=height,
+                variables=variables,
+                color=color,
+                marker=marker,
+            )
+            if sim_plot.strip():
+                lines.extend(
+                    [
+                        "Simulation Plots",
+                        "----------------",
+                        sim_plot,
+                        "",
+                    ]
+                )
+
         lines.extend(["Diagnostics", "-----------"])
         lines.extend(self._diagnostic_lines(title="Warnings", entries=self.warnings))
         lines.extend(self._diagnostic_lines(title="Errors", entries=self.errors))
@@ -1141,6 +1308,9 @@ class RunResults:
         lines.extend(["Timing", "------", f"elapsed: {elapsed:.3f}s"])
 
         return "\n".join(lines)
+
+    def __str__(self) -> str:
+        return self.to_text()
 
     def __repr__(self) -> str:
         parts = []
@@ -1282,8 +1452,10 @@ def dsge_report(
 
     try:
         model = _create_model(txt, filename, **options)
+        from .variants import RunResultsVariants
+
         run_output = model.run(default_pipeline=False)
-        if not isinstance(run_output, RunResults):
+        if not isinstance(run_output, (RunResults, RunResultsVariants)):
             results = RunResults(
                 model=model,
                 source_txt=txt,
@@ -1294,8 +1466,8 @@ def dsge_report(
                 f"Unexpected run() result type: {type(run_output).__name__}"
             )
         else:
-            results = run_output
-            if results.model is None:
+            results = run_output  # type: ignore[assignment]
+            if not isinstance(results, RunResultsVariants) and results.model is None:
                 results.model = model
         results.source_txt = txt
         results.output_type = output_type

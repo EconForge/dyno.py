@@ -30,3 +30,9 @@ c[~] <- y[~]-i[~]
 
 epsilon[t] <- N(0,0.009)
 leta[t] <- N(0,0.01)
+
+@run: steady
+@run: check
+@run: solve
+@run: simulate: {T: 40}
+@run: plot

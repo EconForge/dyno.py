@@ -5,23 +5,25 @@ import numpy as np
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
 from .typedefs import TVector, TMatrix, Solver
-from .errors import BlanchardKahnError
+from .errors import BlanchardKahnError, ConvergenceWarning
 
 _log = logging.getLogger(__name__)
 
 from typing import Any, TYPE_CHECKING
 
 from typing_extensions import Self
-from .typedefs import IRFType
+from .typedefs import IRFType, SimulateMode, UnitsType
 
 if TYPE_CHECKING:
     from .model import AbstractModel
+    from .simul import IRFSimulation, SimulationResult
 
 __all__ = [
     "RecursiveDecisionRule",
     "PerturbationSolution",
     "NoConvergence",
     "BlanchardKahnError",
+    "ConvergenceWarning",
     "solve",
     "solve_ti",
     "solve_qz",
@@ -90,17 +92,6 @@ class RecursiveDecisionRule:
 
         Σ0, Σ = moments(self.X, self.Y, self.Σ)
 
-        # df_cmoments = pd.DataFrame(
-        #     Σ0,
-        #     columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-        #     index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-        # )
-
-        # df_umoments = pd.DataFrame(
-        #     Σ,
-        #     columns=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-        #     index=["{}[t]".format(e) for e in (self.symbols["endogenous"])],
-        # )
         ss, df = self.coefficients_as_df()
 
         html = f"""
@@ -112,7 +103,7 @@ class RecursiveDecisionRule:
         """
         return html
 
-    def irfs(self, type: IRFType = "log-deviation", T=40):
+    def irfs(self, type: IRFType = "log-deviation", T: int = 40) -> "IRFSimulation":
 
         from .simul import irfs
 
@@ -121,29 +112,64 @@ class RecursiveDecisionRule:
         sim = irfs(self._model, self, type=type, T=T)
         return sim
 
-    def plot(self, type: IRFType = "log-deviation"):
+    def simulate(
+        self,
+        T: int = 40,
+        mode: SimulateMode = "auto",
+        N: int = 1,
+        units: UnitsType = "deviation",
+        shocks: dict[str, dict[int, float]] | np.ndarray | None = None,
+        initial_states: dict[str, float] | np.ndarray | None = None,
+    ) -> "SimulationResult":
+        """Simulate the solved model.
 
-        from .simul import sim_to_nsim
+        Parameters
+        ----------
+        T : int, default 40
+            Simulation horizon.
+        mode : {'auto', 'irf', 'random', 'transition', 'deterministic'}, default 'auto'
+            When ``'auto'``, defaults to ``'irf'`` unless ``N > 1``, ``shocks``, or
+            ``initial_states`` are explicitly supplied.
+        N : int, default 1
+            Number of Monte Carlo trajectories when ``mode='random'``.
+        units : {'deviation', 'level', 'percent', 'log-deviation'}, default 'deviation'
+            Default output units.
+        """
+        from .simul import simulate
 
-        import plotly.express as px
+        resolved_mode: SimulateMode
+        if mode == "auto":
+            if shocks is not None or initial_states is not None or N > 1:
+                resolved_mode = "random"
+            else:
+                resolved_mode = "irf"
+        else:
+            resolved_mode = mode
 
-        sim = self.irfs(type=type)
-        plots = sim_to_nsim(sim)
+        if resolved_mode == "irf":
+            return self.irfs(type=units, T=T)
 
-        fig = px.line(
-            plots,
-            x="t",
-            y="value",
-            color="shock",
-            facet_col="variable",
-            facet_col_wrap=2,
+        return simulate(
+            self,
+            T=T,
+            shocks=shocks,
+            initial_states=initial_states,
+            N=N,
+            mode="random",
+            units=units,
         )
 
-        fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-        fig.update_yaxes(title_text="", matches=None)
-        fig.update_xaxes(title_text="")
-
-        return fig
+    def plot(
+        self,
+        type: IRFType = "log-deviation",
+        units: UnitsType | None = None,
+        variables: list[str] | None = None,
+        T: int = 40,
+        **kwargs: Any,
+    ):
+        target_units: UnitsType = units if units is not None else type
+        sim = self.irfs(type=target_units, T=T)
+        return sim.plot(variables=variables, T=T, units=target_units, **kwargs)
 
 
 class PerturbationSolution:
@@ -447,6 +473,17 @@ def serial_solve(a, b):
     return np.linalg.solve(a, b)
 
 
+class NewtonResult(list):
+    """Result container subclassing list for [x, it] unpacking while exposing metadata."""
+
+    def __init__(self, x: np.ndarray, it: int, converged: bool, error: float):
+        super().__init__([x, it])
+        self.x = x
+        self.it = it
+        self.converged = converged
+        self.error = error
+
+
 def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
     """Solve nonlinear system using safeguarded Newton iterations
 
@@ -471,6 +508,8 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
     else:
         solve = serial_solve
 
+    error_0 = float(error)
+
     while it < maxit and not converged:
 
         [v, dv] = f(x)
@@ -479,7 +518,7 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
 
         #        print("Time to evaluate {}".format(ss-tt)0)
 
-        error_0 = abs(v).max()
+        error_0 = float(abs(v).max())
 
         if error_0 < tol:
 
@@ -505,7 +544,7 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
             for bck in range(maxbacksteps):
                 xx = x - dx * (2 ** (-bck))
                 vm = f(xx)[0]
-                err = abs(vm).max()
+                err = float(abs(vm).max())
                 if err < error_0:
                     break
 
@@ -514,11 +553,24 @@ def newton(f, x, verbose=False, tol=1e-6, maxit=5, jactype="serial"):
             if verbose:
                 _log.debug("\t> %d | %s | %s", it, err, bck)
 
+    final_error = error_0
+    if not converged:
+        final_v = f(x)[0]
+        final_error = float(abs(final_v).max())
+        if final_error < tol:
+            converged = True
+
     if not converged:
         import warnings
 
-        warnings.warn("Did not converge")
-    return [x, it]
+        warnings.warn(
+            f"Deterministic / perfect foresight solver did not converge after {it} iterations "
+            f"(maximum residual: {final_error:.2e}). The computed solution is incorrect.",
+            ConvergenceWarning,
+            stacklevel=2,
+        )
+
+    return NewtonResult(x, it, converged, final_error)
 
 
 def deterministic_solve(
@@ -531,10 +583,10 @@ def deterministic_solve(
     growth_rate=None,
     growth_type="geometric",
     return_iterations=False,
+    units: UnitsType = "level",
     **args,
 ):
-
-    import pandas
+    from .simul import TransitionSimulation
 
     continuation = args.pop("terminal_condition", continuation)
     growth_rate = args.pop("growth_rate", growth_rate)
@@ -549,7 +601,7 @@ def deterministic_solve(
 
     u0 = np.array(v0).ravel()
 
-    res, nit = newton(
+    newton_res = newton(
         lambda u: model.deterministic_residuals_with_jacobian(
             u,
             sparsify=True,
@@ -565,16 +617,38 @@ def deterministic_solve(
         tol=args.get("tol", 1e-8),
     )
 
-    w0 = res.reshape(v0.shape)
+    u_sol, nit = newton_res[0], newton_res[1]
+    converged = getattr(newton_res, "converged", True)
+    final_error = getattr(newton_res, "error", None)
 
-    df = pandas.DataFrame(
-        {e: w0[:, i] for i, e in enumerate(model.symbols["variables"])}
+    w0 = u_sol.reshape(v0.shape)
+
+    variables = list(model.symbols["variables"])
+    c = getattr(model, "context", {})
+    ss_map = c.get("steady_states", {})
+    val_map = c.get("values", {})
+    ss_vec = np.array(
+        [ss_map.get(name, val_map.get(name, {}).get(0, np.nan)) for name in variables],
+        dtype=float,
     )
-    df.index = pandas.RangeIndex(T + 1, name="t")
-    df.reset_index(inplace=True)
-    df.attrs["iterations"] = nit
+
+    attrs: dict[str, Any] = {
+        "iterations": nit,
+        "converged": converged,
+    }
+    if final_error is not None:
+        attrs["residual"] = final_error
+
+    sim = TransitionSimulation(
+        data=w0,
+        variables=variables,
+        steady_state=ss_vec,
+        units=units,
+        canonical_units="level",
+        attrs=attrs,
+    )
 
     if return_iterations:
-        return df, nit
+        return sim, nit
 
-    return df
+    return sim

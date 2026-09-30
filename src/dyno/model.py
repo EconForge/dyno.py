@@ -22,8 +22,18 @@ from .model_render import (
 
 if TYPE_CHECKING:
     from .larkfiles import SymbolicModel
+    from .simul import SimulationResult, TransitionSimulation
     from .solver import PerturbationSolution
-from .typedefs import IRFType, Solver, TVector, TMatrix, ModelContext
+    from .variants import VariantCollection
+from .typedefs import (
+    IRFType,
+    ModelContext,
+    SimulateMode,
+    Solver,
+    TMatrix,
+    TVector,
+    UnitsType,
+)
 
 
 class AbstractModel(ABC):
@@ -81,6 +91,25 @@ class AbstractModel(ABC):
         import copy
 
         return copy.deepcopy(self)
+
+    def recalibrate(self: Self, **calib: Any) -> Self:
+        """Return a new model instance with updated parameter/steady-state calibration."""
+        raise NotImplementedError
+
+    def variants(self: Self, *args: Any, **kwargs: Any) -> "VariantCollection[Self]":
+        """Create a ``VariantCollection`` holding differently calibrated versions of this model.
+
+        Examples
+        --------
+        >>> var = model.variants(a=[2, 3, 4])
+        >>> sims = model.variants(a=[2, 3, 4]).solve().simulate()
+        >>> fig = sims.plot()
+        """
+        from .variants import VariantCollection, _expand_variant_specs
+
+        specs, labels = _expand_variant_specs(args, kwargs)
+        models = [self.recalibrate(**spec) for spec in specs]
+        return VariantCollection(models, specs=specs, labels=labels)
 
     def _repr_data(self: Self) -> dict[str, Any]:
         return model_repr_data(self)
@@ -214,7 +243,7 @@ class AbstractModel(ABC):
     def _set_symbols(self: Self) -> None:
         c = self.context
 
-        # exogenous are either defined as processes or by specifying values
+        # exogenous are either defined as processes or by specifying values with t >= 1
         # Preserve declaration/insertion order (avoid set() which scrambles order)
         exo_order: list[str] = []
 
@@ -223,8 +252,17 @@ class AbstractModel(ABC):
                 if name not in exo_order:
                     exo_order.append(name)
 
-        for name in c.get("values", {}).keys():
-            if name not in exo_order:
+        for name, val in c.get("values", {}).items():
+            if isinstance(val, dict):
+                has_t_ge_1 = any(
+                    isinstance(t, (int, float)) and t >= 1 for t in val.keys()
+                )
+            elif isinstance(val, (list, tuple, np.ndarray)):
+                has_t_ge_1 = len(val) > 0
+            else:
+                has_t_ge_1 = False
+
+            if has_t_ge_1 and name not in exo_order:
                 exo_order.append(name)
 
         exo_set = set(exo_order)
@@ -234,6 +272,9 @@ class AbstractModel(ABC):
         for v in declared_vars:
             if v not in exo_set:
                 variables.append(v)
+        for name in c.get("values", {}).keys():
+            if name not in exo_set and name not in variables:
+                variables.append(name)
         for v in declared_vars:
             if v in exo_set and v not in variables:
                 variables.append(v)
@@ -409,7 +450,7 @@ class AbstractModel(ABC):
     def _repr_html_(self: Self) -> str:
         return self._render_repr_html(self._repr_data())
 
-    def solve(self: Self, **args: Any) -> "PerturbationSolution | pd.DataFrame":
+    def solve(self: Self, **args: Any) -> "PerturbationSolution | TransitionSimulation":
         invalid_shifts = getattr(self, "_invalid_shifts", None)
         if invalid_shifts:
             from .errors import SystemStructureError
@@ -433,6 +474,34 @@ class AbstractModel(ABC):
 
             return deterministic_solve(self, **args)
         return self.perturb(**args)
+
+    def simulate(
+        self: Self,
+        T: int | None = None,
+        mode: SimulateMode = "auto",
+        N: int = 1,
+        units: UnitsType | None = None,
+        **args: Any,
+    ) -> "SimulationResult":
+        """Simulate the model.
+
+        For deterministic models (or when ``mode`` is ``'transition'`` or ``'deterministic'``),
+        runs the stacked-time perfect foresight solver and returns a ``TransitionSimulation``.
+        For stochastic models, solves the first-order perturbation and delegates to
+        ``solution.simulate(...)``.
+        """
+        if self.is_deterministic or mode in ("transition", "deterministic"):
+            from .solver import deterministic_solve
+
+            target_units: UnitsType = "level" if units is None else units
+            return deterministic_solve(self, T=T, units=target_units, **args)
+
+        solve_kwargs = {k: v for k, v in args.items() if k in {"method"}}
+        sim_kwargs = {k: v for k, v in args.items() if k not in {"method"}}
+        sol = self.perturb(**solve_kwargs)
+        horizon = 40 if T is None else int(T)
+        target_units = "deviation" if units is None else units
+        return sol.simulate(T=horizon, mode=mode, N=N, units=target_units, **sim_kwargs)
 
     def perturb(self: Self, method: Solver = "qz") -> "PerturbationSolution":
         from .solver import PerturbationSolution, RecursiveDecisionRule

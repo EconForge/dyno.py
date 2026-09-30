@@ -94,6 +94,20 @@ Blanchard-Kahn conditions: met
 Simulation
 ----------
 Simulation: computed (IRFs, shocks=1, horizon=40)
+  shocks: e_a
+
+Simulation Plots
+----------------
+[ASCII / terminal graphs rendered via plotext]
+```
+
+You can also customize or extract terminal graphs directly:
+```python
+# Print or retrieve text plots with plotext:
+print(results.plot_text(cols=2, width=80))
+
+# Control graph inclusion in text reports:
+print(results.to_text(graphs=False))
 ```
 
 ### Jupyter Notebooks (HTML & Markdown)
