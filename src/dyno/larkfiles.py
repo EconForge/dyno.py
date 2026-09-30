@@ -181,7 +181,7 @@ class DynoFile(SymbolicModel):
 
         # Separate assignments processing from parsing.
 
-    def process_assignments(self, **calib) -> Tree:
+    def process_assignments(self, **calib) -> None:
 
         fe = AssignmentEvaluator(calibration=calib)
         fe.visit(self.tree)

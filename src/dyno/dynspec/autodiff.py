@@ -1,4 +1,5 @@
 import math
+from typing import Any, Callable
 import numpy as np
 
 
@@ -410,7 +411,7 @@ def pow(x, y):
 
 
 # Dictionary mapping function names to dual number implementations
-MATH_FUNCTIONS = {
+MATH_FUNCTIONS: dict[str, Callable[..., Any]] = {
     "sin": sin,
     "cos": cos,
     "tan": tan,

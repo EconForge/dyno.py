@@ -78,7 +78,7 @@ class FormulaEvaluator(Interpreter):
         """
         super().__init__()
 
-        self.function_table = function_table or {}
+        self.function_table: Dict[str, Callable[..., Any]] = dict(function_table or {})
         self.unknown_as_nan = unknown_as_nan
         self.raise_on_nan = raise_on_nan
         self.steady_state = steady_state
@@ -91,7 +91,7 @@ class FormulaEvaluator(Interpreter):
         self.metadata = context.get("metadata", {})
 
         self.time = None  # None or integer
-        self.errors = []
+        self.errors: List[Any] = []
 
         # Add default mathematical functions
         from .autodiff import MATH_FUNCTIONS
@@ -296,7 +296,7 @@ class AssignmentEvaluator(FormulaEvaluator):
         """
         super().__init__()
 
-        self.function_table = function_table or {}
+        self.function_table: Dict[str, Callable[..., Any]] = dict(function_table or {})
         self.unknown_as_nan = unknown_as_nan
         self.raise_on_nan = raise_on_nan
 
@@ -309,12 +309,12 @@ class AssignmentEvaluator(FormulaEvaluator):
         self.steady_states = context.get("steady_states", {})
         self.metadata = context.get("metadata", {}).copy()
 
-        self.equations = []
-        self.equation_metadata = []
-        self.block_metadata_entries = []
+        self.equations: List[Any] = []
+        self.equation_metadata: List[Dict[str, Any]] = []
+        self.block_metadata_entries: List[Any] = []
         self._metadata_stack: List[Dict[str, Any]] = [{"tags": []}]
         self.time = None  # None or integer
-        self.errors = []
+        self.errors: List[Any] = []
 
         # Add default mathematical functions
         from .autodiff import MATH_FUNCTIONS
@@ -361,7 +361,7 @@ class AssignmentEvaluator(FormulaEvaluator):
 
     def _attach_statement_metadata(self, node: Tree, metadata: Dict[str, Any]) -> None:
         try:
-            node.meta.statement_metadata = metadata
+            setattr(node.meta, "statement_metadata", metadata)
         except Exception:
             pass
 
@@ -770,7 +770,7 @@ class EquationsEvaluator(FormulaEvaluator):
         super().__init__()
         # self.symbol_table = symbol_table or {}
 
-        self.function_table = function_table or {}
+        self.function_table: Dict[str, Callable[..., Any]] = dict(function_table or {})
         self.steady_state = steady_state
         self.diff = diff
         self.unknown_as_nan = unknown_as_nan
@@ -784,9 +784,9 @@ class EquationsEvaluator(FormulaEvaluator):
 
         self.steady_states = context.get("steady_states", {})
 
-        self.equations = []
+        self.equations: List[Any] = []
         self.time = None  # None or integer
-        self.errors = []
+        self.errors: List[Any] = []
 
         # Add default mathematical functions
         from .autodiff import MATH_FUNCTIONS

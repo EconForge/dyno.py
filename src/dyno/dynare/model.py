@@ -4,8 +4,11 @@ import numpy as np
 from scipy.optimize import root
 
 from typing_extensions import Self
-from typing import Any
-from dyno.typedefs import TVector, TMatrix
+from typing import TYPE_CHECKING, Any, cast
+from dyno.typedefs import ModelContext, TVector, TMatrix
+
+if TYPE_CHECKING:
+    from dyno.report import RunResults
 
 from dyno.errors import DynareParserError, SteadyStateError
 
@@ -424,7 +427,7 @@ class DynareModel(AbstractModel):
         exo = exogenous
 
         if isdeterministic:
-            det_vals = {v: [] for v in exo}
+            det_vals: dict[str, list[Any]] = {v: [] for v in exo}
             for var, traj in self.symbolic.trajectories.items():
                 for p1, p2, val in traj:
                     pad_list(det_vals[var], p2)
@@ -457,7 +460,7 @@ class DynareModel(AbstractModel):
         }
         # self.paths = None
         # self.exogenous = self.processes
-        self.context = context
+        self.context = cast(ModelContext, context)
 
     @property
     def equations(self):
@@ -514,13 +517,14 @@ class DynareModel(AbstractModel):
             value of f(y0, y1, y2, e, p), as well as partial derivatives w.r.t. y0, y1, y2 and e if diff is set to True
         """
 
-        y0 = list(y0)
-        y1 = list(y1)
-        y2 = list(y2)
-        e = list(e)
-        p = list(p)
-
-        args = [y0, y1, y2, e, e, p]
+        args: list[list[Any]] = [
+            list(y0),
+            list(y1),
+            list(y2),
+            list(e),
+            list(e),
+            list(p),
+        ]
         if len(self.context["processes"]) == 0:
             # deterministic model: no stochastic processes defined
             args[3] = []

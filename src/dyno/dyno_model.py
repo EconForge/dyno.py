@@ -4,15 +4,26 @@ import os
 import warnings
 import yaml
 import math
-from .typedefs import TVector, TMatrix, IRFType, Solver, DynamicFunction
+from .typedefs import (
+    TVector,
+    TMatrix,
+    IRFType,
+    ModelContext,
+    Solver,
+    DynamicFunction,
+)
 
 from dyno.dynspec.grammar import parser, str_expression
 from dyno.dynspec.analyze import FormulaEvaluator
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from typing_extensions import Self
 
 if TYPE_CHECKING:
+    import scipy.sparse
+
     from dyno.report import RunResults
+    from dyno.simul import TransitionSimulation
+    from dyno.solver import PerturbationSolution
 
 import numpy as np
 from scipy.optimize import root
@@ -163,7 +174,9 @@ class DynoModel(AbstractModel):
                     results.residuals = e.residuals
                     results.add_warning(str(e))
             elif name in {"solve", "perturb"}:
-                solution = model.solve(**options)
+                solution: PerturbationSolution | TransitionSimulation | None = (
+                    model.solve(**options)
+                )
                 results.solution = solution
                 results.eigenvalues = getattr(solution, "evs", None)
             elif name in {"simul", "simulate"}:
@@ -419,7 +432,7 @@ class DynoModel(AbstractModel):
         for name in variables.keys():
             steady_states.setdefault(name, math.nan)
 
-        self.context = context
+        self.context = cast(ModelContext, context)
 
     def recalibrate(self: Self, **calib):
         m = self.copy()
@@ -483,7 +496,7 @@ class DynoModel(AbstractModel):
 
     def compute_jacobians(
         self, y2, y1, y0, e
-    ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix, TMatrix]:
+    ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]:
 
         from dyno.dynspec.autodiff import DNumber as DN
 
@@ -766,8 +779,8 @@ def _build_sparse_jacobian(
     p: int,
     DD: np.ndarray,
     terminal_derivatives: dict,
-    alpha_prev: np.ndarray = None,
-    alpha_curr: np.ndarray = None,
+    alpha_prev: np.ndarray | None = None,
+    alpha_curr: np.ndarray | None = None,
 ) -> "scipy.sparse.csr_matrix":
     import scipy.sparse
 
@@ -951,8 +964,8 @@ def _build_dense_jacobian(
     p: int,
     DD: np.ndarray,
     terminal_derivatives: dict,
-    alpha_prev: np.ndarray = None,
-    alpha_curr: np.ndarray = None,
+    alpha_prev: np.ndarray | None = None,
+    alpha_curr: np.ndarray | None = None,
 ) -> np.ndarray:
     if alpha_prev is None:
         alpha_prev = np.zeros(p)
@@ -1015,7 +1028,7 @@ def _compute_terminal_continuation(
             if isinstance(growth_rate, dict):
                 g = np.array([float(growth_rate.get(name, 0.0)) for name in symbols])
             elif np.isscalar(growth_rate):
-                g = np.full(p, float(growth_rate))
+                g = np.full(p, float(cast(float, growth_rate)))
             else:
                 g = np.asarray(growth_rate, dtype=float)
             v_next = (1.0 + g) * v_curr

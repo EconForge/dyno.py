@@ -17,7 +17,7 @@ from lark.lexer import Token
 from lark.visitors import Interpreter, Visitor, Transformer
 from os import path
 
-from typing import Tuple, Dict, Set, Union, List
+from typing import Tuple, Dict, Set, Union, List, cast
 
 GRAMMARS_PATH = path.join(path.split(__file__)[0], "grammars/")
 GRAMMAR_FILE = path.join(GRAMMARS_PATH, "grammar.lark")
@@ -196,7 +196,7 @@ class Printer(Interpreter):
 
 # prints expression
 def str_expression(expr: Expression, stringify_symbols=False) -> str:
-    return Printer(stringify_symbols=stringify_symbols).visit(expr)
+    return Printer(stringify_symbols=stringify_symbols).visit(cast(Tree, expr))
 
 
 # that one is ambiguous because of compatibility concerns.
@@ -227,9 +227,8 @@ def stringify_value(arg: Tuple[str, int]) -> str:
 
 
 def stringify_variable(arg: Tuple[str, Tuple[str, int]]) -> str:
-    s = arg[0]
-    time = str(arg[1])
-    shift = int(arg[2])
+    s, (time, shift) = arg
+    shift = int(shift)
 
     if shift < 0:
         return "{}__{}_m{}_".format(s, time, str(-shift))
@@ -264,9 +263,3 @@ def expression_or_string(f):
             return str_expression(res)
 
     return wrapper
-
-
-## these functions apply the vistors/transformers either on expressions or on strings
-# @expression_or_string
-def stringify(expr: Expression) -> str:
-    return Stringifier().transform(expr)

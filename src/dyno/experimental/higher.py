@@ -102,9 +102,9 @@ class HigherOrderDerivatives:
         v_context = {}
         for v in model.symbols["variables"]:
             v_context[v] = {
-                -1: sp.Symbol(stringify_variable((v, "t", -1))),  # type: ignore
-                0: sp.Symbol(stringify_variable((v, "t", 0))),  # type: ignore
-                1: sp.Symbol(stringify_variable((v, "t", 1))),  # type: ignore
+                -1: sp.Symbol(stringify_variable((v, ("t", -1)))),
+                0: sp.Symbol(stringify_variable((v, ("t", 0)))),
+                1: sp.Symbol(stringify_variable((v, ("t", 1)))),
             }
 
         context = {

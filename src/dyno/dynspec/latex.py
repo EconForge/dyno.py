@@ -8,7 +8,7 @@ representation.
 """
 
 from lark import Transformer, Tree, Token
-from typing import Any
+from typing import Any, cast
 
 
 class LatexTransformer(Transformer):
@@ -331,7 +331,7 @@ def latex(expr: Any) -> str:
     # Avoid a hard import cycle when used from other modules: import parser
     # only when needed.
     if isinstance(expr, (Tree, Token)):
-        result = LatexTransformer().transform(expr)
+        result = LatexTransformer().transform(cast(Tree, expr))
         # Extract string from precedence tuple if needed
         if isinstance(result, tuple):
             return result[0]

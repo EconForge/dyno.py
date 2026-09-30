@@ -4,6 +4,7 @@ import logging
 import numpy as np
 from numpy.linalg import solve as linsolve
 from scipy.linalg import ordqz
+from numpy.typing import NDArray
 from .typedefs import TVector, TMatrix, Solver
 from .errors import BlanchardKahnError, ConvergenceWarning
 
@@ -379,7 +380,7 @@ def decompose_blocks(Z: TMatrix) -> tuple[TMatrix, TMatrix, TMatrix, TMatrix]:
     return Z11, Z12, Z21, Z22
 
 
-def genev(α: float, β: float, tol: float = 1e-9) -> float:
+def genev(α: complex, β: complex, tol: float = 1e-9) -> complex:
     """
     Computes the generalized eigenvalue λ = α/β
 
@@ -402,7 +403,7 @@ def genev(α: float, β: float, tol: float = 1e-9) -> float:
             return np.inf
 
 
-def vgenev(α: TVector, β: TVector, tol: float = 1e-9) -> TVector:
+def vgenev(α: NDArray[Any], β: NDArray[Any], tol: float = 1e-9) -> NDArray[Any]:
     """
     Computes the generalized eigenvalues λ = α/β, vectorized version of `genev`
 
@@ -417,7 +418,7 @@ def vgenev(α: TVector, β: TVector, tol: float = 1e-9) -> TVector:
     λ : 2N Vector
         vector of generalized eigenvalues computed as λ = α/β
     """
-    return (np.array([genev(a, b) for a, b in zip(α, β)])).reshape(len(α))
+    return (np.array([genev(a, b, tol=tol) for a, b in zip(α, β)])).reshape(len(α))
 
 
 def moments(X: TMatrix, Y: TMatrix, Σ: TMatrix) -> tuple[TMatrix, TMatrix]:

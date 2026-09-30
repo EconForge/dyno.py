@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from .simul import SimulationResult, TransitionSimulation
     from .solver import PerturbationSolution
     from .variants import VariantCollection
+    from .report import RunResults
 from .typedefs import (
     IRFType,
     ModelContext,
@@ -50,6 +51,7 @@ class AbstractModel(ABC):
     strict: bool
     _invalid_shifts: list[str] | None
     _steady_stats: dict[str, Any] | None = None
+    _calibration_overrides: dict[str, Any]
 
     def __init__(
         self: Self,
@@ -222,7 +224,7 @@ class AbstractModel(ABC):
     @abstractmethod
     def compute_jacobians(
         self: Self, y2, y1, y0, e
-    ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix, TMatrix]: ...
+    ) -> tuple[TVector, TMatrix, TMatrix, TMatrix, TMatrix]: ...
 
     def run(self: Self, default_pipeline: bool = False) -> "RunResults":
         from .report import RunResults
@@ -321,17 +323,17 @@ class AbstractModel(ABC):
     def check(
         self: "Self", tol: float = 1e-6, compute_eigenvalues: bool | None = None
     ) -> "Self":
+        constants = self.context.get("constants", {})
+        steady_states = self.context.get("steady_states", {})
         unassigned_params = [
             p
             for p in self.symbols.get("parameters", [])
-            if isinstance(self.context.get("constants", {}).get(p), float)
-            and np.isnan(self.context.get("constants", {}).get(p))
+            if isinstance(val := constants.get(p), float) and np.isnan(val)
         ]
         unassigned_ss = [
             v
             for v in self.symbols.get("endogenous", [])
-            if isinstance(self.context.get("steady_states", {}).get(v), float)
-            and np.isnan(self.context.get("steady_states", {}).get(v))
+            if isinstance(val := steady_states.get(v), float) and np.isnan(val)
         ]
         if unassigned_params or unassigned_ss:
             msgs = []
@@ -415,7 +417,7 @@ class AbstractModel(ABC):
         y0, _ = self.__steady_state_vectors__
         guess = np.nan_to_num(np.asarray(y0, dtype=float), nan=1.0)
 
-        def _candidate(values: np.ndarray) -> Self:
+        def _candidate(values: np.ndarray) -> AbstractModel:
             calib = {name: float(values[i]) for i, name in enumerate(endogenous)}
             model = self.recalibrate(**calib)
             for name, value in calib.items():
@@ -433,7 +435,7 @@ class AbstractModel(ABC):
             A, B, C = jac[1], jac[2], jac[3]
             return A + B + C
 
-        solver_options = {"maxfev": maxiter}
+        solver_options: dict[str, Any] = {"maxfev": maxiter}
         if "options" in options and isinstance(options["options"], dict):
             solver_options.update(options.pop("options"))
         solver_options.update(options)
@@ -443,10 +445,10 @@ class AbstractModel(ABC):
             guess,
             jac=_jac,
             method=cast(Any, method),
-            options=solver_options,
+            options=cast(Any, solver_options),
         )
 
-        solved: Self = _candidate(np.asarray(sol.x, dtype=float))
+        solved = cast(Self, _candidate(np.asarray(sol.x, dtype=float)))
         residuals = np.asarray(solved.residuals, dtype=float)
 
         converged = bool(
