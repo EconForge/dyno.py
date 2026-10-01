@@ -141,11 +141,11 @@ df = irfs_dict["e_z"]
 print(df[["y", "c", "k", "i"]].head(10))
 ```
 
-Plot the IRFs interactively with Plotly:
+Plot the IRFs interactively with Altair:
 
 ```python
-fig = solution.plot(type="deviation")
-fig.show()
+chart = solution.plot(type="deviation")
+chart  # displays inline in Jupyter
 ```
 
 > [!NOTE]

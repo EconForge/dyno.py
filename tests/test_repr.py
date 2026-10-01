@@ -177,9 +177,7 @@ x[t] = alpha * x[t-1] + e[t]
 
 def test_runresults_markdown_does_not_inline_simulation_graph_html():
     class DummyFigure:
-        def to_html(self, full_html=False, include_plotlyjs="cdn"):
-            assert full_html is False
-            assert include_plotlyjs == "cdn"
+        def to_html(self):
             return "<div>dummy-figure-md</div>"
 
     txt = """
@@ -224,9 +222,7 @@ x[t] = alpha * x[t-1] + e[t]
 
 def test_runresults_html_includes_figure_html():
     class DummyFigure:
-        def to_html(self, full_html=False, include_plotlyjs="cdn"):
-            assert full_html is False
-            assert include_plotlyjs == "cdn"
+        def to_html(self):
             return "<div>dummy-figure</div>"
 
     results = RunResults(output_type="html")
@@ -801,7 +797,7 @@ def test_report_has_dedicated_plot_section():
     @run: check
     @run: solve
     @run: simulate: {T: 15}
-    @run: plot: {engine: plotly}
+    @run: plot: {engine: altair}
 
     a <- 0.5
     x[~] <- 0.0

@@ -12,7 +12,7 @@ Previous computational economics tools often required switching between a code e
 
 - **Integrated Editor & Diagnostics**: Syntax highlighting, code navigation, and inline line-level error reporting.
 - **Reactive Background Engine**: Edits trigger automatic background re-solving without manual execution commands.
-- **Interactive Visualization**: Embedded Plotly impulse response functions and moment tables.
+- **Interactive Visualization**: Embedded Altair impulse response functions and moment tables.
 - **Multi-Document Workflow**: Manage multiple models simultaneously with coordinated split-pane views.
 
 ```mermaid

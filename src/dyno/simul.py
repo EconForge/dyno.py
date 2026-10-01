@@ -196,7 +196,7 @@ class SimulationResult:
         variables: list[str] | None = None,
         T: int | None = None,
         units: UnitsType | None = None,
-        engine: str = "plotly",
+        engine: str = "altair",
         **kwargs: Any,
     ) -> Any:
         """Plot the simulation trajectories."""

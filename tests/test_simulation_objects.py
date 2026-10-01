@@ -81,11 +81,13 @@ def test_random_simulation_spaghetti_draws_and_chaining():
     assert isinstance(df_multi.index, pd.MultiIndex)
     assert len(df_multi) == 12 * 26
 
-    # Fluent spaghetti plot generation (Plotly & Altair)
-    fig_plotly = sim.plot(units="percent")
-    assert fig_plotly is not None
-    # Verify spaghetti traces have showlegend=False and reduced opacity
-    assert all(trace.showlegend is False for trace in fig_plotly.data)
+    # Fluent spaghetti plot generation (Altair)
+    fig = sim.plot(units="percent")
+    spec = fig.to_dict()
+    # Spaghetti lines: one line per draw, reduced opacity, no color legend
+    assert spec["encoding"]["detail"]["field"] == "shock"
+    assert "color" not in spec["encoding"]
+    assert spec["mark"]["opacity"] < 1
 
     fig_altair = sim.plot(engine="altair", variables=["k", "c"], T=15)
     assert fig_altair is not None

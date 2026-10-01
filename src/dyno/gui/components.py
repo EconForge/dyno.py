@@ -82,18 +82,24 @@ def SolutionViewer(dr_, moments_, use_hpfilter_):
 
 def SimulViewer2(irfs_, sim_grid, selects):
 
-    import plotly.express as px
+    import altair as alt
 
     irfs = irfs_.value
 
-    fig = px.line(
-        irfs, x="t", y="value", color="shock", facet_col="variable", facet_col_wrap=2
+    chart = (
+        alt.Chart(irfs)
+        .mark_line()
+        .encode(
+            x=alt.X("t:Q", title=None),
+            y=alt.Y("value:Q", title=None),
+            color="shock:N",
+            facet=alt.Facet("variable:N", columns=2, title=None),
+        )
+        .properties(width=200, height=100)
+        .resolve_scale(y="independent")
+        .interactive()
     )
-    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-    fig.update_yaxes(title_text="", matches=None)
-    fig.update_xaxes(title_text="")
-
-    solara.FigurePlotly(fig)
+    solara.FigureAltair(chart)
 
     solara.Markdown("The values on the y axes are %-deviations from the steady state.")
 

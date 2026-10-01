@@ -13,16 +13,20 @@ from dyno.simul import (
 from dyno.typedefs import UnitsType
 from dyno.variants import VariantCollection
 
-VARIANT_COLORS = [
-    "#2563eb",
-    "#dc2626",
-    "#059669",
-    "#d97706",
-    "#7c3aed",
-    "#db2777",
-    "#0891b2",
-    "#4f46e5",
-]
+ENGINES = ("altair", "plotext")
+
+
+def _check_engine(engine: str) -> None:
+    """Raise a helpful error for unsupported plotting engines."""
+    if engine not in ENGINES:
+        hint = (
+            " Plotly support has been removed; use Altair instead."
+            if engine == "plotly"
+            else ""
+        )
+        raise ValueError(
+            f"Unknown plotting engine {engine!r}; expected one of {ENGINES}.{hint}"
+        )
 
 
 def _prepare_nsim(
@@ -97,7 +101,7 @@ def plot_variants(
     shocks: list[str] | str | None = None,
     T: int | None = None,
     units: UnitsType | None = None,
-    engine: str = "plotly",
+    engine: str = "altair",
     cols: int = 2,
     **kwargs: Any,
 ) -> Any:
@@ -115,7 +119,7 @@ def plot_variants(
         Maximum time horizon to display.
     units : {'level', 'deviation', 'percent', 'log-deviation'} | None, optional
         Units to convert into before plotting.
-    engine : {'plotly', 'altair', 'plotext'}, default 'plotly'
+    engine : {'altair', 'plotext'}, default 'altair'
         Plotting backend.
     cols : int, default 2
         Number of facet columns.
@@ -137,6 +141,7 @@ def plot_variants(
             cols=cols,
             **kwargs,
         )
+    _check_engine(engine)
 
     nsim = _prepare_variants_nsim(
         sim_vc,
@@ -158,74 +163,7 @@ def plot_variants(
     legend_title = params[0] if len(params) == 1 else "Variant"
     variant_order = list(sim_vc.labels)
 
-    if engine == "altair":
-        import altair as alt
-
-        if is_spaghetti:
-            max_draws = max(
-                (item.N for item in sim_vc.items if isinstance(item, RandomSimulation)),
-                default=10,
-            )
-            opacity = max(0.15, min(0.6, 3.0 / max(1, max_draws)))
-            nsim = nsim.copy()
-            nsim["_trace_group"] = (
-                nsim["variant"].astype(str) + "__" + nsim["shock"].astype(str)
-            )
-            ch = (
-                alt.Chart(nsim)
-                .mark_line(opacity=opacity)
-                .encode(
-                    x="t:Q",
-                    y="value:Q",
-                    color=alt.Color(
-                        "variant:N", sort=variant_order, title=legend_title
-                    ),
-                    detail="_trace_group:N",
-                    facet=alt.Facet("variable:N", columns=cols),
-                )
-                .properties(width=220, height=120)
-                .resolve_scale(y="independent")
-                .interactive()
-            )
-            return ch
-        elif is_multi_shock:
-            ch = (
-                alt.Chart(nsim)
-                .mark_line()
-                .encode(
-                    x="t:Q",
-                    y="value:Q",
-                    color=alt.Color(
-                        "variant:N", sort=variant_order, title=legend_title
-                    ),
-                    strokeDash=alt.StrokeDash("shock:N", title="Shock"),
-                    facet=alt.Facet("variable:N", columns=cols),
-                )
-                .properties(width=220, height=120)
-                .resolve_scale(y="independent")
-                .interactive()
-            )
-            return ch
-        else:
-            ch = (
-                alt.Chart(nsim)
-                .mark_line()
-                .encode(
-                    x="t:Q",
-                    y="value:Q",
-                    color=alt.Color(
-                        "variant:N", sort=variant_order, title=legend_title
-                    ),
-                    facet=alt.Facet("variable:N", columns=cols),
-                )
-                .properties(width=220, height=120)
-                .resolve_scale(y="independent")
-                .interactive()
-            )
-            return ch
-
-    # Default: plotly
-    import plotly.express as px
+    import altair as alt
 
     if is_spaghetti:
         max_draws = max(
@@ -237,65 +175,52 @@ def plot_variants(
         nsim["_trace_group"] = (
             nsim["variant"].astype(str) + "__" + nsim["shock"].astype(str)
         )
-        fig = px.line(
-            nsim,
-            x="t",
-            y="value",
-            color="variant",
-            line_group="_trace_group",
-            facet_col="variable",
-            facet_col_wrap=cols,
-            category_orders={"variant": variant_order},
-            color_discrete_sequence=VARIANT_COLORS,
+        ch = (
+            alt.Chart(nsim)
+            .mark_line(opacity=opacity)
+            .encode(
+                x="t:Q",
+                y="value:Q",
+                color=alt.Color("variant:N", sort=variant_order, title=legend_title),
+                detail="_trace_group:N",
+                facet=alt.Facet("variable:N", columns=cols),
+            )
+            .properties(width=220, height=120)
+            .resolve_scale(y="independent")
+            .interactive()
         )
-        seen_variants: set[str] = set()
-        for trace in fig.data:
-            grp = str(getattr(trace, "legendgroup", "") or getattr(trace, "name", ""))
-            if grp in seen_variants:
-                trace.showlegend = False
-            else:
-                seen_variants.add(grp)
-                trace.showlegend = True
-            trace.opacity = opacity
+        return ch
     elif is_multi_shock:
-        fig = px.line(
-            nsim,
-            x="t",
-            y="value",
-            color="variant",
-            line_dash="shock",
-            facet_col="variable",
-            facet_col_wrap=cols,
-            category_orders={"variant": variant_order},
-            color_discrete_sequence=VARIANT_COLORS,
+        ch = (
+            alt.Chart(nsim)
+            .mark_line()
+            .encode(
+                x="t:Q",
+                y="value:Q",
+                color=alt.Color("variant:N", sort=variant_order, title=legend_title),
+                strokeDash=alt.StrokeDash("shock:N", title="Shock"),
+                facet=alt.Facet("variable:N", columns=cols),
+            )
+            .properties(width=220, height=120)
+            .resolve_scale(y="independent")
+            .interactive()
         )
+        return ch
     else:
-        fig = px.line(
-            nsim,
-            x="t",
-            y="value",
-            color="variant",
-            facet_col="variable",
-            facet_col_wrap=cols,
-            category_orders={"variant": variant_order},
-            color_discrete_sequence=VARIANT_COLORS,
+        ch = (
+            alt.Chart(nsim)
+            .mark_line()
+            .encode(
+                x="t:Q",
+                y="value:Q",
+                color=alt.Color("variant:N", sort=variant_order, title=legend_title),
+                facet=alt.Facet("variable:N", columns=cols),
+            )
+            .properties(width=220, height=120)
+            .resolve_scale(y="independent")
+            .interactive()
         )
-
-    fig.for_each_annotation(lambda a: a.update(text=f"<b>{a.text.split('=')[-1]}</b>"))
-    fig.update_yaxes(
-        title_text="",
-        matches=None,
-        zeroline=True,
-        zerolinecolor="#cbd5e1",
-        zerolinewidth=1,
-    )
-    fig.update_xaxes(title_text="")
-    fig.update_layout(
-        template="plotly_white",
-        legend_title_text=legend_title,
-        margin=dict(t=50, b=40, l=40, r=20),
-    )
-    return fig
+        return ch
 
 
 def plot_simulation(
@@ -303,7 +228,7 @@ def plot_simulation(
     variables: list[str] | None = None,
     T: int | None = None,
     units: UnitsType | None = None,
-    engine: str = "plotly",
+    engine: str = "altair",
     **kwargs: Any,
 ) -> Any:
     """Plot any SimulationResult (IRF, Random spaghetti, or Transition), VariantCollection, dict, or DataFrame.
@@ -318,7 +243,7 @@ def plot_simulation(
         Maximum time horizon to display.
     units : {'level', 'deviation', 'percent', 'log-deviation'} | None, optional
         Units to convert into before plotting.
-    engine : {'plotly', 'altair', 'plotext'}, default 'plotly'
+    engine : {'altair', 'plotext'}, default 'altair'
         Plotting backend.
     """
     if variables is None and "vars" in kwargs:
@@ -342,6 +267,7 @@ def plot_simulation(
         else:
             sim_data = sim
         return plot_simulation_plotext(sim_data, variables=variables, **kwargs)
+    _check_engine(engine)
 
     nsim = _prepare_nsim(sim, variables=variables, T=T, units=units)
     is_spaghetti = isinstance(sim, RandomSimulation) and sim.N > 1
@@ -351,103 +277,64 @@ def plot_simulation(
         or (not isinstance(sim, (SimulationResult, dict)) and hasattr(sim, "melt"))
     )
 
-    if engine == "altair":
-        import altair as alt
-
-        if is_spaghetti:
-            n_draws = sim.N if isinstance(sim, RandomSimulation) else 10
-            opacity = max(0.15, min(0.6, 3.0 / max(1, n_draws)))
-            ch = (
-                alt.Chart(nsim)
-                .mark_line(opacity=opacity)
-                .encode(
-                    x="t:Q",
-                    y="value:Q",
-                    detail="shock:N",
-                    facet=alt.Facet("variable:N", columns=2),
-                )
-                .properties(width=200, height=100)
-                .resolve_scale(y="independent")
-                .interactive()
-            )
-            return ch
-        elif is_single:
-            ch = (
-                alt.Chart(nsim)
-                .mark_line()
-                .encode(
-                    x="t:Q",
-                    y="value:Q",
-                    facet=alt.Facet("variable:N", columns=2),
-                )
-                .properties(width=200, height=100)
-                .resolve_scale(y="independent")
-                .interactive()
-            )
-            return ch
-        else:
-            ch = (
-                alt.Chart(nsim)
-                .mark_line()
-                .encode(
-                    x="t:Q",
-                    y="value:Q",
-                    color="shock:N",
-                    facet=alt.Facet("variable:N", columns=2),
-                )
-                .properties(width=200, height=100)
-                .resolve_scale(y="independent")
-                .interactive()
-            )
-            return ch
-
-    # Default: plotly
-    import plotly.express as px
+    import altair as alt
 
     if is_spaghetti:
         n_draws = sim.N if isinstance(sim, RandomSimulation) else 10
         opacity = max(0.15, min(0.6, 3.0 / max(1, n_draws)))
-        fig = px.line(
-            nsim,
-            x="t",
-            y="value",
-            line_group="shock",
-            facet_col="variable",
-            facet_col_wrap=2,
+        ch = (
+            alt.Chart(nsim)
+            .mark_line(opacity=opacity)
+            .encode(
+                x="t:Q",
+                y="value:Q",
+                detail="shock:N",
+                facet=alt.Facet("variable:N", columns=2),
+            )
+            .properties(width=200, height=100)
+            .resolve_scale(y="independent")
+            .interactive()
         )
-        fig.update_traces(opacity=opacity, line=dict(color="#2563eb"), showlegend=False)
+        return ch
     elif is_single:
-        fig = px.line(
-            nsim,
-            x="t",
-            y="value",
-            facet_col="variable",
-            facet_col_wrap=2,
+        ch = (
+            alt.Chart(nsim)
+            .mark_line()
+            .encode(
+                x="t:Q",
+                y="value:Q",
+                facet=alt.Facet("variable:N", columns=2),
+            )
+            .properties(width=200, height=100)
+            .resolve_scale(y="independent")
+            .interactive()
         )
+        return ch
     else:
-        fig = px.line(
-            nsim,
-            x="t",
-            y="value",
-            color="shock",
-            facet_col="variable",
-            facet_col_wrap=2,
+        ch = (
+            alt.Chart(nsim)
+            .mark_line()
+            .encode(
+                x="t:Q",
+                y="value:Q",
+                color="shock:N",
+                facet=alt.Facet("variable:N", columns=2),
+            )
+            .properties(width=200, height=100)
+            .resolve_scale(y="independent")
+            .interactive()
         )
-
-    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-    fig.update_yaxes(title_text="", matches=None)
-    fig.update_xaxes(title_text="")
-    return fig
+        return ch
 
 
 def plot_irfs(sim: Any, engine: str = "altair", **kwargs: Any) -> Any:
-    """Plot impulse response functions using Altair, Plotly, or Plotext.
+    """Plot impulse response functions using Altair or Plotext.
 
     Parameters
     ----------
     sim : SimulationResult | VariantCollection | dict | pd.DataFrame
         Simulation or IRF data.
-    engine : {"altair", "plotly", "plotext"}, default "altair"
+    engine : {"altair", "plotext"}, default "altair"
         Plotting engine to use.
     **kwargs : Any
         Additional arguments passed to the engine-specific plot function.
@@ -459,16 +346,11 @@ def plot_irfs(sim: Any, engine: str = "altair", **kwargs: Any) -> Any:
 
     if engine == "plotext":
         return plot_irfs_plotext(sim, **kwargs)
-    elif engine == "plotly":
-        if isinstance(sim, dict):
-            return plot_irfs_plotly(sim)
-        else:
-            return plot_irf_plotly(sim)
+    _check_engine(engine)
+    if isinstance(sim, dict):
+        return plot_irfs_altair(sim)
     else:
-        if isinstance(sim, dict):
-            return plot_irfs_altair(sim)
-        else:
-            return plot_irf_altair(sim)
+        return plot_irf_altair(sim)
 
 
 def plot_variants_plotext(
@@ -765,50 +647,3 @@ def plot_irfs_altair(sim):
         .interactive()
     )
     return ch
-
-
-def plot_irfs_plotly(sim):
-    import plotly.express as px
-
-    plots = sim_to_nsim(sim)
-
-    fig = px.line(
-        plots,
-        x="t",
-        y="value",
-        color="shock",
-        facet_col="variable",
-        facet_col_wrap=2,
-    )
-
-    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-    fig.update_yaxes(title_text="", matches=None)
-    fig.update_xaxes(title_text="")
-
-    return fig
-
-
-def plot_irf_plotly(sim):
-    import plotly.express as px
-
-    if isinstance(sim, SimulationResult):
-        sim = sim.to_df()
-    else:
-        sim = sim.copy()
-    if "t" not in sim.columns:
-        sim["t"] = sim.index
-    plots = sim.melt(id_vars=["t"])
-
-    fig = px.line(
-        plots,
-        x="t",
-        y="value",
-        facet_col="variable",
-        facet_col_wrap=2,
-    )
-
-    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-    fig.update_yaxes(title_text="", matches=None)
-    fig.update_xaxes(title_text="")
-
-    return fig

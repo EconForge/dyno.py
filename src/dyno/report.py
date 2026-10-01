@@ -771,12 +771,9 @@ class RunResults:
     def _figure_to_html(figure: Any) -> str:
         if hasattr(figure, "to_html"):
             try:
-                return figure.to_html(full_html=False, include_plotlyjs="cdn")
+                return figure.to_html()
             except TypeError:
-                try:
-                    return figure.to_html()
-                except TypeError:
-                    pass
+                pass
         if hasattr(figure, "_repr_html_"):
             return figure._repr_html_()
         return f"<pre>{figure}</pre>"

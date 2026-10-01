@@ -39,7 +39,7 @@ cd dyno.py
 pixi install -e dev
 ```
 
-Pixi creates a virtual environment under `.pixi/envs/dev` with Python 3.12, PyTest, NumPy, SciPy, SymPy, Pandas, Plotly, Lark, and development tooling.
+Pixi creates a virtual environment under `.pixi/envs/dev` with Python 3.12, PyTest, NumPy, SciPy, SymPy, Pandas, Altair, Lark, and development tooling.
 
 ---
 
