@@ -40,6 +40,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `solve_ti` starts from a deterministic initial guess instead of a random
   matrix.
 - `dynare-preprocessor-pylib` is no longer restricted to Linux in `pixi.toml`.
+- Relaxed dependency floors to what dyno actually needs on Python 3.12:
+  `numpy>=1.26.0`, `pandas>=2.1.1`, `scipy>=1.11.3`, `rich>=13.0.0`,
+  `altair>=5.0.0`, `lark>=1.1.7`, `typing_extensions>=4.6.0`,
+  `pyyaml>=6.0.1` and, for the `experimental` extra, `sympy>=1.12`. A
+  `min-deps` pixi environment pins every runtime dependency to its floor and
+  CI runs the test suite in it.
+- `pyproject.toml` is the single source of truth for the version, Python floor
+  and runtime dependencies: pixi-build-python reads them from there, so
+  `pixi.toml [package]` no longer repeats the version or run dependencies.
+  The workspace Python floor is now `>=3.12`, like the package.
+  `ci/check_deps.py` (`pixi run check-deps`, run in CI) fails when the
+  dependency lists in `pixi.toml` drift from `pyproject.toml`.
 
 ### Removed
 
@@ -47,6 +59,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `dyno.dynare.DynareModel`), `model.data` (use `model.symbolic`),
   `dyno.Report`, `dyno.DynoRunResults`, `dyno.DynareRunResults` (use
   `dyno.RunResults`) and `dyno.dynare_cli` (use `dyno.cli.dynare`).
+
+- The unused conda recipe `recipe/recipe.yaml` (stale at version 0.1.7);
+  `pixi build` / `pixi publish` builds the conda package.
 
 - Tracked build and scratch artifacts (`coverage.xml`, `mkdocs.yml`,
   `import_tests.yaml`, `TODO`). The root `rbc.mod` used by the tests moved

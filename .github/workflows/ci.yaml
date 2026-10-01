@@ -31,6 +31,23 @@ jobs:
           file: ./coverage.xml
           flags: unittests
 
+  min-deps:
+    name: Lowest supported dependency versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check that pixi.toml and pyproject.toml dependencies match
+        run: python3 ci/check_deps.py
+
+      - name: Install Pixi
+        uses: prefix-dev/setup-pixi@v0.9.4
+        with:
+          environments: min-deps
+
+      - name: Test with every runtime dependency at its floor
+        run: pixi run --environment min-deps test
+
   dynare:
     name: Dynare preprocessor backend
     runs-on: ubuntu-latest
