@@ -322,36 +322,55 @@ class LModFile(SymbolicModel):
             symbols=self.symbols, **calib, function_table=function_table
         )
         fe.visit(self.tree)
+        fe.finalize()
 
         self.equations = fe.equations
 
-        # Set processes
+        commands = self._extract_dynare_commands()
+
+        # Set processes.  A file is stochastic when it declares shock
+        # variances (or correlations) or calls ``stoch_simul``; otherwise it
+        # is a perfect-foresight model and the exogenous variables follow the
+        # paths given by ``shocks``/``initval``/``endval``.
         from dyno.language import Normal
 
         covs = fe.covariances
         exo = tuple(self.symbols["exogenous"])
-        n_e = len(exo)
-        mat = np.zeros((n_e, n_e))
-        for ind, k in covs.items():
-            i = exo.index(ind[0])
-            j = exo.index(ind[1])
-            mat[i, j] = k
-            mat[j, i] = k
+        stochastic = bool(covs) or any(c["command"] == "stoch_simul" for c in commands)
+        processes: dict[tuple[str, ...], Any] = {}
+        if stochastic and exo:
+            n_e = len(exo)
+            mat = np.zeros((n_e, n_e))
+            for ind, k in covs.items():
+                i = exo.index(ind[0])
+                j = exo.index(ind[1])
+                mat[i, j] = k
+                mat[j, i] = k
+            processes = {exo: Normal(mat)}
 
-        processes = {exo: Normal(mat)}
+        # Exogenous variables default to a zero steady state unless the file
+        # gives them a value (``initval``/``endval``).
+        steady_states = {e: 0.0 for e in exo} | fe.steady_states
+
+        values: dict[str, dict[int, float]] = {k: dict(v) for k, v in fe.values.items()}
+        if fe.has_endval:
+            # ``endval`` is the terminal (steady) state; ``initval`` pins date 0.
+            for name, value in fe.initvals.items():
+                values.setdefault(name, {})[0] = float(value)
+        for name, value in fe.histvals.items():
+            values.setdefault(name, {})[0] = float(value)
 
         context = {
             "constants": fe.constants,
             "variables": fe.variables,
-            "values": fe.values,
+            "values": values,
             "processes": processes,
-            "steady_states": fe.steady_states
-            | {e: 0.0 for e in exo},  # set exogenous steady states to zero
+            "steady_states": steady_states,
         }
 
         self.context = context
         self.metadata = {
-            "dynare_commands": self._extract_dynare_commands(),
+            "dynare_commands": commands,
         }
 
     def _extract_dynare_commands(self: Self) -> list[dict[str, Any]]:
@@ -421,4 +440,44 @@ class LModFile(SymbolicModel):
 
             commands.append({"command": command, "options": options})
 
-        return commands
+        return _translate_perfect_foresight_commands(commands)
+
+
+def _translate_perfect_foresight_commands(
+    commands: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Map Dynare's perfect-foresight commands onto Dyno run commands.
+
+    - ``perfect_foresight_setup(periods=N)`` records the horizon and emits nothing;
+    - ``perfect_foresight_solver`` and ``simul(periods=N)`` become
+      ``simul`` with ``mode="deterministic"`` and ``T=N``;
+    - consecutive ``rplot x;`` statements become one ``plot`` command.
+    """
+    out: list[dict[str, Any]] = []
+    horizon: int | None = None
+    for cmd in commands:
+        name = cmd["command"]
+        options = dict(cmd.get("options", {}))
+        if name == "perfect_foresight_setup":
+            if "periods" in options:
+                horizon = int(options["periods"])
+            continue
+        if name in ("perfect_foresight_solver", "simul"):
+            if "periods" in options:
+                horizon = int(options.pop("periods"))
+            new_options: dict[str, Any] = {"mode": "deterministic"}
+            if horizon is not None:
+                new_options["T"] = horizon
+            out.append({"command": "simul", "options": new_options})
+            continue
+        if name == "rplot":
+            variables = list(options.get("variables", []))
+            if out and out[-1]["command"] == "plot":
+                out[-1]["options"]["variables"] += [
+                    v for v in variables if v not in out[-1]["options"]["variables"]
+                ]
+            else:
+                out.append({"command": "plot", "options": {"variables": variables}})
+            continue
+        out.append({"command": name, "options": options})
+    return out

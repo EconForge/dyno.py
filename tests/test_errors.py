@@ -252,11 +252,9 @@ def test_model_local_variables_and_unary_plus():
 # ---------------------------------------------------------------------------
 
 
-def test_unsupported_deterministic_shocks_in_shocks_block():
-    """periods/values inside a shocks block (perfect foresight syntax) must raise
-    UnsupportedFeatureError, not a raw LARKParserError."""
-    from dyno.errors import UnsupportedFeatureError
-
+def test_deterministic_shocks_in_shocks_block_are_supported():
+    """periods/values inside a shocks block (perfect foresight syntax) are
+    interpreted as forced exogenous paths and the file imports."""
     mod_txt = """\
 var c, k;
 varexo z;
@@ -280,11 +278,23 @@ end;
 perfect_foresight_setup(periods=100);
 perfect_foresight_solver;
 """
+    model = DynoModel(txt=mod_txt, filename="pf_test.mod")
+    assert model.is_deterministic
+    assert model.context["values"] == {"z": {1: 0.01}}
+    assert model.metadata["dynare_commands"][-1] == {
+        "command": "simul",
+        "options": {"mode": "deterministic", "T": 100},
+    }
+
+
+def test_unsupported_perfect_foresight_with_expectation_errors():
+    from dyno.errors import UnsupportedFeatureError
+
     with pytest.raises(UnsupportedFeatureError) as exc_info:
-        DynoModel(txt=mod_txt, filename="pf_test.mod")
-    assert exc_info.value.feature in ("deterministic_shocks", "perfect_foresight")
-    msg = str(exc_info.value)
-    assert any(kw in msg for kw in ("periods", "perfect foresight", "deterministic"))
+        DynoModel(
+            "examples/dynare/perfect_foresight/perfect_foresight_expectation_errors.mod"
+        )
+    assert exc_info.value.feature == "perfect_foresight"
 
 
 def test_unsupported_external_function_in_steady_state_model():
@@ -358,22 +368,14 @@ r = report();
     [
         "examples/modfiles/ramst.mod",
         "examples/dynare/perfect_foresight/perfect_foresight_rbc.mod",
-        "examples/dynare/perfect_foresight/perfect_foresight_expectation_errors.mod",
     ],
 )
-def test_perfect_foresight_mod_raises_unsupported_not_lark(mod_path):
-    """Modfiles that use deterministic shocks (periods/values) must raise
-    UnsupportedFeatureError, not LARKParserError."""
-    from dyno.errors import UnsupportedFeatureError, LARKParserError
-
-    try:
-        DynoModel(mod_path)
-    except UnsupportedFeatureError:
-        pass  # expected
-    except LARKParserError as e:
-        pytest.fail(f"Got LARKParserError instead of UnsupportedFeatureError: {e}")
-    except Exception:
-        pass  # other errors (e.g. after import) are not our concern here
+def test_perfect_foresight_mod_imports_as_deterministic(mod_path):
+    """Modfiles that use deterministic shocks (periods/values) import as
+    perfect-foresight models."""
+    model = DynoModel(mod_path)
+    assert model.is_deterministic
+    assert model.symbols["exogenous"]
 
 
 @pytest.mark.parametrize(

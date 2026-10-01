@@ -19,7 +19,9 @@ Dyno offers two ways to load and run Dynare `.mod` files:
 2. **`DynoModel` (`dyno.DynoModel`)**:
    - Pure-Python parser built with Lark.
    - Requires no external C++ dependencies or compiled binaries.
-   - Reads standard `.mod` files for perturbation and simulation workflows.
+   - Reads standard `.mod` files for perturbation and simulation workflows,
+     including perfect-foresight files (`shocks` with `periods`/`values`,
+     `initval`/`endval`/`histval`, `perfect_foresight_setup`/`_solver`, `simul`).
 
 ```mermaid
 graph TD

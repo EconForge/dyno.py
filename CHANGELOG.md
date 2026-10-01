@@ -13,6 +13,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `model.simulate()`, `solution.simulate()`, `dyno.simul.simulate()` and the
   `simul` run command, for reproducible random simulations.
 - A CI job running the `DynareModel` tests against the Dynare preprocessor.
+- Perfect-foresight `.mod` files are read by `DynoModel`: deterministic
+  shocks (`periods`/`values`), `endval`, `histval` (date 0), and the
+  `perfect_foresight_setup`/`perfect_foresight_solver`, `simul` and `rplot`
+  commands map onto the deterministic solver. A `.mod` file with no shock
+  variances and no `stoch_simul` is now a deterministic model, and `varexo`
+  variables are exogenous even without a shock process. `steady_state_model`
+  blocks are evaluated after `initval`/`endval`, and exogenous steady states
+  come from `initval` instead of being forced to zero.
 
 ### Changed
 

@@ -306,17 +306,15 @@ def detect_unsupported_dynare_feature(
                 "reporting",
             )
 
-    # 7. Perfect foresight commands (narrow window)
-    for kw in [
-        "perfect_foresight_setup",
-        "perfect_foresight_solver",
-        "perfect_foresight_with_expectation_errors",
-    ]:
-        if re.search(rf"\b{kw}\b", target_line, re.IGNORECASE) or re.search(
-            rf"\b{kw}\b", window_txt, re.IGNORECASE
+    # 7. Perfect foresight with expectation errors (narrow window).
+    #    Plain ``perfect_foresight_setup``/``perfect_foresight_solver`` and
+    #    ``simul`` are supported; the ``learnt_in`` variants are not.
+    for kw in _EXPECTATION_ERRORS_KEYWORDS:
+        if re.search(rf"\b{kw}", target_line, re.IGNORECASE) or re.search(
+            rf"\b{kw}", window_txt, re.IGNORECASE
         ):
             return _make(
-                f"Dynare perfect foresight command '{kw}' is not supported in .mod files by DynoModel.",
+                f"Dynare perfect foresight with expectation errors ('{kw}') is not supported in .mod files by DynoModel.",
                 "perfect_foresight",
             )
 
@@ -342,28 +340,13 @@ def detect_unsupported_dynare_feature(
     # actual unsupported keyword is elsewhere in the file.
     # ------------------------------------------------------------------
 
-    # 10. Perfect foresight — deterministic shocks: ``periods N; values V;``
-    #     inside a ``shocks`` block.  The grammar only handles stochastic shocks
-    #     (``var X; stderr V;``), so the ``periods`` keyword triggers a parse error.
-    #     We detect both the specific token and the broader file-level pattern.
-    if _has_deterministic_shocks(txt):
-        return _make(
-            "Deterministic shock syntax ('periods'/'values' inside shocks block) is not supported "
-            "by DynoModel. Perfect foresight simulations require DynareModel.",
-            "deterministic_shocks",
-        )
-
-    # Full-file scan for perfect_foresight_* commands (complements check #7 above
-    # for files where the error token is far from the command keyword).
-    for kw in [
-        "perfect_foresight_setup",
-        "perfect_foresight_solver",
-        "perfect_foresight_with_expectation_errors",
-        "simul",
-    ]:
-        if re.search(rf"\b{kw}\b", txt, re.IGNORECASE):
+    # 10. Full-file scan for perfect_foresight_with_expectation_errors
+    #     (complements check #7 above for files where the error token is far
+    #     from the command keyword).
+    for kw in _EXPECTATION_ERRORS_KEYWORDS:
+        if re.search(rf"\b{kw}", txt, re.IGNORECASE):
             return _make(
-                f"Dynare perfect foresight command '{kw}' is not supported in .mod files by DynoModel.",
+                f"Dynare perfect foresight with expectation errors ('{kw}') is not supported in .mod files by DynoModel.",
                 "perfect_foresight",
             )
 
@@ -407,14 +390,16 @@ def detect_unsupported_dynare_feature(
 # Helper predicates for full-file pattern detection
 # ---------------------------------------------------------------------------
 
-_KNOWN_FUNCTIONS = frozenset(
-    ["sin", "cos", "exp", "log", "sqrt", "abs", "steady_state"]
+# Keywords of Dynare's perfect foresight with expectation errors
+# (``perfect_foresight_with_expectation_errors_setup/solver`` and the
+# ``learnt_in`` option of ``shocks``/``endval``), matched as prefixes.
+_EXPECTATION_ERRORS_KEYWORDS = (
+    "perfect_foresight_with_expectation_errors",
+    "learnt_in",
 )
 
-# Regex that matches a ``shocks`` block (with optional options) and captures its body.
-_SHOCKS_BLOCK_RE = re.compile(
-    r"\bshocks\s*(?:\([^)]*\))?\s*;(.*?)\bend\s*;",
-    re.DOTALL | re.IGNORECASE,
+_KNOWN_FUNCTIONS = frozenset(
+    ["sin", "cos", "exp", "log", "sqrt", "abs", "steady_state"]
 )
 
 # Regex that matches a ``steady_state_model`` block and captures its body.
@@ -452,20 +437,6 @@ def _strip_comments(txt: str) -> str:
     return txt
 
 
-def _has_deterministic_shocks(txt: str) -> bool:
-    """Return True if *any* ``shocks`` block in *txt* contains ``periods`` or ``values``
-    statements — the deterministic shock syntax used in perfect foresight models.
-    """
-    stripped = _strip_comments(txt)
-    for m in _SHOCKS_BLOCK_RE.finditer(stripped):
-        body = m.group(1)
-        if re.search(r"\bperiods\b", body, re.IGNORECASE):
-            return True
-        if re.search(r"\bvalues\b", body, re.IGNORECASE):
-            return True
-    return False
-
-
 def _has_external_steady_state_function(txt: str) -> bool:
     """Return True if the ``steady_state_model`` block calls a function that is not
     in the set of functions known to the Dyno grammar.
@@ -499,8 +470,7 @@ def detect_unsupported_features_preparsed(txt: str) -> UnsupportedFeatureError |
     Checks (in priority order):
     1. Macroprocessor directives (``@#define``, ``@#for``, …)
     2. MATLAB/Octave reporting API (``dseries(``, ``report()``, …)
-    3. Deterministic shock syntax (``periods``/``values`` in shocks block)
-    4. External function calls in ``steady_state_model`` block
+    3. External function calls in ``steady_state_model`` block
     """
 
     def _make_preparsed(message: str, feature: str) -> UnsupportedFeatureError:
@@ -524,15 +494,7 @@ def detect_unsupported_features_preparsed(txt: str) -> UnsupportedFeatureError |
             "matlab_reporting_api",
         )
 
-    # 3. Deterministic shock syntax
-    if _has_deterministic_shocks(txt):
-        return _make_preparsed(
-            "Deterministic shock syntax ('periods'/'values' inside shocks block) is not supported "
-            "by DynoModel. Perfect foresight simulations require DynareModel.",
-            "deterministic_shocks",
-        )
-
-    # 4. External function calls in steady_state_model block
+    # 3. External function calls in steady_state_model block
     if _has_external_steady_state_function(txt):
         return _make_preparsed(
             "External function calls in 'steady_state_model' block (e.g. 'func_name(...)') "

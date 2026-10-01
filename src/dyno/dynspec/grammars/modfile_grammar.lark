@@ -3,7 +3,7 @@
 
 modfile: (var_statement | par_statement | varexo_statement | pred_statement | parinit_statement)*   \
     model_block \
-    (command_statement | steady_block | initval_block | steady_block | shocks_block | parinit_statement)*
+    (command_statement | steady_block | initval_block | endval_block | histval_block | shocks_block | parinit_statement)*
     
 
 varexo_statement: "varexo" (lsymbol ","?)* lsymbol ";"
@@ -37,10 +37,23 @@ steady_block.1: _STEADY_CMD ";" _list_of_parassignments _END_TOKEN ";"
 _STEADY_CMD.2: "steady_state_model"
 
 initval_block.1: "initval" ";" _list_of_parassignments _END_TOKEN ";"
+endval_block.1: "endval" ";" _list_of_parassignments _END_TOKEN ";"
 
-shocks_block.1: "shocks" ";"  (setstdvar_stmt | setvar_stmt | setcovar_stmt | setcorr_stmt)*  _END_TOKEN ";" 
+// histval; k(0) = 1.2; end;   (only the date-0 form is interpreted)
+histval_block.1: "histval" ";" (histassignment ";")+ _END_TOKEN ";"
+histassignment: variable "=" formula
+
+shocks_block.1: "shocks" ["(" properties ")"] ";"  (setstdvar_stmt | setvar_stmt | setcovar_stmt | setcorr_stmt | setdetvar_stmt)*  _END_TOKEN ";"
 
 setstdvar_stmt: "var" symbol ";" "stderr" formula ";"
+
+// Deterministic (perfect foresight) shocks:
+//   var x; periods 1:9, 10; values 0.1, (alpha*2);
+setdetvar_stmt: "var" symbol ";" "periods" period_item (","? period_item)* ";" "values" value_item (","? value_item)* ";"
+period_item: INT [":" INT]
+value_item: NUMBER                 -> value_number
+    | "-" NUMBER                   -> value_neg_number
+    | "(" formula ")"              -> value_expr
 setvar_stmt: "var" symbol "=" formula ";"
 setcovar_stmt: "var" symbol "," symbol "=" formula ";"
 setcorr_stmt: "corr" symbol "," symbol "=" formula ";"
@@ -122,7 +135,7 @@ _END_TOKEN: "end"
 
 FUNCTION.1: /\b(sin|cos|exp|log|sqrt|abs|steady_state)\b/
 
-COMMAND.1: "steady"|"check"|"stoch_simul"|"steady_state_model"
+COMMAND.1: "steady"|"check"|"stoch_simul"|"steady_state_model"|"simul"|"perfect_foresight_setup"|"perfect_foresight_solver"|"rplot"
 
 SIGNED_INT2: ("+"|"-") INT
 

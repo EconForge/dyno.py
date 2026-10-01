@@ -241,6 +241,14 @@ class AbstractModel(ABC):
         # Preserve declaration/insertion order (avoid set() which scrambles order)
         exo_order: list[str] = []
 
+        # Variables declared exogenous by the source file (``varexo`` in .mod
+        # files) are exogenous even without a process or a forced path.
+        declared = getattr(self.symbolic, "symbols", None)
+        if isinstance(declared, dict):
+            for name in declared.get("exogenous", []):
+                if name not in exo_order:
+                    exo_order.append(name)
+
         for exo_tuple in c.get("processes", {}).keys():
             for name in exo_tuple:
                 if name not in exo_order:
