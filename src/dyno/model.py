@@ -381,6 +381,7 @@ class AbstractModel(ABC):
         **options: Any,
     ) -> Self:
         from scipy.optimize import root
+
         invalid_shifts = getattr(self, "_invalid_shifts", None)
         if invalid_shifts:
             from .errors import SystemStructureError

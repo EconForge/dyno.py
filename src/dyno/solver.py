@@ -321,6 +321,7 @@ def solve_qz(
         when Blanchard-Kahn conditions are not verified (less than N generalized eigenvalues inside the unit ball)
     """
     from scipy.linalg import ordqz
+
     n = A.shape[0]
     I = np.eye(n)
     Z = np.zeros((n, n))

@@ -264,6 +264,7 @@ STRING: /"([^"\\]|\\.)*"/
 %ignore WS
 """
 
+
 @functools.cache
 def _lark_parser() -> Lark:
     return Lark(EXPR_GRAMMAR, parser="earley")

@@ -477,6 +477,7 @@ class SimulationVariants(VariantCollection[R], item_type=SimulationResult):
     def to_df(self, units: UnitsType | None = None) -> pd.DataFrame:
         """Convert simulation variants into a unified MultiIndex DataFrame indexed by ``variant``."""
         import pandas as pd
+
         frames: dict[str, pd.DataFrame] = {}
         for label, item in zip(self.labels, self.items):
             df = item.to_df(units=units)
@@ -727,6 +728,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         self, orientation: str = "horizontal"
     ) -> pd.DataFrame | None:
         import pandas as pd
+
         if not any(r.residuals is not None for r in self.items):
             return None
 
@@ -750,6 +752,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         self, orientation: str = "horizontal"
     ) -> pd.DataFrame | None:
         import pandas as pd
+
         if not any(r.eigenvalues is not None for r in self.items):
             return None
 

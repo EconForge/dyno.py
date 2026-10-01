@@ -419,6 +419,7 @@ def style_eigenvalues_dataframe(
 
     def highlight_eigenvalues(data: pd.DataFrame) -> pd.DataFrame:
         import pandas as pd
+
         styles = pd.DataFrame("", index=data.index, columns=data.columns)
         if is_horizontal:
             for col_idx, col in enumerate(data.columns):
@@ -834,6 +835,7 @@ class RunResults:
     ) -> tuple["pd.DataFrame | None", "pd.DataFrame | None"]:
         """Return (conditional_df, unconditional_df) when available."""
         import pandas as pd
+
         if self.model is None:
             return None, None
 
