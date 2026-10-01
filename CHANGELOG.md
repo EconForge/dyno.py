@@ -52,6 +52,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `import_tests.yaml`, `TODO`). The root `rbc.mod` used by the tests moved
   to `examples/modfiles/rbc_simple.mod`.
 
+- `dyno.gui.dyno_gui` and its helper module `dyno.gui.components`. The
+  Solara app was unused and no longer ran (it called the removed
+  `dyno.model.irfs` and `DynareModel.compute`). The model explorer
+  (`dyno.gui.model_representation_gui`) is unaffected.
+
 ## [0.1.11] and earlier
 
 Breaking changes to the `.dyno` language made before this changelog existed:
