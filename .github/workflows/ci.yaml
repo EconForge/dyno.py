@@ -45,6 +45,27 @@ jobs:
       - name: Test DynareModel against the Dynare preprocessor
         run: pixi run --environment dev-dynare test-dynare
 
+  installed-package:
+    name: Installed-package smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Build the wheel
+        run: uv build --wheel --out-dir dist
+
+      - name: Install the wheel into a clean environment
+        run: |
+          uv venv --python 3.12 "$RUNNER_TEMP/venv"
+          uv pip install --python "$RUNNER_TEMP/venv/bin/python" dist/*.whl
+
+      - name: Run the smoke test outside the source tree
+        working-directory: ${{ runner.temp }}
+        run: "$RUNNER_TEMP/venv/bin/python $GITHUB_WORKSPACE/ci/smoke_installed.py"
+
   docs:
     name: Verify Documentation (Zensical)
     runs-on: ubuntu-latest
