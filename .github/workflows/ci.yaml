@@ -31,6 +31,20 @@ jobs:
           file: ./coverage.xml
           flags: unittests
 
+  dynare:
+    name: Dynare preprocessor backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pixi
+        uses: prefix-dev/setup-pixi@v0.9.4
+        with:
+          environments: dev-dynare
+
+      - name: Test DynareModel against the Dynare preprocessor
+        run: pixi run --environment dev-dynare test-dynare
+
   docs:
     name: Verify Documentation (Zensical)
     runs-on: ubuntu-latest

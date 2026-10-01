@@ -211,7 +211,7 @@ class DynoModel(AbstractModel):
                     sim_options = {
                         k: v
                         for k, v in options.items()
-                        if k in {"shocks", "initial_states"}
+                        if k in {"shocks", "initial_states", "rng"}
                     }
                     results.simulation = solution.simulate(
                         T=horizon,

@@ -8,11 +8,8 @@ def test_rbc_simulation_forces_initial_shocks_and_k0():
     model = DynoModel("examples/rbc.dyno")
     sol = model.solve()
 
-    np.random.seed(123)
-    df1 = simulate(sol, T=20)
-
-    np.random.seed(456)
-    df2 = simulate(sol, T=20)
+    df1 = simulate(sol, T=20, rng=123)
+    df2 = simulate(sol, T=20, rng=456)
 
     # Initial state at t=0 has k0 perturbed by 1% and contemporaneous impact of e[0]=0.99
     k_ss = model.steady_state["k"]
@@ -39,11 +36,8 @@ def test_explicit_shocks_parameter():
         "e_z": {1: 0.1, 2: 0.05},
         "e_y": {1: 0.0, 2: 0.0},
     }
-    np.random.seed(1)
-    df1 = simulate(sol, T=10, shocks=forced_shocks)
-
-    np.random.seed(2)
-    df2 = simulate(sol, T=10, shocks=forced_shocks)
+    df1 = simulate(sol, T=10, shocks=forced_shocks, rng=1)
+    df2 = simulate(sol, T=10, shocks=forced_shocks, rng=2)
 
     # Date 1 and 2 transitions are identical due to forced shocks
     np.testing.assert_allclose(df1.iloc[1].values, df2.iloc[1].values)
