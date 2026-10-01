@@ -161,7 +161,7 @@ solution_alt.plot().show()
 
 ## Perfect Foresight (Deterministic) Models
 
-`DynoModel` also reads the deterministic workflow of Dynare. A `.mod` file is
+Both backends read the deterministic workflow of Dynare. A `.mod` file is
 treated as a perfect-foresight model when it declares no shock variances and
 does not call `stoch_simul`. The following constructs are interpreted:
 
@@ -186,9 +186,11 @@ results = model.run()         # steady, check, simul(T=200), plot
 path = results.simulation.to_df()
 ```
 
-`steady_state_model` blocks are evaluated once all `initval`/`endval` blocks
-have been read, so they can refer to exogenous variables set in `initval`.
-Not supported yet: `perfect_foresight_with_expectation_errors_*` and the
+With `DynoModel`, `steady_state_model` blocks are evaluated once all
+`initval`/`endval` blocks have been read, so they can refer to exogenous
+variables set in `initval`. With `DynareModel`, the preprocessor handles the
+blocks and Dyno reads the resulting shock trajectories (`endval` and `histval`
+are not interpreted there yet). Not supported yet: `perfect_foresight_with_expectation_errors_*` and the
 `learnt_in` option of `shocks`/`endval`, `histval` entries at dates other
 than 0, and leads or lags beyond one period.
 

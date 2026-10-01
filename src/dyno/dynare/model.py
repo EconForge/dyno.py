@@ -1,5 +1,7 @@
 from dyno.model import AbstractModel
-from dyno.language import pad_list, Normal, Deterministic
+from dyno.language import Normal
+import re
+
 import numpy as np
 from scipy.optimize import root
 
@@ -171,6 +173,21 @@ class DynareModel(AbstractModel):
                         results.eigenvalues = getattr(model, "_eigenvalues", None)
                     elif name == "resid":
                         results.residuals = model.residuals
+                    elif name in {"simul", "simulate"}:
+                        from dyno.solver import deterministic_solve
+
+                        det_opts = {k: v for k, v in options.items() if k != "mode"}
+                        sim = deterministic_solve(model, **det_opts)
+                        results.simulation = sim
+                        if not sim.attrs.get("converged", True):
+                            results.add_warning(
+                                f"Deterministic / perfect foresight simulation did not converge after "
+                                f"{sim.attrs.get('iterations', '?')} iterations "
+                                f"(maximum residual: {sim.attrs.get('residual', float('nan')):.2e}). "
+                                "The computed solution is incorrect."
+                            )
+                    elif name == "plot":
+                        plot_variables = options.get("variables") or None
                     elif name == "stoch_simul":
                         dr = model.perturb()
                         results.solution = dr
@@ -202,11 +219,7 @@ class DynareModel(AbstractModel):
                     line=line,
                 )
 
-        if (
-            show_graph
-            and results.simulation is not None
-            and isinstance(results.simulation, dict)
-        ):
+        if show_graph and results.simulation is not None:
             from dyno.plots import plot_simulation
 
             results._plot_options = {"engine": "altair"}
@@ -260,6 +273,11 @@ class DynareModel(AbstractModel):
         if allow_undeclared_params:
             txt = self._declare_undeclared_params(txt)
 
+        # The binding runs the preprocessor in a stochastic context, which
+        # Dynare refuses to mix with ``perfect_foresight_solver``/``simul``.
+        # Those statements are removed here and re-inserted as run commands.
+        txt, self._perfect_foresight_statements = _extract_solver_statements(txt)
+
         try:
             self.symbolic = Modfile(txt, deriv_order, params_deriv_order)
         except PreprocessorException as e:
@@ -292,6 +310,7 @@ class DynareModel(AbstractModel):
             options = statement.get("options", {})
             if not isinstance(options, dict):
                 options = {}
+            options = {k: _coerce_option(v) for k, v in options.items()}
 
             symbol_list = statement.get("symbol_list")
             if isinstance(symbol_list, list) and symbol_list:
@@ -299,7 +318,47 @@ class DynareModel(AbstractModel):
 
             commands.append({"command": command, "options": options})
 
-        return commands
+        solver_statements = list(getattr(self, "_perfect_foresight_statements", []))
+        if solver_statements:
+            setups = [
+                i
+                for i, c in enumerate(commands)
+                if c["command"] == "perfect_foresight_setup"
+            ]
+            at = setups[-1] + 1 if setups else len(commands)
+            commands[at:at] = solver_statements
+
+        from dyno.larkfiles import _translate_perfect_foresight_commands
+
+        return _translate_perfect_foresight_commands(commands)
+
+    def _deterministic_shocks(self: Self) -> dict[str, dict[int, float]]:
+        """Forced exogenous paths from the ``shocks`` blocks of the preprocessor JSON.
+
+        ``var x; periods p1:p2; values v;`` becomes ``{x: {t: v}}`` for
+        ``t`` in ``p1..p2``; date 0 is the initial condition, as in .dyno files.
+        """
+        import json
+
+        payload = json.loads(self.symbolic.json_string)
+        statements = payload.get("transformed_modfile", {}).get("statements", [])
+        constants = {
+            k: v
+            for k, v in self.symbolic.context.items()
+            if k in self.symbolic.parameters
+        }
+
+        values: dict[str, dict[int, float]] = {}
+        for statement in statements:
+            if statement.get("statementName") != "shocks":
+                continue
+            for entry in statement.get("deterministic_shocks", []):
+                series = values.setdefault(str(entry["var"]), {})
+                for item in entry.get("values", []):
+                    value = _evaluate_expression(str(item["value"]), constants)
+                    for t in range(int(item["period1"]), int(item["period2"]) + 1):
+                        series[t] = value
+        return values
 
     def _declare_undeclared_params(self: Self, txt: str) -> str:
         """Automatically declare parameters that are assigned values without being declared.
@@ -438,25 +497,21 @@ class DynareModel(AbstractModel):
         }
         constants = {k: v for (k, v) in c.items() if (k in parameters)}
 
-        # read specification of exogenous shocks in the modfile
-        if len(self.symbolic.trajectories) > 0 and len(self.symbolic.covariances) > 0:
-            raise ValueError(
-                "A model cannot simultaneously define deterministic trajectories and "
-                "stochastic covariances. Check the shocks block in your .mod file."
-            )
-        isdeterministic = len(self.symbolic.trajectories) > 0
+        commands = self._extract_dynare_commands()
+        deterministic_shocks = self._deterministic_shocks()
+
+        # A file is a perfect-foresight model when it forces exogenous paths
+        # or uses the perfect-foresight commands, and declares no shock
+        # variances nor calls stoch_simul (Dynare refuses to mix the two).
+        names = {c["command"] for c in commands}
+        isdeterministic = (bool(deterministic_shocks) or "simul" in names) and not (
+            len(self.symbolic.covariances) > 0 or "stoch_simul" in names
+        )
         exo = exogenous
 
+        values: dict[str, dict[int, float]]
         if isdeterministic:
-            det_vals: dict[str, list[Any]] = {v: [] for v in exo}
-            for var, traj in self.symbolic.trajectories.items():
-                for p1, p2, val in traj:
-                    pad_list(det_vals[var], p2)
-                    det_vals[var][p1 - 1 : p2] = [val] * (p2 - p1 + 1)
-            # self.paths = Deterministic(det_vals)
-            # self.processes = None
-            # self.exogenous = self.paths
-            values = det_vals
+            values = deterministic_shocks
             processes = {}
         else:
             n = len(exo)
@@ -476,7 +531,7 @@ class DynareModel(AbstractModel):
             "processes": processes,
             "steady_states": steady_states,
             "metadata": {
-                "dynare_commands": self._extract_dynare_commands(),
+                "dynare_commands": commands,
             },
         }
         # self.paths = None
@@ -506,9 +561,22 @@ class DynareModel(AbstractModel):
 
         return self.symbolic.derivatives(y, y, y, e, e, p)
 
-    def deterministic_residuals(self, v):
-
-        return v * 0
+    def _dynamic_point(self, v_prev, v_curr, v_next, diff=False):
+        q = len(self.symbols["endogenous"])
+        p = [self.context["constants"][name] for name in self.symbolic.parameters]
+        e = v_curr[q:]
+        if not diff:
+            return np.asarray(self._f_dynamic(v_next[:q], v_curr[:q], v_prev[:q], e, p))
+        r, A, B, C, D = self._f_dynamic(
+            v_next[:q], v_curr[:q], v_prev[:q], e, p, diff=True
+        )
+        n_vars = len(self.symbols["variables"])
+        J = np.zeros((len(r), n_vars, 3))
+        J[:, :q, 0] = C
+        J[:, :q, 1] = B
+        J[:, :q, 2] = A
+        J[:, q:, 1] = D
+        return np.asarray(r), J
 
     def _f_dynamic(
         self: Self,
@@ -538,29 +606,22 @@ class DynareModel(AbstractModel):
             value of f(y0, y1, y2, e, p), as well as partial derivatives w.r.t. y0, y1, y2 and e if diff is set to True
         """
 
+        # (endo_future, endo_present, endo_past, exo, exo_det, params).
+        # ``varexo_det`` variables are not supported, so that slot is empty.
         args: list[list[Any]] = [
             list(y0),
             list(y1),
             list(y2),
             list(e),
-            list(e),
+            [],
             list(p),
         ]
-        if len(self.context["processes"]) == 0:
-            # deterministic model: no stochastic processes defined
-            args[3] = []
-        else:
-            # stochastic model: has processes; second exogenous slot is unused
-            args[4] = []
 
         r = np.array(self.symbolic.residuals(*args))
 
         if diff:
             jacobians = self.symbolic.jacobians(*args)
-            if len(self.context["processes"]) == 0:
-                del jacobians[3]
-            else:
-                del jacobians[4]
+            del jacobians[4]
             n = len(self.equations)
             lengths = [n] * 3 + [len(e), len(p)]
             r1, r2, r3, r4 = [
@@ -570,6 +631,66 @@ class DynareModel(AbstractModel):
             return r, r1, r2, r3, r4
 
         return r
+
+
+_SOLVER_STATEMENT_RE = re.compile(
+    r"\b(perfect_foresight_solver|simul)\s*(\(([^)]*)\))?\s*;",
+    re.IGNORECASE,
+)
+
+
+def _extract_solver_statements(txt: str) -> tuple[str, list[dict[str, Any]]]:
+    """Remove ``perfect_foresight_solver``/``simul`` statements from *txt*.
+
+    Returns the stripped text and the statements as run commands, in order.
+    """
+    statements: list[dict[str, Any]] = []
+
+    def _strip(match: "re.Match[str]") -> str:
+        options: dict[str, Any] = {}
+        for item in (match.group(3) or "").split(","):
+            item = item.strip()
+            if not item:
+                continue
+            if "=" in item:
+                key, value = item.split("=", 1)
+                options[key.strip()] = _coerce_option(value.strip())
+            else:
+                options[item] = True
+        statements.append({"command": match.group(1).lower(), "options": options})
+        return ""
+
+    return _SOLVER_STATEMENT_RE.sub(_strip, txt), statements
+
+
+def _evaluate_expression(expr: str, constants: dict[str, Any]) -> float:
+    """Evaluate a numeric expression written by the preprocessor (``values``)."""
+    import math
+
+    try:
+        return float(expr)
+    except ValueError:
+        pass
+    namespace: dict[str, Any] = {
+        name: getattr(math, name)
+        for name in ("exp", "log", "sqrt", "sin", "cos", "tan", "pi")
+    }
+    namespace["abs"] = abs
+    namespace.update(constants)
+    return float(eval(expr, {"__builtins__": {}}, namespace))  # noqa: S307
+
+
+def _coerce_option(value: Any) -> Any:
+    """The preprocessor JSON stores option values as strings; parse numbers."""
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            try:
+                return float(value)
+            except ValueError:
+                return value
+    return value
 
 
 def sparse_to_dense(

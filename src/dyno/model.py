@@ -32,6 +32,7 @@ from .typedefs import (
     SimulateMode,
     Solver,
     TMatrix,
+    TTensor,
     TVector,
     UnitsType,
 )
@@ -608,6 +609,126 @@ class AbstractModel(ABC):
             model=self,
         )
         return PerturbationSolution(dr, evs=evs)
+
+    def _dynamic_point(
+        self: Self,
+        v_prev: TVector,
+        v_curr: TVector,
+        v_next: TVector,
+        diff: bool = False,
+    ) -> TVector | tuple[TVector, TTensor]:
+        """Evaluate the dynamic equations at one date.
+
+        ``v_prev``, ``v_curr`` and ``v_next`` hold all variables (endogenous
+        first, then exogenous, in the order of ``symbols["variables"]``) at
+        dates t-1, t and t+1. Returns the residuals, and when ``diff`` is
+        true also the Jacobian ``J`` of shape ``(n_equations, n_variables, 3)``
+        where the last axis indexes the date (t-1, t, t+1).
+
+        The default implementation relies on ``compute_residuals`` and
+        ``compute_jacobians``, which only see the date-t exogenous values.
+        """
+        q = len(self.symbols["endogenous"])
+        y_prev, y_curr, y_next = v_prev[:q], v_curr[:q], v_next[:q]
+        e = v_curr[q:]
+        if not diff:
+            return np.asarray(self.compute_residuals(y_next, y_curr, y_prev, e))
+        r, A, B, C, D = self.compute_jacobians(y_next, y_curr, y_prev, e)
+        p = len(self.symbols["variables"])
+        J = np.zeros((len(r), p, 3))
+        J[:, :q, 0] = C
+        J[:, :q, 1] = B
+        J[:, :q, 2] = A
+        J[:, q:, 1] = D
+        return np.asarray(r), J
+
+    def _forced_path(self: Self, T: int) -> TMatrix:
+        """Steady state at every date, overridden by ``context["values"]``."""
+        y, e = self.__steady_state_vectors__
+        ss = np.concatenate([y, e])
+        v1 = ss[None, :].repeat(T + 1, axis=0)
+        for key, value in self.context.get("values", {}).items():
+            i = self.symbols["variables"].index(key)
+            for a, b in value.items():
+                if 0 <= a <= T:
+                    v1[a, i] = b
+        return v1
+
+    def deterministic_residuals_with_jacobian(
+        self: Self,
+        v: np.ndarray,
+        sparsify: bool = False,
+        continuation: str = "stationary",
+        growth_rate: Any = None,
+        growth_type: str = "geometric",
+        **kwargs: Any,
+    ) -> tuple[np.ndarray, Any]:
+        """Stacked-time residuals and Jacobian of the perfect-foresight system.
+
+        Generic implementation built on ``_dynamic_point``, one date at a
+        time. Date 0 is pinned to the forced path (initial condition), the
+        trailing exogenous variables follow ``context["values"]`` at every
+        date, and the value after the horizon comes from the terminal
+        ``continuation`` (see ``_compute_terminal_continuation``).
+        """
+        from .dyno_model import (
+            _build_dense_jacobian,
+            _build_sparse_jacobian,
+            _compute_terminal_continuation,
+        )
+
+        continuation = kwargs.get("terminal_condition", continuation)
+        if continuation in ("static", "steady_static"):
+            raise NotImplementedError(
+                f"Terminal condition {continuation!r} is only available for DynoModel."
+            )
+
+        flat = v.ndim == 1
+        variables = list(self.symbols["variables"])
+        p = len(variables)
+        q = len(self.symbols["endogenous"])
+        T = int(np.prod(v.shape) / p - 1)
+        v = v.reshape((T + 1, p))
+
+        y, e = self.__steady_state_vectors__
+        ss = np.concatenate([y, e])
+        v_prev_T = v[-2, :] if T >= 1 else v[-1, :]
+        v_next_T, alpha_prev, alpha_curr = _compute_terminal_continuation(
+            continuation,
+            v_prev_T,
+            v[-1, :],
+            ss,
+            variables,
+            growth_rate=growth_rate,
+            growth_type=growth_type,
+        )
+        v_b = np.concatenate([v[0, :][None, :], v[:-1, :]], axis=0)
+        v_f = np.concatenate([v[1:, :], v_next_T[None, :]], axis=0)
+
+        v1 = self._forced_path(T)
+        N = T + 1
+        res = np.zeros((N, p))
+        DD = np.zeros((N, p, p, 3))
+        for t in range(N):
+            r_t, J_t = cast(
+                tuple[TVector, TTensor],
+                self._dynamic_point(v_b[t], v[t], v_f[t], diff=True),
+            )
+            res[t, :q] = r_t
+            DD[t, :q, :, :] = J_t
+        res[:, q:] = v[:, q:] - v1[:, q:]
+        for i in range(q, p):
+            DD[:, i, i, 1] = 1.0
+        res[0, :] = v[0, :] - v1[0, :]  # initial condition
+
+        if not flat:
+            return res, DD
+        J: Any
+        if sparsify:
+            J = _build_sparse_jacobian(N, p, DD, {}, alpha_prev, alpha_curr)
+        else:
+            J = _build_dense_jacobian(N, p, DD, {}, alpha_prev, alpha_curr)
+        return res.ravel(), J
 
     def deterministic_guess(self: Self, T: int | None = None):
         if T is None:

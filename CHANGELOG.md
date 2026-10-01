@@ -21,6 +21,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   variables are exogenous even without a shock process. `steady_state_model`
   blocks are evaluated after `initval`/`endval`, and exogenous steady states
   come from `initval` instead of being forced to zero.
+- `DynareModel` (preprocessor backend) runs perfect-foresight files too:
+  `AbstractModel` gained a generic stacked-time
+  `deterministic_residuals_with_jacobian` built on a per-date
+  `_dynamic_point` evaluation, and `DynareModel.run()` understands the
+  `simul` and `plot` commands produced from `perfect_foresight_setup`,
+  `perfect_foresight_solver`, `simul` and `rplot`.
 
 ### Changed
 

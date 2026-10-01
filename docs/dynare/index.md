@@ -14,6 +14,7 @@ Dyno offers two ways to load and run Dynare `.mod` files:
      below); it is not installed with `dyno` itself.
    - Integrates directly with the C++ Dynare preprocessor Python bindings (`dynare-preprocessor-pylib`).
    - Provides full fidelity with official Dynare preprocessing, including macro-processor directives (`@#include`, `@#for`, `@#define`, `@#if`).
+   - Runs stochastic (`stoch_simul`) and perfect-foresight (`perfect_foresight_setup`/`_solver`, `simul`) files.
    - Available via conda-forge and prefix.dev.
 
 2. **`DynoModel` (`dyno.DynoModel`)**:
