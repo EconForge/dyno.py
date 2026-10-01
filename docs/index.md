@@ -93,7 +93,7 @@ chart
 
 | Section | Description |
 |---|---|
-| [**Getting Started**](getting_started/installation.md) | Installation with Pixi, environment options, and introductory walkthroughs for `.dyno` and `.mod` files. |
+| [**Getting Started**](getting_started/installation.md) | Installing Dyno with Pixi, contributor setup, and introductory walkthroughs for `.dyno` and `.mod` files. |
 | [**Model Specification**](model_specification/syntax.md) | Syntax reference for declarations (`<-`), equations (`=`), time indices, metadata tags, and YAML wrappers. |
 | [**Solvers & Theory**](solvers/steady_state.md) | Numerical root-finding for steady states, first-order perturbation methods, and deterministic stacked-time Newton solvers. |
 | [**Analysis & Simulation**](analysis/irfs.md) | Impulse response functions, theoretical moments, stochastic simulation, and automated reporting. |
