@@ -2407,7 +2407,7 @@
 </li>
 <li>
 <h3 id="visualization-tooling">Visualization &amp; Tooling<a class="headerlink" href="#visualization-tooling" title="Permanent link">&para;</a></h3>
-<p>Export simulation trajectories to Pandas DataFrames, render interactive charts with Plotly or Altair, or explore models interactively in JupyterLab using the Dyno Lab extension.</p>
+<p>Export simulation trajectories to Pandas DataFrames, render interactive charts with Altair (or text charts in the terminal with plotext), or explore models interactively in JupyterLab using the Dyno Lab extension.</p>
 </li>
 </ul>
 </div>
@@ -2460,9 +2460,9 @@
 </span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="n">irfs</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">irfs</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">"deviation"</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
 </span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="nb">print</span><span class="p">(</span><span class="n">irfs</span><span class="p">[</span><span class="s2">"e_z"</span><span class="p">][[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"i"</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
 </span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="c1"># Render an interactive Plotly chart</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="n">fig</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">"deviation"</span><span class="p">)</span>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="c1"># Render an interactive Altair chart (displays inline in Jupyter)</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="n">chart</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">"deviation"</span><span class="p">)</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="n">chart</span>
 </span></code></pre></div>
 <hr />
 <h2 id="documentation-overview">Documentation Overview<a class="headerlink" href="#documentation-overview" title="Permanent link">&para;</a></h2>

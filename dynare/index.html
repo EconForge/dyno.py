@@ -2293,7 +2293,7 @@
                   
 
 <h1 id="dynare-in-python-dynodynare">Dynare in Python (<code>dyno.dynare</code>)<a class="headerlink" href="#dynare-in-python-dynodynare" title="Permanent link">&para;</a></h1>
-<p><strong><code>dyno.dynare</code></strong> provides Python support for Dynare <code>.mod</code> files. It bridges existing Dynare models with the Python scientific stack (NumPy, SciPy, Pandas, Plotly).</p>
+<p><strong><code>dyno.dynare</code></strong> provides Python support for Dynare <code>.mod</code> files. It bridges existing Dynare models with the Python scientific stack (NumPy, SciPy, Pandas, Altair).</p>
 <hr />
 <h2 id="two-parsing-backends-for-mod-files">Two Parsing Backends for <code>.mod</code> Files<a class="headerlink" href="#two-parsing-backends-for-mod-files" title="Permanent link">&para;</a></h2>
 <p>Dyno offers two ways to load and run Dynare <code>.mod</code> files:</p>
@@ -2322,7 +2322,7 @@
         MOD[".mod File"] --&gt; DM["DynareModel (dyno.dynare.model)"]
         CPP["Co-Developed C++ Preprocessor&lt;br/&gt;(dynare-preprocessor-pylib)&lt;br/&gt;[conda-forge &amp; prefix.dev]"] --&gt; DM
         DM --&gt; SOLVE["Dyno Perturbation Solver (QZ / Time Iteration)"]
-        SOLVE --&gt; OUT["Pandas DataFrames &amp; Plotly Visualizations"]
+        SOLVE --&gt; OUT["Pandas DataFrames &amp; Altair Visualizations"]
     end
 
     DYNARE -.-&gt; DM
