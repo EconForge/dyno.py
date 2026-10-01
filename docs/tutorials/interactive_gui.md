@@ -1,21 +1,22 @@
 # Tutorial: Interactive Modeling with Dyno Lab
 
-This tutorial walks through using **Dyno Lab** (`jupyterlab_dyno`), the interactive JupyterLab extension for Dyno, to explore, calibrate, and simulate a Real Business Cycle (RBC) model in real time.
+This tutorial walks through using **Dyno Lab** (`jupyterlab-dyno`), the interactive JupyterLab extension for Dyno, to explore, calibrate, and simulate a Real Business Cycle (RBC) model in real time.
 
 ---
 
 ## Prerequisites & Setup
 
-Ensure you have `jupyterlab_dyno` installed in your environment:
+Ensure JupyterLab and `jupyterlab-dyno` are installed in your Pixi project, with the `econforge` channel added (see [Install Dyno](../getting_started/installation.md)):
 
 ```bash
-pixi add --channel https://repo.prefix.dev/econforge jupyterlab_dyno
+pixi workspace channel add --prepend https://prefix.dev/econforge
+pixi add jupyterlab jupyterlab-dyno
 ```
 
 Launch JupyterLab:
 
 ```bash
-pixi run -e dev jupyter lab
+pixi run jupyter lab
 ```
 
 JupyterLab will start and open your browser to the workspace.
