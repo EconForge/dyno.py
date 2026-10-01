@@ -784,6 +784,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#perfect-foresight-deterministic-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Perfect Foresight (Deterministic) Models
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#using-dynaremodel-dynodynare" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2301,6 +2312,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#perfect-foresight-deterministic-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Perfect Foresight (Deterministic) Models
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#using-dynaremodel-dynodynare" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2404,125 +2426,193 @@
 </li>
 <li>Uses the official Dynare preprocessor C++ library (<code>dynare-preprocessor-pylib</code>).</li>
 <li>Ensures 100% adherence to Dynare preprocessing syntax and rules.</li>
-<li>Requires the optional <code>dynare</code> feature in Pixi.</li>
+<li>
+<p><strong>Not part of the default installation.</strong> It needs the optional
+     <code>dynare-preprocessor-pylib</code> package from the EconForge channel on prefix.dev:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pixi<span class="w"> </span>add<span class="w"> </span>--channel<span class="w"> </span>https://prefix.dev/econforge<span class="w"> </span>dynare-preprocessor-pylib
+</span></code></pre></div>
+<p>In this repository, use an environment that includes the <code>dynare</code> feature
+ (<code>pixi run -e dev-dynare ...</code>). Without the package, <code>DynareModel</code> raises a
+ <code>ModuleNotFoundError</code> explaining what to install; <code>DynoModel</code> still reads
+ <code>.mod</code> files.</p>
+</li>
 </ol>
 <p>Both classes expose the exact same high-level Python API: <code>model.solve()</code>, <code>model.residuals</code>, <code>model.steady_state</code>, <code>model.recalibrate()</code>, and <code>model.run()</code>.</p>
 <hr />
 <h2 id="example-a-real-business-cycle-rbc-model">Example: A Real Business Cycle (RBC) Model<a class="headerlink" href="#example-a-real-business-cycle-rbc-model" title="Permanent link">&para;</a></h2>
 <p>Consider a standard Hansen Real Business Cycle model saved as <code>RBC.mod</code>:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>var c, r, w, n, k, i, y, a;
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>varexo epsilon, leta;
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>parameters beta, delta, khi, eta, alpha, rho, nss;
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>beta = 0.985;
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>delta = 0.025;
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>nss = 0.33;
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>eta = 1.0;
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>alpha = 0.33;
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>rho = 0.95;
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>khi = (1-alpha)*(1-nss)^eta/nss*(1/beta-1+delta)/(1/beta-1+delta-delta*alpha);
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>model;
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>1/c = beta*(r(+1)+1-delta)/c(+1);
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>w = khi*c/(1-n)^eta;
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>k = (1-delta)*k(-1)+i;
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>y = a*k(-1)^alpha*n^(1-alpha);
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>log(a) = rho*log(a(-1))+epsilon;
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>w = (1-alpha)*y/n;
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>r = alpha*y/k(-1);
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>y = c+i;
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>end;
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>steady_state_model;
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>a = 1;
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>r = 1/beta-1+delta;
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>n = nss;
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>k = (alpha/r)^(1/(1-alpha))*n;
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>y = k^alpha*n^(1-alpha);
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>w = (1-alpha)*y/n;
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>i = delta*k;
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>c = y-i;
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>end;
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>shocks;
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>var epsilon; stderr 0.009;
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>var leta; stderr 0.001;
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>end;
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>var c, r, w, n, k, i, y, a;
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>varexo epsilon, leta;
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>parameters beta, delta, khi, eta, alpha, rho, nss;
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>beta = 0.985;
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>delta = 0.025;
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>nss = 0.33;
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>eta = 1.0;
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>alpha = 0.33;
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>rho = 0.95;
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>khi = (1-alpha)*(1-nss)^eta/nss*(1/beta-1+delta)/(1/beta-1+delta-delta*alpha);
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>model;
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>1/c = beta*(r(+1)+1-delta)/c(+1);
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>w = khi*c/(1-n)^eta;
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>k = (1-delta)*k(-1)+i;
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>y = a*k(-1)^alpha*n^(1-alpha);
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>log(a) = rho*log(a(-1))+epsilon;
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>w = (1-alpha)*y/n;
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>r = alpha*y/k(-1);
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>y = c+i;
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>end;
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>steady_state_model;
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>a = 1;
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>r = 1/beta-1+delta;
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>n = nss;
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>k = (alpha/r)^(1/(1-alpha))*n;
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>y = k^alpha*n^(1-alpha);
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>w = (1-alpha)*y/n;
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>i = delta*k;
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>c = y-i;
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>end;
+</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>shocks;
+</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>var epsilon; stderr 0.009;
+</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>var leta; stderr 0.001;
+</span><span id="__span-1-38"><a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a>end;
 </span></code></pre></div>
 <hr />
 <h2 id="loading-and-inspecting-with-dynomodel">Loading and Inspecting with <code>DynoModel</code><a class="headerlink" href="#loading-and-inspecting-with-dynomodel" title="Permanent link">&para;</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynoModel</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Load the .mod file directly</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">model</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"examples/modfiles/RBC.mod"</span><span class="p">)</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># Inspect symbols</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Endogenous:"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s2">"endogenous"</span><span class="p">])</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># ['c', 'r', 'w', 'n', 'k', 'i', 'y', 'a']</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Exogenous shocks:"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s2">"exogenous"</span><span class="p">])</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="c1"># ['epsilon', 'leta']</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="c1"># Inspect parameters and steady states</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Parameters:"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">context</span><span class="p">[</span><span class="s2">"constants"</span><span class="p">])</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Steady State:"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">steady_state</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynoModel</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Load the .mod file directly</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">model</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"examples/modfiles/RBC.mod"</span><span class="p">)</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># Inspect symbols</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Endogenous:"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s2">"endogenous"</span><span class="p">])</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># ['c', 'r', 'w', 'n', 'k', 'i', 'y', 'a']</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Exogenous shocks:"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s2">"exogenous"</span><span class="p">])</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1"># ['epsilon', 'leta']</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c1"># Inspect parameters and steady states</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Parameters:"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">context</span><span class="p">[</span><span class="s2">"constants"</span><span class="p">])</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Steady State:"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">steady_state</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="verifying-steady-state-and-diagnostics">Verifying Steady State and Diagnostics<a class="headerlink" href="#verifying-steady-state-and-diagnostics" title="Permanent link">&para;</a></h2>
 <p>Verify that the <code>steady_state_model</code> block satisfies the dynamic equilibrium conditions:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Check equation residuals</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Residuals:"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">residuals</span><span class="p">)</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Strict validation (raises SteadyStateError on mismatch)</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">model</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Check equation residuals</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Residuals:"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">residuals</span><span class="p">)</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Strict validation (raises SteadyStateError on mismatch)</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">model</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
 </span></code></pre></div>
 <hr />
 <h2 id="solving-and-simulating">Solving and Simulating<a class="headerlink" href="#solving-and-simulating" title="Permanent link">&para;</a></h2>
 <p>Solve the model using generalized Schur (QZ) decomposition:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">solution</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># Inspect decision rule components</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Steady state vector x0:</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">solution</span><span class="o">.</span><span class="n">x0</span><span class="p">)</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Transition matrix X:</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">solution</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Impact matrix Y:</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">solution</span><span class="o">.</span><span class="n">Y</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">solution</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Inspect decision rule components</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Steady state vector x0:</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">solution</span><span class="o">.</span><span class="n">x0</span><span class="p">)</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Transition matrix X:</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">solution</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Impact matrix Y:</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">solution</span><span class="o">.</span><span class="n">Y</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="computing-impulse-responses">Computing Impulse Responses<a class="headerlink" href="#computing-impulse-responses" title="Permanent link">&para;</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Generate log-deviation IRFs for 40 periods</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">irfs</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">irfs</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">"log-deviation"</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Extract response to technology shock 'epsilon'</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">df_tech</span> <span class="o">=</span> <span class="n">irfs</span><span class="p">[</span><span class="s2">"epsilon"</span><span class="p">]</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nb">print</span><span class="p">(</span><span class="n">df_tech</span><span class="p">[[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">,</span> <span class="s2">"i"</span><span class="p">,</span> <span class="s2">"n"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># Interactive visualization</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">fig</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">"log-deviation"</span><span class="p">)</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Generate log-deviation IRFs for 40 periods</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">irfs</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">irfs</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">"log-deviation"</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Extract response to technology shock 'epsilon'</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">df_tech</span> <span class="o">=</span> <span class="n">irfs</span><span class="p">[</span><span class="s2">"epsilon"</span><span class="p">]</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="nb">print</span><span class="p">(</span><span class="n">df_tech</span><span class="p">[[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">,</span> <span class="s2">"i"</span><span class="p">,</span> <span class="s2">"n"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="c1"># Interactive visualization</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="n">fig</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">"log-deviation"</span><span class="p">)</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </span></code></pre></div>
 <hr />
 <h2 id="recalibrating-parameters">Recalibrating Parameters<a class="headerlink" href="#recalibrating-parameters" title="Permanent link">&para;</a></h2>
 <p>You can modify parameter calibrations without editing the underlying <code>.mod</code> file:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Increase persistence rho and capital share alpha</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">model_alt</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">recalibrate</span><span class="p">(</span><span class="n">rho</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.36</span><span class="p">)</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">solution_alt</span> <span class="o">=</span> <span class="n">model_alt</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">solution_alt</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Increase persistence rho and capital share alpha</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">model_alt</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">recalibrate</span><span class="p">(</span><span class="n">rho</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.36</span><span class="p">)</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">solution_alt</span> <span class="o">=</span> <span class="n">model_alt</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">solution_alt</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </span></code></pre></div>
+<hr />
+<h2 id="perfect-foresight-deterministic-models">Perfect Foresight (Deterministic) Models<a class="headerlink" href="#perfect-foresight-deterministic-models" title="Permanent link">&para;</a></h2>
+<p>Both backends read the deterministic workflow of Dynare. A <code>.mod</code> file is
+treated as a perfect-foresight model when it declares no shock variances and
+does not call <code>stoch_simul</code>. The following constructs are interpreted:</p>
+<table>
+<thead>
+<tr>
+<th>Dynare construct</th>
+<th>Meaning in Dyno</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>shocks; var x; periods 1:3, 5; values 1.1, 0.9; end;</code></td>
+<td>Forced path of the exogenous variable (<code>model.context["values"]</code>)</td>
+</tr>
+<tr>
+<td><code>initval; ... end;</code></td>
+<td>Steady state and state at date 0</td>
+</tr>
+<tr>
+<td><code>endval; ... end;</code></td>
+<td>Terminal steady state; <code>initval</code> then pins date 0</td>
+</tr>
+<tr>
+<td><code>histval; k(0) = 10; end;</code></td>
+<td>Initial condition at date 0</td>
+</tr>
+<tr>
+<td><code>perfect_foresight_setup(periods=N); perfect_foresight_solver;</code></td>
+<td><code>simul</code> run command with <code>mode="deterministic"</code> and <code>T=N</code></td>
+</tr>
+<tr>
+<td><code>simul(periods=N);</code></td>
+<td>Same as above</td>
+</tr>
+<tr>
+<td><code>rplot c k;</code></td>
+<td><code>plot</code> run command</td>
+</tr>
+</tbody>
+</table>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynoModel</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">model</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"examples/modfiles/ramst.mod"</span><span class="p">)</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">model</span><span class="o">.</span><span class="n">is_deterministic</span>        <span class="c1"># True</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">model</span><span class="o">.</span><span class="n">context</span><span class="p">[</span><span class="s2">"values"</span><span class="p">]</span>       <span class="c1"># {'x': {1: 1.2}}</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">results</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>         <span class="c1"># steady, check, simul(T=200), plot</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">path</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">simulation</span><span class="o">.</span><span class="n">to_df</span><span class="p">()</span>
+</span></code></pre></div>
+<p>With <code>DynoModel</code>, <code>steady_state_model</code> blocks are evaluated once all
+<code>initval</code>/<code>endval</code> blocks have been read, so they can refer to exogenous
+variables set in <code>initval</code>. With <code>DynareModel</code>, the preprocessor handles the
+blocks and Dyno reads the resulting shock trajectories (<code>endval</code> and <code>histval</code>
+are not interpreted there yet). Not supported yet: <code>perfect_foresight_with_expectation_errors_*</code> and the
+<code>learnt_in</code> option of <code>shocks</code>/<code>endval</code>, <code>histval</code> entries at dates other
+than 0, and leads or lags beyond one period.</p>
 <hr />
 <h2 id="using-dynaremodel-dynodynare">Using <code>DynareModel</code> (<code>dyno.dynare</code>)<a class="headerlink" href="#using-dynaremodel-dynodynare" title="Permanent link">&para;</a></h2>
 <p>If your model uses advanced Dynare preprocessing features (such as intricate macro-processor loops, external steady-state functions, or complex block structures), use <code>DynareModel</code> from the <strong><code>dyno.dynare</code></strong> subpackage:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynare</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynareModel</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># Uses dynare-preprocessor-pylib under the hood</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">model_official</span> <span class="o">=</span> <span class="n">DynareModel</span><span class="p">(</span><span class="s2">"examples/modfiles/RBC.mod"</span><span class="p">)</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">solution_official</span> <span class="o">=</span> <span class="n">model_official</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">fig</span> <span class="o">=</span> <span class="n">solution_official</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynare</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynareModel</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Uses dynare-preprocessor-pylib under the hood</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">model_official</span> <span class="o">=</span> <span class="n">DynareModel</span><span class="p">(</span><span class="s2">"examples/modfiles/RBC.mod"</span><span class="p">)</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">solution_official</span> <span class="o">=</span> <span class="n">model_official</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">fig</span> <span class="o">=</span> <span class="n">solution_official</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </span></code></pre></div>
 <blockquote>
 <p>[!NOTE]
 <code>DynareModel</code> requires <code>dynare-preprocessor-pylib</code>. If not already installed, activate it via the <code>dynare</code> environment:
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>pixi<span class="w"> </span>run<span class="w"> </span>-e<span class="w"> </span>dev-dynare<span class="w"> </span>python<span class="w"> </span>my_script.py
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>pixi<span class="w"> </span>run<span class="w"> </span>-e<span class="w"> </span>dev-dynare<span class="w"> </span>python<span class="w"> </span>my_script.py
 </span></code></pre></div></p>
 <p>For an in-depth guide on the Python Dynare package roadmap and architecture, see <a href="../../dynare/">Dynare in Python (<code>dyno.dynare</code>)</a>.</p>
 </blockquote>

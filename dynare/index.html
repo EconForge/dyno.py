@@ -2299,8 +2299,12 @@
 <p>Dyno offers two ways to load and run Dynare <code>.mod</code> files:</p>
 <ol>
 <li><strong><code>DynareModel</code> (<code>dyno.dynare.DynareModel</code>)</strong>:</li>
+<li>Requires the optional <code>dynare-preprocessor-pylib</code> package (see
+     <a href="#preprocessor-integration-dynare-preprocessor-pylib">Preprocessor Integration</a>
+     below); it is not installed with <code>dyno</code> itself.</li>
 <li>Integrates directly with the C++ Dynare preprocessor Python bindings (<code>dynare-preprocessor-pylib</code>).</li>
 <li>Provides full fidelity with official Dynare preprocessing, including macro-processor directives (<code>@#include</code>, <code>@#for</code>, <code>@#define</code>, <code>@#if</code>).</li>
+<li>Runs stochastic (<code>stoch_simul</code>) and perfect-foresight (<code>perfect_foresight_setup</code>/<code>_solver</code>, <code>simul</code>) files.</li>
 <li>
 <p>Available via conda-forge and prefix.dev.</p>
 </li>
@@ -2309,7 +2313,9 @@
 </li>
 <li>Pure-Python parser built with Lark.</li>
 <li>Requires no external C++ dependencies or compiled binaries.</li>
-<li>Reads standard <code>.mod</code> files for perturbation and simulation workflows.</li>
+<li>Reads standard <code>.mod</code> files for perturbation and simulation workflows,
+     including perfect-foresight files (<code>shocks</code> with <code>periods</code>/<code>values</code>,
+     <code>initval</code>/<code>endval</code>/<code>histval</code>, <code>perfect_foresight_setup</code>/<code>_solver</code>, <code>simul</code>).</li>
 </ol>
 <pre class="mermaid"><code>graph TD
     subgraph "Dyno Ecosystem"
@@ -2381,9 +2387,6 @@
 </span></code></pre></div></li>
 <li><strong>Top-Level Re-Export</strong>:
   <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynareModel</span>
-</span></code></pre></div></li>
-<li><strong>Legacy Module Forwarding</strong>:
-  <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynare_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynareModel</span>  <span class="c1"># Deprecated alias pointing to dyno.dynare.model</span>
 </span></code></pre></div></li>
 </ul>
 <hr />
