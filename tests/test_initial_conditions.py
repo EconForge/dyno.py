@@ -1,7 +1,8 @@
 import textwrap
 import numpy as np
 import pytest
-from dyno import DynoModel, deterministic_solve
+from dyno import DynoModel
+from dyno.solver import deterministic_solve
 from tests.test_deterministic_ramsey import DISASTER_MODEL_TXT
 
 

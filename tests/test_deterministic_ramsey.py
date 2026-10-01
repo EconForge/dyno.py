@@ -13,7 +13,8 @@ Tests:
 
 import numpy as np
 import pytest
-from dyno import DynoModel, deterministic_solve
+from dyno import DynoModel
+from dyno.solver import deterministic_solve
 
 RAMSEY_MODEL_TXT = """
 # Neoclassical Ramsey Model with Perfect Foresight / Deterministic Transition

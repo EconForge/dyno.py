@@ -104,13 +104,55 @@ class DynoModel(AbstractModel):
         return commands
 
     def run(self: Self, default_pipeline: bool = False) -> "RunResults":
-        from .report import RunResults
+        """Execute the model's ``@run:`` pipeline and collect the results.
 
-        warnings.warn(
-            "DynoModel.run() is experimental and its command metadata format may change.",
-            UserWarning,
-            stacklevel=2,
-        )
+        Commands are read from ``model.metadata["run"]`` (populated by
+        ``@run:`` directives in a ``.dyno`` file, a ``run:`` list in a YAML
+        model, or the computing commands of a ``.mod`` file) and executed in
+        order. The ``@run:`` command format is stable.
+
+        Each command can be written as:
+
+        - a bare name: ``@run: steady``
+        - a single-key mapping with options: ``@run: simul: {T: 40}``
+          (``null`` options are allowed, e.g. ``steady: null``)
+        - an explicit mapping: ``{command: simul, options: {T: 40}}``
+
+        A trailing ``;`` on the command name (``@run: solve;``) mutes that
+        command's output in reports.
+
+        Supported commands:
+
+        - ``steady``: solve for the steady state (``model.steady(**options)``)
+        - ``resid``: compute steady-state residuals
+        - ``check``: compute residuals and check Blanchard-Kahn conditions
+        - ``solve`` / ``perturb``: compute the first-order solution
+        - ``simul`` / ``simulate``: simulate the model (perfect-foresight path
+          for deterministic models)
+        - ``analyze`` / ``stoch_simul``: solve, compute moments and IRFs
+        - ``plot``: plot the current simulation
+        - ``variants``: run the remaining commands on each calibration variant
+          (``model.variants(**options)``)
+
+        Parameters
+        ----------
+        default_pipeline : bool, optional
+            If True and the model defines no commands, run ``resid`` followed
+            by ``analyze`` (``T=40``). By default False.
+
+        Returns
+        -------
+        RunResults
+            Container with the final model, residuals, solution, eigenvalues,
+            moments, simulation and figure produced by the pipeline (a
+            collection of results when ``variants`` is used).
+
+        Raises
+        ------
+        NotImplementedError
+            If a command is not supported.
+        """
+        from .report import RunResults
 
         commands = self._normalize_run_commands()
         model = self
@@ -345,6 +387,28 @@ class DynoModel(AbstractModel):
             defines=defines,
             **kwargs,
         )
+        self._warn_suspicious_variables()
+
+    def _warn_suspicious_variables(self: Self) -> None:
+        """Warn about endogenous variables that are likely typos.
+
+        In Dyno syntax any name followed by ``[t]`` becomes a variable, so a
+        misspelled name silently adds an endogenous variable. Flag those that
+        appear in a single equation and have no steady-state declaration.
+        Dynare files are skipped: their variables are declared explicitly.
+        """
+        if not isinstance(self.symbolic, DynoFile):
+            return
+        hints = self._suspicious_endogenous(require_single_occurrence=True)
+        if hints:
+            from .errors import UndefinedSymbolWarning
+
+            warnings.warn(
+                "Possible typo in variable name:\n"
+                + "\n".join(f"  {h}" for h in hints),
+                UndefinedSymbolWarning,
+                stacklevel=3,
+            )
 
     def import_model(
         self: Self,

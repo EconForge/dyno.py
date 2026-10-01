@@ -127,6 +127,40 @@ class DynareModel(AbstractModel):
         return m
 
     def run(self: Self, default_pipeline: bool = False) -> "RunResults":
+        """Execute the model's computing commands and collect the results.
+
+        Commands are read from ``model.metadata["dynare_commands"]`` (the
+        computing commands of the ``.mod`` file) or, failing that, from
+        ``model.metadata["run"]``, as normalized
+        ``{"command": ..., "options": {...}}`` entries in the same stable
+        ``@run:`` command format as :meth:`dyno.DynoModel.run`, and executed
+        in order.
+
+        Supported commands:
+
+        - ``steady``: solve for the steady state (``model.steady(**options)``)
+        - ``resid``: compute steady-state residuals
+        - ``check``: compute residuals and check Blanchard-Kahn conditions
+        - ``simul`` / ``simulate``: perfect-foresight simulation
+        - ``stoch_simul``: solve, compute moments and IRFs (``irf``,
+          ``type``, ``variables`` and ``nograph`` options)
+        - ``plot``: select the variables to plot
+
+        Other commands are ignored.
+
+        Parameters
+        ----------
+        default_pipeline : bool, optional
+            If True and the model defines no commands, compute residuals,
+            then IRFs (stochastic models) or a perfect-foresight simulation
+            (deterministic models) over 40 periods. By default False.
+
+        Returns
+        -------
+        RunResults
+            Container with the final model, residuals, solution, eigenvalues,
+            moments, simulation and figure produced by the pipeline.
+        """
         from dyno.report import RunResults
 
         commands = self.metadata.get("dynare_commands", self.metadata.get("run", []))

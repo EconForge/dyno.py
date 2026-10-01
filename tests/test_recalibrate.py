@@ -152,7 +152,7 @@ x[t] = alpha*x[t-1] + beta
         model.check()
 
 
-def test_dyno_run_is_experimental_and_executes_commands() -> None:
+def test_dyno_run_executes_commands_without_warning() -> None:
     from dyno import RunResults
 
     txt = """
@@ -170,8 +170,12 @@ model: |
 
     model = DynoModel(filename="<run>.yaml", yaml=txt)
 
-    with pytest.warns(UserWarning, match="experimental"):
+    import warnings
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         result = model.run()
+    assert not [w for w in caught if "experimental" in str(w.message)]
 
     assert isinstance(result, RunResults)
     assert result.model is not model
@@ -194,8 +198,7 @@ model: |
 
     model = DynoModel(filename="<run2>.yaml", yaml=txt)
 
-    with pytest.warns(UserWarning, match="experimental"):
-        result = model.run()
+    result = model.run()
 
     assert result.model.context["steady_states"]["x"] == pytest.approx(20.0)
 
@@ -214,8 +217,7 @@ model: |
 
     model = DynoModel(filename="<run3>.yaml", yaml=txt)
 
-    with pytest.warns(UserWarning, match="experimental"):
-        result = model.run()
+    result = model.run()
 
     assert result.model.context["steady_states"]["x"] == pytest.approx(20.0)
 
@@ -239,8 +241,7 @@ e[t] <- N(0.1)
     assert isinstance(model.metadata["run"], list)
     assert len(model.metadata["run"]) == 4
 
-    with pytest.warns(UserWarning, match="experimental"):
-        result = model.run()
+    result = model.run()
 
     assert isinstance(result, RunResults)
     assert result.solution is not None
