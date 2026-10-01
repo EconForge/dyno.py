@@ -1,4 +1,4 @@
-import dyno
+from dyno.simul import simulate
 
 
 def test_solution_ti():
@@ -10,7 +10,7 @@ def test_solution_ti():
 
     sol = model.solve(method="ti")
 
-    sim = dyno.simulate(sol)
+    sim = simulate(sol)
 
 
 def test_solution_qz():
@@ -20,7 +20,7 @@ def test_solution_qz():
 
     sol = model.solve(method="qz")
 
-    sim = dyno.simulate(sol)
+    sim = simulate(sol)
 
 
 if __name__ == "__main__":

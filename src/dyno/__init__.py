@@ -1,15 +1,36 @@
-"""Dyno package."""
+"""Dyno package.
+
+The names listed in ``__all__`` form the public API. Lower-level building
+blocks (matrix solvers, simulation helpers, ...) remain available from their
+submodules, e.g. ``dyno.solver.solve_qz`` or ``dyno.simul.simulate``.
+"""
 
 from pathlib import Path
 
-# from .model import *
-from .solver import *
-from .simul import *
-
 from .dyno_model import DynoModel
-from . import dynare
 from .dynare import DynareModel
+from .errors import (
+    BlanchardKahnError,
+    ConvergenceWarning,
+    DynareParserError,
+    DynoError,
+    LARKParserError,
+    ParserError,
+    RedefinitionWarning,
+    SteadyStateError,
+    SystemStructureError,
+    UndefinedSymbolError,
+    UndefinedSymbolWarning,
+    UnsupportedFeatureError,
+)
 from .report import RunResults
+from .simul import (
+    IRFSimulation,
+    RandomSimulation,
+    SimulationResult,
+    TransitionSimulation,
+)
+from .solver import PerturbationSolution, RecursiveDecisionRule
 from .variants import (
     ModelVariants,
     RunResultsVariants,
@@ -17,6 +38,41 @@ from .variants import (
     SolutionVariants,
     VariantCollection,
 )
+
+__all__ = [
+    # Models
+    "DynoModel",
+    "DynareModel",
+    # Results
+    "RunResults",
+    "PerturbationSolution",
+    "RecursiveDecisionRule",
+    "SimulationResult",
+    "IRFSimulation",
+    "RandomSimulation",
+    "TransitionSimulation",
+    # Variants
+    "VariantCollection",
+    "ModelVariants",
+    "SolutionVariants",
+    "SimulationVariants",
+    "RunResultsVariants",
+    # Errors and warnings
+    "DynoError",
+    "ParserError",
+    "LARKParserError",
+    "DynareParserError",
+    "UnsupportedFeatureError",
+    "UndefinedSymbolError",
+    "SystemStructureError",
+    "SteadyStateError",
+    "BlanchardKahnError",
+    "UndefinedSymbolWarning",
+    "RedefinitionWarning",
+    "ConvergenceWarning",
+    # Utilities
+    "examples_path",
+]
 
 
 def examples_path(*parts: str) -> Path:

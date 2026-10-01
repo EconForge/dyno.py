@@ -40,6 +40,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `solve_ti` starts from a deterministic initial guess instead of a random
   matrix.
 - `dynare-preprocessor-pylib` is no longer restricted to Linux in `pixi.toml`.
+- The top-level `dyno` namespace now declares `__all__` (models, result,
+  solution, simulation and variants classes, errors and warnings,
+  `examples_path`) and no longer re-exports `dyno.solver` / `dyno.simul`
+  with `import *`. Low-level functions such as `solve_qz`, `solve_ti`,
+  `moments`, `deterministic_solve`, `irfs`, `simulate` and `sim_to_nsim`
+  must be imported from `dyno.solver` or `dyno.simul`.
 
 ### Removed
 

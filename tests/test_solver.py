@@ -1,6 +1,5 @@
 def test_all(tol=1e-9):
 
-    import dyno
     from dyno.solver import solve_qz, solve_ti
     import numpy as np
 
@@ -43,7 +42,8 @@ def test_all(tol=1e-9):
 
 def test_deterministic_solve_non_convergence_warning():
     import pytest
-    from dyno import DynoModel, deterministic_solve
+    from dyno import DynoModel
+    from dyno.solver import deterministic_solve
     from dyno.errors import ConvergenceWarning
 
     model = DynoModel("examples/rbc_deterministic.dyno")
