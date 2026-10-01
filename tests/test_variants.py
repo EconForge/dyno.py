@@ -163,7 +163,7 @@ def test_variants_solve_simulate_and_plot_chain():
 
 
 def test_variants_steady_check_and_modfile():
-    model = DynoModel("rbc.mod")
+    model = DynoModel("examples/modfiles/rbc_simple.mod")
     var = model.variants(alpha=[0.25, 0.33, 0.40]).steady().check()
     assert isinstance(var, VariantCollection)
     assert len(var) == 3
@@ -202,7 +202,7 @@ def test_variants_deterministic_transition_and_spaghetti():
     assert len(fig_det.data) == 3 * 2
 
     # 2. Stochastic spaghetti variants
-    stoch_model = DynoModel("rbc.mod")
+    stoch_model = DynoModel("examples/modfiles/rbc_simple.mod")
     np.random.seed(123)
     spag_sims = (
         stoch_model.variants(rho=[0.6, 0.95]).solve().simulate(mode="random", N=4, T=15)

@@ -4,16 +4,17 @@ def test_all(tol=1e-9):
     from dyno.solver import solve_qz, solve_ti
     import numpy as np
 
+    rng = np.random.default_rng(0)
     n = 4
-    A0 = np.eye(n) + np.random.random((n, n)) * 0.01
+    A0 = np.eye(n) + rng.random((n, n)) * 0.01
     B0 = np.diag(30 * np.ones(n))
     B0[0, 0] = 20
     B0[-1, -1] = 20
     B0 = B0 - np.diag(10 * np.ones(n - 1), -1)
-    B0 = B0 - np.diag(10 * np.ones(n - 1), 1) + np.random.random((n, n)) * 0.01
+    B0 = B0 - np.diag(10 * np.ones(n - 1), 1) + rng.random((n, n)) * 0.01
     C0 = np.diag(15 * np.ones(n))
     C0 = C0 - np.diag(5 * np.ones(n - 1), -1)
-    C0 = C0 - np.diag(5 * np.ones(n - 1), 1) + np.random.random((n, n)) * 0.01
+    C0 = C0 - np.diag(5 * np.ones(n - 1), 1) + rng.random((n, n)) * 0.01
 
     import time
 
