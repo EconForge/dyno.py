@@ -17,6 +17,10 @@ class ConvergenceWarning(UserWarning):
     """Warning raised when a numerical solver fails to converge."""
 
 
+class RedefinitionWarning(UserWarning):
+    """Warning raised when a constant is assigned more than once; the first value is kept."""
+
+
 class UndefinedSymbolError(DynoError):
     """Raised when an operation requires symbols that are not defined."""
 

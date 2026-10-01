@@ -24,3 +24,5 @@ demos/**
 **.db
 !examples/**/*.m
 !examples/**/*.csv
+coverage.xml
+.ipynb_checkpoints/

@@ -1,24 +1,22 @@
-def test_modfile_describe():
-    files = [
-        "example1.mod",
-        "example2.mod",
-        # "example3.mod", # has steady-state external file
-        # "Gali_2015.mod", # has steady-state() function
-        "NK_baseline.mod",
-    ]
+import pytest
 
-    # TODO: for excluded file, check the error is meaningful
-    exclude = []
+from dyno.dyno_model import DynoModel
 
-    for f in files:
-        print("Trying to import and describe", f)
-        filename = "examples/modfiles/" + f
-        from dyno.dyno_model import DynoModel
-
-        model = DynoModel(filename)
-        print(model.describe())
+# Dynare example files that are expected to import through the Lark backend.
+# Files needing a steady-state function or an external steady-state file
+# (``example3.mod``, ``Gali_2015.mod``) are covered by ``test_errors.py``.
+MODFILES = ["example1.mod", "example2.mod", "NK_baseline.mod"]
 
 
-if __name__ == "__main__":
-    test_modfile_describe()
-# print(model.solve())
+@pytest.mark.parametrize("name", MODFILES)
+def test_modfile_imports_and_renders(name):
+    model = DynoModel("examples/modfiles/" + name)
+
+    assert len(model.symbolic.equations) == len(model.symbols["endogenous"]) > 0
+    assert model.symbols["parameters"]
+
+    text = repr(model)
+    assert model.name in text
+
+    markdown = model._markdown_()
+    assert isinstance(markdown, str) and markdown.strip()

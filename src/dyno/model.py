@@ -375,6 +375,17 @@ class AbstractModel(ABC):
         """Convergence statistics and algorithm details from the most recent steady-state calculation."""
         return getattr(self, "_steady_stats", None)
 
+    def _check_square(self: Self) -> None:
+        """Raise ``SystemStructureError`` unless there are as many equations as endogenous variables."""
+        neq = len(getattr(self.symbolic, "equations", []))
+        n_endo = len(self.symbols.get("endogenous", []))
+        if neq != n_endo:
+            from .errors import SystemStructureError
+
+            raise SystemStructureError(
+                f"Model has {neq} equation(s) but {n_endo} endogenous variable(s): {self.symbols.get('endogenous', [])}. The dynamic system must be square."
+            )
+
     def steady(
         self: Self,
         tol: float = 1e-10,
@@ -398,6 +409,8 @@ class AbstractModel(ABC):
             maxiter = int(options.pop("maxiter"))
         if "method" in options:
             method = str(options.pop("method"))
+
+        self._check_square()
 
         endogenous = self.symbols["endogenous"]
         if len(endogenous) == 0:
@@ -525,14 +538,7 @@ class AbstractModel(ABC):
                 "Dyno solvers currently support shifts in [-1, 1]."
             )
 
-        neq = len(getattr(self.symbolic, "equations", []))
-        n_endo = len(self.symbols.get("endogenous", []))
-        if neq != n_endo:
-            from .errors import SystemStructureError
-
-            raise SystemStructureError(
-                f"Model has {neq} equation(s) but {n_endo} endogenous variable(s): {self.symbols.get('endogenous', [])}. The dynamic system must be square."
-            )
+        self._check_square()
         if self.is_deterministic:
             from .solver import deterministic_solve
 
@@ -554,6 +560,7 @@ class AbstractModel(ABC):
         For stochastic models, solves the first-order perturbation and delegates to
         ``solution.simulate(...)``.
         """
+        self._check_square()
         if self.is_deterministic or mode in ("transition", "deterministic"):
             from .solver import deterministic_solve
 

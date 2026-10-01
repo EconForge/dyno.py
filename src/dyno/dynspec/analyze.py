@@ -506,7 +506,21 @@ class AssignmentEvaluator(FormulaEvaluator):
                 # print(f"Warning: constant {name} calibrated to {self.__calibration__[name]}; assignment ignored.")
                 return
             if name in self.constants:
-                print(f"Warning: constant {name} redefined")
+                import warnings
+
+                from dyno.errors import RedefinitionWarning
+
+                meta = getattr(symbol_tree, "meta", None)
+                where = (
+                    f" (line {meta.line})"
+                    if meta is not None and not meta.empty
+                    else ""
+                )
+                warnings.warn(
+                    f"Constant {name} redefined{where}; keeping its first value.",
+                    RedefinitionWarning,
+                    stacklevel=2,
+                )
             else:
                 self.constants[name] = value
             # self.symbol_table[key] = value
