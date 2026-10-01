@@ -387,6 +387,7 @@ def test_runresults_markdown_repr_disabled_for_text_output_type_by_default():
 
 def test_runresults_markdown_repr_still_available_when_explicitly_selected():
     results = RunResults(output_type="text", mime_bundle_repr="markdown")
+    results.add_error("boom")
 
     md = results._repr_markdown_()
 
@@ -485,6 +486,7 @@ def test_runresults_str_handles_missing_outputs_gracefully():
 
 def test_runresults_mimebundle_uses_same_markdown_renderer():
     results = RunResults()
+    results.add_error("boom")
 
     bundle = results._repr_mimebundle_()
 
@@ -606,6 +608,7 @@ def test_runresults_display_emits_markdown_then_figure():
         pass
 
     results = RunResults(output_type="markdown")
+    results.add_error("boom")
     results.figure = DummyFigure()
 
     display_mock = Mock()
@@ -849,3 +852,18 @@ def test_runresults_display_myst_emits_html():
     shown = display_mock.call_args_list[0].args[0]
     assert "Model Overview" in shown
     assert ":::" not in shown
+
+
+def test_runresults_unhandled_error_renders_as_callout_with_traceback():
+    results = RunResults()
+    try:
+        raise NotImplementedError("Unsupported DynoModel.run command: simu")
+    except NotImplementedError as e:
+        results.add_error(str(e))
+        results.errors[-1]["_exception"] = e
+
+    md = results._repr_markdown_()
+
+    assert "::::{error} Unsupported DynoModel.run command: simu" in md
+    assert ":::{dropdown} Traceback (NotImplementedError)" in md
+    assert "\n# " not in md

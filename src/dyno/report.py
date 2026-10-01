@@ -63,8 +63,15 @@ template = tempita.Template(
                             
 {[endfor]} 
 
----
+{[endif]}
 
+{[for er in unhandled_errors]}
+{[error_callout(er)]}
+
+{[endfor]}
+
+{[if len(parser_errors)>0 or len(unhandled_errors)>0]}
+---
 {[endif]}
 
 
@@ -268,16 +275,31 @@ $$\epsilon_t \sim \mathcal{N}(0, \Sigma)$$
 {[endif]}
                             
 
-# {[if len(unhandled_errors)>0]}                     
-# {[for er in unhandled_errors]}
-# ```
-# {[str(er)]}
-# ```
-# {[endfor]}
-# {[endif]}
 """,
     delimiters=("{[", "]}"),
 )
+
+
+def error_callout(e: BaseException | str) -> str:
+    """MyST error admonition for an unexpected exception or error message.
+
+    The first line of the message is the title, followed by the rest of the
+    message. For an exception, the full traceback goes in a collapsed
+    "Traceback" dropdown inside the admonition.
+    """
+    import traceback
+
+    message = str(e).strip() or type(e).__name__
+    title, _, rest = message.partition("\n")
+    lines = [f"::::{{error}} {title}"]
+    if rest.strip():
+        lines += ["", rest.strip()]
+    if isinstance(e, BaseException):
+        trace = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+        lines += ["", f":::{{dropdown}} Traceback ({type(e).__name__})", "````text"]
+        lines += [trace.rstrip(), "````", ":::"]
+    lines.append("::::")
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -1015,9 +1037,10 @@ class RunResults:
             for e in exception_errors
             if isinstance(e.get("_exception"), ParserError)
         ]
+        # Other exceptions, and errors recorded as plain messages
         unhandled_errors = [
-            e["_exception"]
-            for e in exception_errors
+            e.get("_exception", e["message"])
+            for e in self.errors
             if not isinstance(e.get("_exception"), ParserError)
         ]
         error_lines = [
@@ -1033,6 +1056,7 @@ class RunResults:
             ],
             "parser_errors": parser_errors,
             "unhandled_errors": unhandled_errors,
+            "error_callout": error_callout,
             "error_lines": error_lines,
             "alt": altair,
             "to_html_table": self._to_html_table,
@@ -1141,10 +1165,6 @@ class RunResults:
         d.update(context)
 
         txt = template.substitute(**d)
-
-        for e in unhandled_errors:
-            print("Unhandled error:")
-            print(e)
 
         return txt
 

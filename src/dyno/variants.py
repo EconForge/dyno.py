@@ -1444,6 +1444,17 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
                     err_lines.extend([":class: dropdown", "```", str(e), "```"])
                 err_lines.append(":::")
                 blocks.append("\n".join(err_lines))
+        # Other exceptions, and errors recorded as plain messages
+        unhandled_errors = [
+            e.get("_exception", e["message"])
+            for e in self.errors
+            if not isinstance(e.get("_exception"), ParserError)
+        ]
+        if unhandled_errors:
+            from dyno.report import error_callout
+
+            blocks.extend(error_callout(e) for e in unhandled_errors)
+        if parser_errors or unhandled_errors:
             blocks.append("---")
 
         # 2. Model header, Calibration dropdown, Equations dropdown
