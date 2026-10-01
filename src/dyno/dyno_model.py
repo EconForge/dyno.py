@@ -221,7 +221,22 @@ class DynoModel(AbstractModel):
                         **sim_options,
                     )
             elif name in {"analyze", "stoch_simul"}:
-                from .plots import plot_irfs
+                from .plots import plot_simulation
+
+                plot_variables = options.get("variables", options.get("vars"))
+                plot_options: dict[str, Any] = {"engine": "altair"}
+                if plot_variables:
+                    plot_options["variables"] = plot_variables
+                if name == "stoch_simul":
+                    # Dynare semantics: ``periods`` is the length of the
+                    # stochastic simulation, not the IRF horizon.
+                    horizon = int(options.get("T", options.get("irf", 40)))
+                    show_graph = not options.get("nograph", False) and horizon > 0
+                else:
+                    horizon = int(
+                        options.get("T", options.get("irf", options.get("periods", 40)))
+                    )
+                    show_graph = True
 
                 if model.is_deterministic:
                     from .solver import deterministic_solve
@@ -229,12 +244,17 @@ class DynoModel(AbstractModel):
                     det_opts = {
                         k: v
                         for k, v in options.items()
-                        if k not in {"irf", "periods", "type"}
+                        if k
+                        not in {
+                            "irf",
+                            "periods",
+                            "type",
+                            "variables",
+                            "vars",
+                            "nograph",
+                        }
                     }
-                    if "T" not in det_opts:
-                        det_opts["T"] = int(
-                            options.get("irf", options.get("periods", 40))
-                        )
+                    det_opts["T"] = horizon
                     sim = deterministic_solve(model, **det_opts)
                     results.simulation = sim
                     if hasattr(sim, "attrs") and not sim.attrs.get("converged", True):
@@ -244,8 +264,6 @@ class DynoModel(AbstractModel):
                             f"(maximum residual: {sim.attrs.get('residual', float('nan')):.2e}). "
                             "The computed solution is incorrect."
                         )
-                    results._plot_options = {"engine": "altair"}  # type: ignore[attr-defined]
-                    results.figure = plot_irfs(results.simulation)
                 else:
                     solve_options = {
                         k: v for k, v in options.items() if k in {"method"}
@@ -256,13 +274,14 @@ class DynoModel(AbstractModel):
                         results.solution = solution
                     results.eigenvalues = getattr(solution, "evs", None)
                     irf_type = options.get("units", options.get("type", "deviation"))
-                    horizon = int(
-                        options.get("T", options.get("irf", options.get("periods", 40)))
-                    )
                     results.moments = solution.moments()[1]
-                    results.simulation = solution.irfs(type=irf_type, T=horizon)
-                    results._plot_options = {"engine": "altair"}  # type: ignore[attr-defined]
-                    results.figure = plot_irfs(results.simulation)
+                    if horizon > 0:
+                        results.simulation = solution.irfs(type=irf_type, T=horizon)
+                if show_graph and results.simulation is not None:
+                    results._plot_options = plot_options
+                    results.figure = plot_simulation(
+                        results.simulation, engine="altair", variables=plot_variables
+                    )
             elif name == "plot":
                 if results.simulation is not None:
                     from .plots import plot_simulation

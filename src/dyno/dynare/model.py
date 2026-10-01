@@ -131,6 +131,9 @@ class DynareModel(AbstractModel):
         commands = self.metadata.get("dynare_commands", self.metadata.get("run", []))
         model = self
         results = RunResults(model=model)
+        results._from_pipeline = True
+        plot_variables: list[str] | None = None
+        show_graph = True
 
         if not commands and default_pipeline:
             # Default pipeline: residuals + solve + IRFs
@@ -174,8 +177,13 @@ class DynareModel(AbstractModel):
                         results.eigenvalues = dr.evs
                         results.moments = dr.moments()[1]
                         irf_type = options.get("type", "deviation")
-                        horizon = int(options.get("irf", options.get("periods", 40)))
-                        results.simulation = dr.irfs(type=irf_type, T=horizon)
+                        # ``periods`` is the simulation length in Dynare, not
+                        # the IRF horizon.
+                        horizon = int(options.get("irf", 40))
+                        plot_variables = options.get("variables")
+                        show_graph = not options.get("nograph", False) and horizon > 0
+                        if horizon > 0:
+                            results.simulation = dr.irfs(type=irf_type, T=horizon)
                 except SteadyStateError as e:
                     results.residuals = e.residuals
                     results.steady_stats = getattr(e, "steady_stats", None)
@@ -194,10 +202,19 @@ class DynareModel(AbstractModel):
                     line=line,
                 )
 
-        if results.simulation is not None and isinstance(results.simulation, dict):
-            from dyno.plots import plot_irfs
+        if (
+            show_graph
+            and results.simulation is not None
+            and isinstance(results.simulation, dict)
+        ):
+            from dyno.plots import plot_simulation
 
-            results.figure = plot_irfs(results.simulation)
+            results._plot_options = {"engine": "altair"}
+            if plot_variables:
+                results._plot_options["variables"] = plot_variables
+            results.figure = plot_simulation(
+                results.simulation, engine="altair", variables=plot_variables
+            )
 
         results.finish()
         return results
@@ -275,6 +292,10 @@ class DynareModel(AbstractModel):
             options = statement.get("options", {})
             if not isinstance(options, dict):
                 options = {}
+
+            symbol_list = statement.get("symbol_list")
+            if isinstance(symbol_list, list) and symbol_list:
+                options = {**options, "variables": [str(s) for s in symbol_list]}
 
             commands.append({"command": command, "options": options})
 

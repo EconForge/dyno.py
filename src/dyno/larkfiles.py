@@ -128,7 +128,7 @@ class SymbolicModel:
         return (
             '<div style="overflow-x:auto;">'
             '<table class="dyno-equations" style="border:none; '
-            'border-collapse:collapse; table-layout:auto; width:100%; '
+            "border-collapse:collapse; table-layout:auto; width:100%; "
             'margin:0.5em 0;">'
             f"<tbody>{''.join(rows)}</tbody></table></div>"
         )
@@ -396,33 +396,28 @@ class LModFile(SymbolicModel):
 
             command = str(first)
             options: dict[str, Any] = {}
+            # Bare names after the option list form the symbol list
+            # (e.g. ``stoch_simul(order=1) y c k;``).
+            symbol_list: list[str] = []
 
-            tail = list(statement.children[1:])
-            i = 0
-            while i < len(tail):
-                child = tail[i]
-                if isinstance(child, Tree):
-                    if child.data in ("cmd_opt_num", "cmd_opt_name"):
-                        k = _name_from_node(child.children[0])
-                        v = _coerce_value(child.children[1])
-                        if k is not None:
-                            options[k] = v
-                        i += 1
-                        continue
-                    elif child.data == "cmd_opt_flag":
-                        k = _name_from_node(child.children[0])
-                        if k is not None:
-                            options[k] = True
-                        i += 1
-                        continue
-                    elif child.data == "name":
-                        if i + 1 < len(tail):
-                            k = _name_from_node(tail[i])
-                            if k is not None:
-                                options[k] = _coerce_value(tail[i + 1])
-                            i += 2
-                            continue
-                i += 1
+            for child in statement.children[1:]:
+                if not isinstance(child, Tree):
+                    continue
+                if child.data in ("cmd_opt_num", "cmd_opt_name"):
+                    k = _name_from_node(child.children[0])
+                    if k is not None:
+                        options[k] = _coerce_value(child.children[1])
+                elif child.data == "cmd_opt_flag":
+                    k = _name_from_node(child.children[0])
+                    if k is not None:
+                        options[k] = True
+                elif child.data == "name":
+                    k = _name_from_node(child)
+                    if k is not None:
+                        symbol_list.append(k)
+
+            if symbol_list:
+                options["variables"] = symbol_list
 
             commands.append({"command": command, "options": options})
 

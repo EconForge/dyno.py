@@ -229,3 +229,56 @@ x[t] = alpha * x[t-1]
     assert model.metadata["version"] == 2
     assert model.metadata.get("_muted_name") is True
     assert model.metadata.get("_muted_version") is True
+
+
+_STOCH_SIMUL_TEMPLATE = """
+var x y;
+varexo e;
+parameters a;
+
+a = 0.9;
+
+model;
+x = a*x(-1) + e;
+y = 2*x;
+end;
+
+initval;
+x = 0;
+y = 0;
+e = 0;
+end;
+
+steady;
+{command}
+"""
+
+
+def test_dynomodel_stoch_simul_symbol_list_parsed_as_variables():
+    txt = _STOCH_SIMUL_TEMPLATE.format(command="stoch_simul(order=1, irf=8) y x;")
+    model = DynoModel(filename="tiny.mod", txt=txt)
+
+    commands = model._normalize_run_commands()
+
+    assert commands[1]["options"] == {"order": 1, "irf": 8, "variables": ["y", "x"]}
+
+
+def test_dynomodel_stoch_simul_plots_requested_variables():
+    txt = _STOCH_SIMUL_TEMPLATE.format(command="stoch_simul(irf=8) y;")
+    model = DynoModel(filename="tiny.mod", txt=txt)
+
+    results = model.run(default_pipeline=False)
+
+    assert results.figure is not None
+    assert results._plot_options["variables"] == ["y"]
+    assert set(results.figure.data["variable"]) == {"y"}
+    assert "Simulation charts" in results.to_markdown()
+
+
+def test_dynomodel_stoch_simul_nograph_and_irf0_skip_plot():
+    for command in ["stoch_simul(nograph);", "stoch_simul(irf=0, periods=500);"]:
+        txt = _STOCH_SIMUL_TEMPLATE.format(command=command)
+        results = DynoModel(filename="tiny.mod", txt=txt).run(default_pipeline=False)
+
+        assert results.solution is not None
+        assert results.figure is None
