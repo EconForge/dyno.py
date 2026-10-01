@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     from dyno.solver import PerturbationSolution
 
 import numpy as np
-from scipy.optimize import root
 
 from .errors import LARKParserError, ParserError, SteadyStateError
 from lark.exceptions import UnexpectedInput

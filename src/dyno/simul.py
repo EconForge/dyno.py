@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
-import pandas as pd
 
 from .typedefs import IRFType, SimulateMode, TTensor, TVector, UnitsType
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from .model import AbstractModel
     from .solver import PerturbationSolution, RecursiveDecisionRule
 
@@ -140,6 +141,8 @@ class SimulationResult:
 
     def to_dict(self, units: UnitsType | None = None) -> dict[Any, pd.DataFrame]:
         """Return a dictionary mapping each experiment key in ``index`` to its ``(T+1, V)`` DataFrame."""
+        import pandas as pd
+
         arr = self.in_units(units)
         res: dict[Any, pd.DataFrame] = {}
         for i, key in enumerate(self.index):
@@ -154,6 +157,8 @@ class SimulationResult:
         When ``N == 1`` (and not an ``IRFSimulation``), returns a 2D ``(T+1, V)`` DataFrame.
         When ``N > 1``, returns a MultiIndex DataFrame indexed by ``(experiment, t)``.
         """
+        import pandas as pd
+
         arr = self.in_units(units)
         if self.N == 1 and not isinstance(self, IRFSimulation):
             df = pd.DataFrame(arr[0], columns=self.variables)
@@ -245,6 +250,8 @@ class IRFSimulation(SimulationResult, dict):
         dict.__init__(self, self.to_dict(units=self.units))
 
     def __getitem__(self, key: Any) -> pd.DataFrame:
+        import pandas as pd
+
         if dict.__contains__(self, key):
             return dict.__getitem__(self, key)
         if isinstance(key, str) and key in self.variables:
@@ -286,6 +293,8 @@ class RandomSimulation(SimulationResult):
         return self.N
 
     def __getitem__(self, key: Any) -> Any:
+        import pandas as pd
+
         if isinstance(key, str) and key in self.variables:
             j = self.variables.index(key)
             arr = self.in_units(self.units)[:, :, j]
@@ -335,6 +344,8 @@ class TransitionSimulation(SimulationResult):
         )
 
     def to_df(self, units: UnitsType | None = None) -> pd.DataFrame:
+        import pandas as pd
+
         arr = self.in_units(units)[0]
         df = pd.DataFrame(arr, columns=self.variables)
         df.index = pd.RangeIndex(self.T + 1, name="t")
@@ -394,6 +405,8 @@ def irf(
     type: IRFType = "level",
 ) -> pd.DataFrame:
     """Impulse response function simulation in response to a shock on a specific exogenous variable."""
+    import pandas as pd
+
     res = _compute_irf_array(dr, i, T=T)
     assert dr.x0 is not None
     sim = TransitionSimulation(
@@ -582,6 +595,8 @@ def sim_to_nsim(sim: Any, units: UnitsType | None = None) -> pd.DataFrame:
     """Convert any simulation object, dict of DataFrames, or DataFrame to tidy long format
     with columns ``['shock', 't', 'variable', 'value']``.
     """
+    import pandas as pd
+
     if isinstance(sim, SimulationResult):
         sim_dict = sim.to_dict(units=units)
     elif isinstance(sim, dict):

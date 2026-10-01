@@ -6,13 +6,11 @@ import os
 from typing import Any, TYPE_CHECKING, cast
 
 import numpy as np
-import pandas as pd
 from numpy.linalg import solve as linsolve
 from typing_extensions import Self
 
 from .errors import SteadyStateError
 from .language import ProductNormal
-from scipy.optimize import root
 from .model_render import (
     model_repr_data,
     render_model_html,
@@ -393,6 +391,8 @@ class AbstractModel(ABC):
         method: str = "hybr",
         **options: Any,
     ) -> Self:
+        from scipy.optimize import root
+
         invalid_shifts = getattr(self, "_invalid_shifts", None)
         if invalid_shifts:
             from .errors import SystemStructureError

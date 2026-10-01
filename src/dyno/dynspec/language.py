@@ -2,7 +2,6 @@ from functools import wraps
 from inspect import signature
 
 import numpy as np
-from scipy.stats import multivariate_normal
 
 _ASCII_TO_GREEK = {
     "Sigma": "Σ",
@@ -58,6 +57,8 @@ class Normal:
 
         assert self.Σ.shape[0] == self.d
         assert self.Σ.shape[1] == self.d
+        from scipy.stats import multivariate_normal  # lazy: slow to import
+
         self._dist_ = multivariate_normal(mean=self.Μ, cov=self.Σ, allow_singular=True)
 
 
