@@ -823,7 +823,7 @@
   <a href="#1-equation-blocks-tag" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Equation Blocks (<code>[tag] { ... }</code>)
+        1. Equation Blocks (<code>[tag] :: { ... }</code>)
       </span>
     </span>
   </a>
@@ -2238,7 +2238,7 @@
   <a href="#1-equation-blocks-tag" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Equation Blocks (<code>[tag] { ... }</code>)
+        1. Equation Blocks (<code>[tag] :: { ... }</code>)
       </span>
     </span>
   </a>
@@ -2424,7 +2424,7 @@
 <h1 id="blocks-metadata-yaml-wrappers">Blocks, Metadata &amp; YAML Wrappers<a class="headerlink" href="#blocks-metadata-yaml-wrappers" title="Permanent link">&para;</a></h1>
 <p>Dyno includes advanced capabilities for organizing equations into semantic groups, tagging statements, embedding models inside YAML pipelines, and declaring automated execution directives.</p>
 <hr />
-<h2 id="1-equation-blocks-tag">1. Equation Blocks (<code>[tag] { ... }</code>)<a class="headerlink" href="#1-equation-blocks-tag" title="Permanent link">&para;</a></h2>
+<h2 id="1-equation-blocks-tag">1. Equation Blocks (<code>[tag] :: { ... }</code>)<a class="headerlink" href="#1-equation-blocks-tag" title="Permanent link">&para;</a></h2>
 <p>In larger models, equations can be grouped logically using block syntax:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>[definition] :: {
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    w_r[t] = (1-α)/α * K[t]/l[t]
@@ -2444,19 +2444,27 @@
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    Q[t]/r[t+1] = β/(1+τ) * C[t]/C[t+1] + φ * C[t]/(Q[t] * Y_K[t])
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>}
 </span></code></pre></div>
-<p>The double-colon <code>::</code> is optional; <code>[tag] { ... }</code> is also valid. Every equation defined inside the block inherits the enclosing block's tag in its metadata.</p>
+<p>The double-colon <code>::</code> is required between the tag and the block. Every equation defined inside the block inherits the enclosing block's tag in its metadata.</p>
 <hr />
 <h2 id="2-statement-annotations-inline-tags">2. Statement Annotations &amp; Inline Tags<a class="headerlink" href="#2-statement-annotations-inline-tags" title="Permanent link">&para;</a></h2>
-<p>You can tag individual equations directly:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># Inline bracket tag
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>1/c[t] = beta*(1/c[t+1])*(r[t+1] + 1 - delta)  [euler_equation]
+<p>You can tag individual equations directly. Annotations always follow <code>::</code>,
+so a bracket after a statement is never mistaken for a time index:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># Bracket tag
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>1/c[t] = beta*(1/c[t+1])*(r[t+1] + 1 - delta)  :: [euler_equation]
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a># Colon-colon notation
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a># Bare tags
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>k[t] = (1-delta)*k[t-1] + i[t]  :: capital_accumulation
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a># Key-value metadata
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>y[t] = exp(a[t])*k[t-1]^alpha  [type=production, sector=goods]
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>y[t] = exp(a[t])*k[t-1]^alpha  :: [type=production, sector=goods, weight=-0.5]
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a># Quoted string: sets the equation's label
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>n[t] = 1/3  :: "Labor supply"
 </span></code></pre></div>
+<p>Inside brackets, entries are comma-separated and each is a bare tag
+(<code>capital</code>), a quoted tag (<code>"steady state"</code>), or <code>key=value</code>, where the value
+is a name, a number (<code>-2</code>, <code>1.5e3</code>) or a quoted string. A key may appear only
+once per bracket.</p>
 <h3 id="accessing-equation-tags-in-python">Accessing Equation Tags in Python<a class="headerlink" href="#accessing-equation-tags-in-python" title="Permanent link">&para;</a></h3>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"my_model.dyno"</span><span class="p">)</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
