@@ -1,17 +1,12 @@
-# Installation & Setup
+# Install Dyno
 
-This guide explains how to install and configure Dyno in your development or production environment using **Pixi**.
+This page explains how to use Dyno in your own project. If you want to work on Dyno itself (clone the repository, run the tests, build the documentation), see [Develop Dyno](development.md).
+
+Dyno is distributed as a conda package on the **`econforge`** channel on prefix.dev (`https://prefix.dev/econforge`). We recommend installing it with [Pixi](https://pixi.sh).
 
 ---
 
-## Package Manager: Pixi
-
-Dyno is managed using [Pixi](https://pixi.sh), a modern cross-platform package and workflow manager built on top of the Conda ecosystem. Pixi ensures deterministic, reproducible environments with lockfile guarantees.
-
-> [!TIP]
-> We recommend using Pixi for all Dyno development tasks. Avoid running `pip` or `poetry` directly in the project repository to prevent dependency divergence.
-
-### Installing Pixi
+## Install Pixi
 
 If you do not have Pixi installed on your system:
 
@@ -27,94 +22,62 @@ If you do not have Pixi installed on your system:
 
 ---
 
-## Cloning and Environment Setup
+## Add Dyno to a project
 
-Clone the repository and install all dependencies:
+Create a project (skip this step to add Dyno to an existing Pixi project), add the `econforge` channel, then add the `dyno` package:
 
 ```bash
-git clone https://github.com/EconForge/dyno.py.git
-cd dyno.py
-
-# Install dependencies and setup default dev environment
-pixi install -e dev
+pixi init my-project
+cd my-project
+pixi workspace channel add --prepend https://prefix.dev/econforge
+pixi add dyno
 ```
 
-Pixi creates a virtual environment under `.pixi/envs/dev` with Python 3.12, PyTest, NumPy, SciPy, SymPy, Pandas, Altair, Lark, and development tooling.
+`--prepend` puts the `econforge` channel before `conda-forge`, so Pixi installs the latest Dyno release from `econforge`. Your `pixi.toml` then contains:
+
+```toml
+[workspace]
+channels = ["https://prefix.dev/econforge", "conda-forge"]
+
+[dependencies]
+dyno = ">=0.1.11,<0.2"
+```
+
+(the exact version constraint depends on the current release).
+
+### Optional components
+
+**Dyno Lab** (JupyterLab extension). The `jupyterlab-dyno` package provides the extension; add JupyterLab alongside it, then launch it:
+
+```bash
+pixi add jupyterlab jupyterlab-dyno
+pixi run jupyter lab
+```
+
+See the [Dyno Lab documentation](../dyno_lab/index.md) for details.
+
+**Dynare preprocessor.** Dyno reads Dynare `.mod` files with its own parser, which needs no extra package. To use `DynareModel`, which relies on the official Dynare preprocessor, add `dynare-preprocessor-pylib`:
+
+```bash
+pixi add dynare-preprocessor-pylib
+```
+
+See the [Dynare quickstart](dynare_quickstart.md) for the differences between the two.
 
 ---
 
-## Pixi Environments and Features
+## Verify the installation
 
-Dyno defines modular features and environments in `pixi.toml` to support different use cases:
+```bash
+pixi run python -c "from dyno import DynoModel; print('Dyno is installed')"
+```
 
-| Environment | Purpose | Key Packages |
-|---|---|---|
-| `dev` *(default)* | Full development environment | `pytest`, `mypy`, `black`, `jupyterlab`, `zensical` |
-| `test` | Lean CI test runner | `pytest`, `coverage`, `pytest-cov` |
-| `dynare` | Full Dynare preprocessor integration | `dynare-preprocessor-pylib` |
-| `prod` | Production / runtime notebook environment | `jupyter`, `numpy`, `scipy`, `pandas` |
+Then follow the [Dyno quickstart](dyno_quickstart.md) to write and solve your first model.
 
 ---
 
-## Installing Dyno Lab (JupyterLab Extension)
+## Supported platforms
 
-For an interactive graphical interface, install **Dyno Lab** (`jupyterlab_dyno`) from the EconForge channel on Prefix.dev:
+`dyno` and `jupyterlab-dyno` are pure-Python (`noarch`) packages and require Python 3.12 or 3.13, so they install wherever those Python versions are available from conda-forge. `dynare-preprocessor-pylib` contains compiled code and is only published for some platforms (currently `linux-64`, `osx-64` and `win-64`; not `osx-arm64`).
 
-```bash
-# Using Pixi
-pixi add --channel https://repo.prefix.dev/econforge jupyterlab_dyno
-
-# Using Micromamba
-micromamba install -c https://repo.prefix.dev/econforge jupyterlab_dyno
-```
-
-To launch JupyterLab with Dyno Lab enabled:
-
-```bash
-pixi run -e dev jupyter lab
-```
-
-For more details, see the [Dyno Lab Documentation](../dyno_lab/index.md).
-
-### Running Commands in Environments
-
-To run commands or tasks within an environment, use the `-e` flag:
-
-```bash
-# Run test suite
-pixi run -e dev test
-
-# Run static type checking
-pixi run -e dev typecheck
-
-# Code formatting check
-pixi run -e dev black
-
-# Serve documentation locally
-pixi run -e dev docs
-```
-
----
-
-## Optional: Dynare Preprocessor
-
-Dyno includes its own native Lark-based parser for `.mod` files that does not require any external C++ binaries. However, if you wish to use the official Dynare preprocessor via `DynareModel` for maximum fidelity with Dynare C++ syntax:
-
-```bash
-# Activate the dynare feature
-pixi run -e dynare pytest tests/dynare
-```
-
-The preprocessor is packaged on the `econforge` prefix channel as `dynare-preprocessor-pylib`.
-
----
-
-## Verifying the Installation
-
-To verify that your installation is working correctly, run a quick Python check:
-
-```bash
-pixi run -e dev python -c "import dyno; print('Dyno loaded successfully!')"
-```
-
-You are now ready to write and solve your first economic model!
+Dyno is developed and tested on `linux-64` only: the development workspace in the repository (`platforms` in `pixi.toml`) is restricted to that platform.
