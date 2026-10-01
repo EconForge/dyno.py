@@ -6,8 +6,6 @@ from inspect import signature
 
 import numpy as np
 
-from scipy.stats import multivariate_normal
-
 
 def language_element(obj):
     return obj
@@ -141,7 +139,9 @@ class Normal(Exogenous):
 
         assert self.Σ.shape[0] == self.d
         assert self.Σ.shape[1] == self.d
-        # this class wraps functionality from scipy
+        # this class wraps functionality from scipy (imported lazily: scipy.stats is slow to import)
+        from scipy.stats import multivariate_normal
+
         self._dist_ = multivariate_normal(mean=self.Μ, cov=self.Σ, allow_singular=True)
 
 

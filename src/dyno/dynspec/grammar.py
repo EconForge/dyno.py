@@ -8,6 +8,7 @@ from lark.exceptions import (
 from yaml import ScalarNode
 
 import copy
+import functools
 
 # import lark
 from lark import Lark
@@ -39,14 +40,32 @@ class TimeFixer(Transformer):
             return tree
 
 
-parser = Lark(
-    grammar_0,
-    start=["formula", "equation_block", "assignment_block", "free_block"],
-    parser="lalr",
-    strict=True,
-    propagate_positions=True,
-    transformer=TimeFixer(),
-)
+@functools.cache
+def get_parser() -> Lark:
+    """Build (once) and return the dyno grammar parser.
+
+    Building is deferred to first use to keep ``import dyno`` fast; Lark's
+    on-disk cache makes subsequent builds (in new processes) nearly free.
+    """
+    return Lark(
+        grammar_0,
+        start=["formula", "equation_block", "assignment_block", "free_block"],
+        parser="lalr",
+        strict=True,
+        propagate_positions=True,
+        transformer=TimeFixer(),
+        cache=True,
+    )
+
+
+class _LazyParser:
+    """Proxy forwarding attribute access to the parser built by `get_parser`."""
+
+    def __getattr__(self, name):
+        return getattr(get_parser(), name)
+
+
+parser = cast(Lark, _LazyParser())
 
 
 Expression = Union[Tree, Token]
@@ -252,7 +271,7 @@ def stringify_symbol(arg) -> str:
 # decorator to define functions which operate
 # either on Trees or on strings.
 def expression_or_string(f):
-    @wraps(f)
+    @functools.wraps(f)
     def wrapper(*args, **kwds):
         if not isinstance(args[0], str):
             return f(*args, **kwds)

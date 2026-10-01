@@ -7,6 +7,7 @@ Implemented compactly and elegantly using Lark grammar and AST evaluation.
 from __future__ import annotations
 
 import dataclasses
+import functools
 import itertools
 import math
 import os
@@ -263,12 +264,14 @@ STRING: /"([^"\\]|\\.)*"/
 %ignore WS
 """
 
-_LARK_PARSER = Lark(EXPR_GRAMMAR, parser="earley")
+@functools.cache
+def _lark_parser() -> Lark:
+    return Lark(EXPR_GRAMMAR, parser="earley")
 
 
 def parse_expression(text: str) -> Tree:
     try:
-        return _LARK_PARSER.parse(text)
+        return _lark_parser().parse(text)
     except LarkError as e:
         raise MacroSyntaxError(f"Expression syntax error: {e}") from e
 

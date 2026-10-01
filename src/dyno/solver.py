@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import numpy as np
 from numpy.linalg import solve as linsolve
-from scipy.linalg import ordqz
 from numpy.typing import NDArray
 from .typedefs import TVector, TMatrix, Solver
 from .errors import BlanchardKahnError, ConvergenceWarning
@@ -321,6 +320,7 @@ def solve_qz(
     LinAlgError :
         when Blanchard-Kahn conditions are not verified (less than N generalized eigenvalues inside the unit ball)
     """
+    from scipy.linalg import ordqz
     n = A.shape[0]
     I = np.eye(n)
     Z = np.zeros((n, n))

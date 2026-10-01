@@ -5,7 +5,6 @@ import time
 import os
 import re
 import numpy as np
-import pandas as pd
 import tempita
 
 from dyno.errors import ParserError, SteadyStateError
@@ -419,6 +418,7 @@ def style_eigenvalues_dataframe(
     is_horizontal = len(df.columns) >= len(df.index)
 
     def highlight_eigenvalues(data: pd.DataFrame) -> pd.DataFrame:
+        import pandas as pd
         styles = pd.DataFrame("", index=data.index, columns=data.columns)
         if is_horizontal:
             for col_idx, col in enumerate(data.columns):
@@ -833,6 +833,7 @@ class RunResults:
         self,
     ) -> tuple["pd.DataFrame | None", "pd.DataFrame | None"]:
         """Return (conditional_df, unconditional_df) when available."""
+        import pandas as pd
         if self.model is None:
             return None, None
 

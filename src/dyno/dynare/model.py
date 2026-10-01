@@ -1,7 +1,6 @@
 from dyno.model import AbstractModel
 from dyno.language import pad_list, Normal, Deterministic
 import numpy as np
-from scipy.optimize import root
 
 from typing_extensions import Self
 from typing import TYPE_CHECKING, Any, cast

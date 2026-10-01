@@ -4,10 +4,12 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 import html
 import itertools
 import time
-from typing import Any, Callable, ClassVar, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, overload
 
 import numpy as np
-import pandas as pd
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 from .model import AbstractModel
 from .report import (
@@ -474,6 +476,7 @@ class SimulationVariants(VariantCollection[R], item_type=SimulationResult):
 
     def to_df(self, units: UnitsType | None = None) -> pd.DataFrame:
         """Convert simulation variants into a unified MultiIndex DataFrame indexed by ``variant``."""
+        import pandas as pd
         frames: dict[str, pd.DataFrame] = {}
         for label, item in zip(self.labels, self.items):
             df = item.to_df(units=units)
@@ -687,6 +690,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
     def parameters_dataframe(
         self, orientation: str = "horizontal"
     ) -> pd.DataFrame | None:
+        import pandas as pd
         from math import nan
 
         base_model = next((r.model for r in self.items if r.model is not None), None)
@@ -704,6 +708,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
     def steady_state_dataframe(
         self, orientation: str = "horizontal"
     ) -> pd.DataFrame | None:
+        import pandas as pd
         from math import nan
 
         base_model = next((r.model for r in self.items if r.model is not None), None)
@@ -721,6 +726,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
     def residuals_dataframe(
         self, orientation: str = "horizontal"
     ) -> pd.DataFrame | None:
+        import pandas as pd
         if not any(r.residuals is not None for r in self.items):
             return None
 
@@ -743,6 +749,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
     def eigenvalues_dataframe(
         self, orientation: str = "horizontal"
     ) -> pd.DataFrame | None:
+        import pandas as pd
         if not any(r.eigenvalues is not None for r in self.items):
             return None
 
@@ -932,6 +939,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
     def _simulation_variants_to_html(
         sim_variants: SimulationVariants[Any], **plot_opts: Any
     ) -> str:
+        import pandas as pd
         from .plots import _prepare_variants_nsim
 
         plot_vars = plot_opts.get("variables") or plot_opts.get("vars")
