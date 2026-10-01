@@ -20,9 +20,14 @@ from .variants import (
 
 
 def examples_path(*parts: str) -> Path:
-    """Return the path to the repository examples directory.
+    """Return the path to the bundled examples directory.
 
-    Optional path parts are joined to the examples directory.
+    Installed packages ship the examples inside ``dyno/examples``; a source
+    checkout uses the repository ``examples`` directory. Optional path parts
+    are joined to the examples directory.
     """
-    root = Path(__file__).resolve().parents[2]
-    return root.joinpath("examples", *parts)
+    here = Path(__file__).resolve().parent
+    root = here / "examples"
+    if not root.is_dir():
+        root = here.parents[1] / "examples"
+    return root.joinpath(*parts)
