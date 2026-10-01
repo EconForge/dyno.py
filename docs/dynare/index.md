@@ -1,6 +1,6 @@
 # Dynare in Python (`dyno.dynare`)
 
-**`dyno.dynare`** provides Python support for Dynare `.mod` files. It bridges existing Dynare models with the Python scientific stack (NumPy, SciPy, Pandas, Plotly).
+**`dyno.dynare`** provides Python support for Dynare `.mod` files. It bridges existing Dynare models with the Python scientific stack (NumPy, SciPy, Pandas, Altair).
 
 ---
 
@@ -30,7 +30,7 @@ graph TD
         MOD[".mod File"] --> DM["DynareModel (dyno.dynare.model)"]
         CPP["Co-Developed C++ Preprocessor<br/>(dynare-preprocessor-pylib)<br/>[conda-forge & prefix.dev]"] --> DM
         DM --> SOLVE["Dyno Perturbation Solver (QZ / Time Iteration)"]
-        SOLVE --> OUT["Pandas DataFrames & Plotly Visualizations"]
+        SOLVE --> OUT["Pandas DataFrames & Altair Visualizations"]
     end
 
     DYNARE -.-> DM

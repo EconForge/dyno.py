@@ -430,7 +430,7 @@ class SolutionVariants(
         variables: list[str] | None = None,
         shocks: list[str] | str | None = None,
         T: int = 40,
-        engine: str = "plotly",
+        engine: str = "altair",
         **kwargs: Any,
     ) -> Any:
         """Compute IRFs for all solution variants and unify them into one plot."""
@@ -506,7 +506,7 @@ class SimulationVariants(VariantCollection[R], item_type=SimulationResult):
         shocks: list[str] | str | None = None,
         T: int | None = None,
         units: UnitsType | None = None,
-        engine: str = "plotly",
+        engine: str = "altair",
         **kwargs: Any,
     ) -> Any:
         """Unify all simulation variants into a single comparative plot."""
@@ -649,7 +649,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
         if sim_vc is None:
             return None
         plot_opts = self._plot_options
-        engine = plot_opts.pop("engine", "plotly")
+        engine = plot_opts.pop("engine", "altair")
         self._unified_figure = sim_vc.plot(engine=engine, **plot_opts)
         self._figure_computed = True
         return self._unified_figure

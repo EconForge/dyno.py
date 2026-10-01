@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import pytest
@@ -142,16 +143,14 @@ def test_variants_solve_simulate_and_plot_chain():
         len(model.symbols["endogenous"]),
     )
 
-    # Unified Plotly figure
-    fig = sims.plot(variables=["y", "c", "k", "n"], shocks="epsilon", units="percent")
-    assert fig is not None
-    trace_names = {trace.legendgroup or trace.name for trace in fig.data}
-    assert {"rho=0.5", "rho=0.8", "rho=0.95"}.issubset(trace_names)
-    assert fig.layout.legend.title.text == "rho"
+    # Unified Altair chart (default engine)
+    ch = sims.plot(variables=["y", "c", "k", "n"], shocks="epsilon", units="percent")
+    assert isinstance(ch, alt.Chart)
+    assert ch.to_dict()["encoding"]["color"]["title"] == "rho"
+    assert {"rho=0.5", "rho=0.8", "rho=0.95"} == set(ch.data["variant"])
 
-    # Unified Altair chart
-    ch = sims.plot(variables=["y", "c"], engine="altair")
-    assert ch is not None
+    with pytest.raises(ValueError, match="Plotly support has been removed"):
+        sims.plot(engine="plotly")
 
     # Unified Plotext chart
     txt_plot = sims.plot(
@@ -174,7 +173,8 @@ def test_variants_steady_check_and_modfile():
     sols = var.solve()
     fig = sols.plot(variables=["y", "k"], T=15)
     assert fig is not None
-    assert len(fig.data) == 3 * 2  # 3 variants * 2 variables (1 shock in rbc.mod)
+    # 3 variants * 2 variables (1 shock in rbc.mod)
+    assert len(fig.data.groupby(["variant", "variable", "shock"])) == 3 * 2
 
 
 def test_variants_deterministic_transition_and_spaghetti():
@@ -199,7 +199,7 @@ def test_variants_deterministic_transition_and_spaghetti():
 
     fig_det = det_sims.plot(variables=["k", "c"], units="percent")
     assert fig_det is not None
-    assert len(fig_det.data) == 3 * 2
+    assert len(fig_det.data.groupby(["variant", "variable"])) == 3 * 2
 
     # 2. Stochastic spaghetti variants
     stoch_model = DynoModel("rbc.mod")
@@ -211,12 +211,11 @@ def test_variants_deterministic_transition_and_spaghetti():
 
     fig_spag = spag_sims.plot(variables=["y", "c"])
     assert fig_spag is not None
-    # Exactly one legend entry per variant should be visible
-    visible_legend_traces = [t for t in fig_spag.data if t.showlegend]
-    assert len(visible_legend_traces) == 2
-
-    ch_spag = spag_sims.plot(variables=["y", "c"], engine="altair")
-    assert ch_spag is not None
+    # Colored by variant (one legend entry each), one line per draw
+    enc = fig_spag.to_dict()["encoding"]
+    assert enc["color"]["field"] == "variant"
+    assert enc["detail"]["field"] == "_trace_group"
+    assert fig_spag.data["variant"].nunique() == 2
 
 
 def test_variants_pipeline_run_results_variants():
@@ -224,7 +223,7 @@ def test_variants_pipeline_run_results_variants():
     @run: variants: {a: [0.2, 0.5, 0.8]}
     @run: solve
     @run: simulate: {T: 15}
-    @run: plot: {engine: plotly}
+    @run: plot: {engine: altair}
 
     a <- 0.5
     x[~] <- 0.0
@@ -249,8 +248,7 @@ def test_variants_pipeline_run_results_variants():
     # Unified figure across all 3 variants
     fig = res.figure
     assert fig is not None
-    trace_names = {trace.legendgroup or trace.name for trace in fig.data}
-    assert {"a=0.2", "a=0.5", "a=0.8"}.issubset(trace_names)
+    assert {"a=0.2", "a=0.5", "a=0.8"} == set(fig.data["variant"])
 
     # Rich representations and text output
     txt_out = res.to_text(graphs=True, color=False)

@@ -78,7 +78,7 @@ To edit global settings:
 | `modfile-preprocessor` | string | `"lark"` | Parser used for Dynare `.mod` files: `"lark"` (Dyno native) or `"dynare"` (`dynare-preprocessor-pylib`). |
 | `kernel-restart` | boolean | `false` | Automatically restart the background Python kernel prior to each solve (useful during development). |
 | `output_type` | string | `"markdown"` | Primary format for rendered reports: `"markdown"`, `"html"`, or `"text"`. |
-| `display_graph` | boolean | `true` | Enable or disable interactive Plotly charts in reports. |
+| `display_graph` | boolean | `true` | Enable or disable interactive Altair charts in reports. |
 | `check_output` | boolean | `false` | Diagnostic mode: prints raw kernel execution streams for debugging. |
 
 ---

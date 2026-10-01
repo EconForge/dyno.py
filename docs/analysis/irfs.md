@@ -57,32 +57,29 @@ Dyno supports three scaling transformations via the `type` parameter:
 
 ---
 
-## Interactive Visualization with Plotly
+## Interactive Visualization with Altair
 
-Dyno integrates seamlessly with Plotly to generate interactive charts:
+`solution.plot()` returns an interactive [Altair](https://altair-viz.github.io/) chart, faceted by variable:
 
 ```python
-fig = solution.plot(type="log-deviation")
+chart = solution.plot(type="log-deviation")
 
-# Display in Jupyter notebook or browser
-fig.show()
+# Display in a Jupyter notebook (or chart.show() / chart.save("irfs.html") elsewhere)
+chart
 
-# Customize layout
-fig.update_layout(
-    title="Impulse Response Analysis",
-    template="plotly_white",
-    height=600,
-)
-fig.show()
+# Customize with the regular Altair API
+chart.properties(title="Impulse Response Analysis")
 ```
+
+Pass `engine="plotext"` to get a text chart for the terminal instead.
 
 ### Exporting Static Figures
 
-Export publication-ready vector images (requires `kaleido`):
+Export publication-ready vector images (requires `vl-convert-python`):
 
 ```python
-fig.write_image("irf_plots.pdf")
-fig.write_image("irf_plots.png", scale=3)
+chart.save("irf_plots.svg")
+chart.save("irf_plots.png", scale_factor=3)
 ```
 
 ---

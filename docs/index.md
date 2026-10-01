@@ -21,7 +21,7 @@ Dyno is a Python library for specifying, solving, and simulating dynamic macroec
     Evaluate steady-state equation residuals, verify Blanchard-Kahn rank and order conditions, compute asymptotic variance-covariance moments via Lyapunov equations, and generate impulse response functions.
 
 -   ### Visualization & Tooling
-    Export simulation trajectories to Pandas DataFrames, render interactive charts with Plotly or Altair, or explore models interactively in JupyterLab using the Dyno Lab extension.
+    Export simulation trajectories to Pandas DataFrames, render interactive charts with Altair (or text charts in the terminal with plotext), or explore models interactively in JupyterLab using the Dyno Lab extension.
 
 </div>
 
@@ -82,9 +82,9 @@ print("Impact matrix Y:\n", solution.Y)
 irfs = solution.irfs(type="deviation", T=40)
 print(irfs["e_z"][["y", "c", "k", "i"]].head())
 
-# Render an interactive Plotly chart
-fig = solution.plot(type="deviation")
-fig.show()
+# Render an interactive Altair chart (displays inline in Jupyter)
+chart = solution.plot(type="deviation")
+chart
 ```
 
 ---

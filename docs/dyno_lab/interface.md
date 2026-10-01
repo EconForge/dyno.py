@@ -18,7 +18,7 @@ When you open any supported model file (`.dyno`, `.dyno.yaml`, or `.mod`), Dyno 
 │  beta  <- 0.99                  │                                  │
 │  ...                            │ Eigenvalues & Stability Check    │
 │                                 │                                  │
-│  # Equations                    │ Interactive IRF Plots (Plotly)   │
+│  # Equations                    │ Interactive IRF Plots (Altair)   │
 │  y[t] = a[t]*k[t-1]^alpha       │                                  │
 │  ...                            │                                  │
 └─────────────────────────────────┴──────────────────────────────────┘
@@ -87,5 +87,5 @@ A fully solved Dyno model presents four comprehensive analytical sections:
 
 ### 4. Interactive Impulse Response Functions (IRFs)
 
-- High-resolution interactive charts powered by **Plotly**.
+- High-resolution interactive charts powered by **Altair** (Vega-Lite).
 - Zoom into specific horizons, hover over time points to read exact percentage values, toggle individual variables on and off in the legend, and download publication-quality SVG/PNG plots.
