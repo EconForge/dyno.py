@@ -2327,18 +2327,17 @@ and opens the app in your browser.</p>
 <li><strong>Browse every example model</strong> under <code>examples/</code> from the sidebar list,
   filterable by name, with <code>↑</code>/<code>↓</code> to jump between results without leaving
   the filter box.</li>
-<li><strong>Edit the source live</strong> in the main panel (with line numbers) and watch
-  every panel recompute as you type.</li>
-<li><strong>Choose what to display</strong>: the model's <em>representation</em> (<code>repr()</code>,
-  <code>_repr_html_()</code>, <code>_markdown_()</code>) or the <em>report</em> produced by
-  <code>model.run(default_pipeline=True)</code>.</li>
-<li><strong>Compare frontends side by side</strong>: text, HTML, and Markdown can all be
-  shown at once, stacked per import variant and aligned across variants.
-  Markdown is rendered with MyST-flavored syntax (admonitions, dropdowns,
-  math), matching the style used by <code>RunResults</code>' own report template.</li>
-<li><strong>Compare import options</strong>: toggle <code>DynoModel</code> vs. <code>DynareModel</code> (when a
-  <code>.mod</code> file supports both) and a shared <code>strict=True</code> switch, to see how
-  each combination handles the same source.</li>
+<li><strong>Edit the source live</strong> in the source panel (with line numbers) and watch
+  the preview recompute as you type.</li>
+<li><strong>Top button bar</strong>: toggle output formats (Markdown by default, HTML,
+  plain text), select import backends (<code>DynoModel</code> vs. <code>DynareModel</code>), or toggle
+  <code>strict</code> mode. The preview always renders the model's full report
+  (<code>model.run(default_pipeline=True)</code>).</li>
+<li><strong>Streamlined preview pane</strong>: displays the selected output format directly,
+  with MyST-flavored Markdown rendering (admonitions, dropdowns, math) matching
+  the style used by <code>RunResults</code>.</li>
+<li><strong>Toggle source editor</strong>: show or hide the source editor to give the preview
+  pane full width.</li>
 <li><strong>Spot parse errors at their source line</strong>: when an import or render step
   fails with a line number attached, that line is highlighted in the gutter.</li>
 </ul>
