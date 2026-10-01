@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from dyno import DynoModel
@@ -240,3 +242,97 @@ y[t] = 1 [production
 """
     with pytest.raises(ParserError):
         DynoFile(txt)
+
+
+def test_empty_metadata_bracket_yields_no_metadata():
+    txt = """
+alpha := 0.3
+k[~] := 1
+y[t] = alpha * k[t-1] []
+"""
+
+    symbolic = DynoFile(txt)
+
+    assert symbolic.equations[0].meta.statement_metadata == {}
+
+
+def test_metadata_entries_mix_in_any_order():
+    txt = """
+alpha := 0.3
+k[~] := 1
+y[t] = alpha * k[t-1] [a, id=res, "note", k=2, v="x y", b]
+"""
+
+    symbolic = DynoFile(txt)
+
+    eq_meta = symbolic.equations[0].meta.statement_metadata
+    assert eq_meta["tags"] == ["a", "note", "b"]
+    assert eq_meta["id"] == "res"
+    assert eq_meta["k"] == 2
+    assert eq_meta["v"] == "x y"
+
+
+def test_junk_bracket_interior_is_rejected():
+    txt = """
+y[t] = 1 [a + b]
+"""
+    with pytest.raises(ParserError):
+        DynoFile(txt)
+
+
+def test_junk_block_bracket_is_rejected():
+    txt = """
+[the transition block] {
+    y[t] = 1
+}
+"""
+    with pytest.raises(ParserError):
+        DynoFile(txt)
+
+
+def test_negative_metadata_value_is_rejected():
+    txt = """
+y[t] = 1 [k=-2]
+"""
+    with pytest.raises(ParserError):
+        DynoFile(txt)
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["neo.dyno", "rbc.dyno", "ramst.dyno", "neoclassical_ramsey.dyno"],
+)
+def test_examples_still_parse(name):
+    path = Path(__file__).parent.parent / "examples" / name
+    DynoFile(path.read_text())
+
+
+def test_file_with_every_annotation_position():
+    txt = """
+@name: Demo
+
+alpha <- 0.3
+
+[block_a, id=g1, note="transition"] {
+    k[t] = (1-delta)*k[t-1] + i[t]   :: [id=lom, capital]
+    y[t] = k[t-1]^alpha              :: "production"
+}
+
+c[t] = y[t] - i[t] [budget, id=res]
+"""
+
+    symbolic = DynoFile(txt)
+
+    metas = [eq.meta.statement_metadata for eq in symbolic.equations]
+    assert metas[0] == {
+        "tags": ["block_a", "capital"],
+        "id": "lom",
+        "note": "transition",
+    }
+    assert metas[1] == {
+        "tags": ["block_a"],
+        "id": "g1",
+        "note": "transition",
+        "label": "production",
+    }
+    assert metas[2] == {"tags": ["budget"], "id": "res"}
