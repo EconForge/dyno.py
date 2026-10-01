@@ -82,7 +82,6 @@ cov = "pytest --ignore=tests/dynare --cov=./ --cov-report=xml"
 mypy = ">=1.19.1,<2"
 pandas-stubs = ">=3.0.0.260204,<4"
 scipy-stubs = ">=1.17.0.2,<2"
-types-mock = ">=5.2.0.20250924,<6"
 types-pyyaml = ">=6.0.12.20250915,<7"
 black = ">=26.1.0,<27"
 
@@ -91,7 +90,6 @@ typecheck = "mypy src --ignore-missing-imports"
 black = "black src tests scratch"
 
 [feature.gui.dependencies]
-mock = ">=5.2.0,<6"
 ipyvuetify = ">=1.11.3,<2"
 solara = ">=1.57.1,<2"
 solara-ui = ">=1.57.1,<2"
