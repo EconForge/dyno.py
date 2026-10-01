@@ -91,7 +91,8 @@ page of the documentation, describe the development setup.
 curl -fsSL https://pixi.sh/install.sh | sh
 ```
 
-For interactive modeling, Dyno features a JupyterLab extension (`jupyterlab_dyno` / Dyno Lab):
+For interactive modeling, the `dev` environment includes JupyterLab and the
+Dyno Lab extension (`jupyterlab-dyno`):
 ```console
 pixi run -e dev jupyter lab
 ```

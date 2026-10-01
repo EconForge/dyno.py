@@ -1,6 +1,6 @@
 # Dyno Lab (JupyterLab Extension)
 
-**Dyno Lab** (`jupyterlab_dyno`) is the official interactive web-based graphical user interface for DSGE modeling in Dyno. Developed and maintained as an **independent package** in the EconForge ecosystem, Dyno Lab is a native JupyterLab extension providing a live, synchronized side-by-side workspace for authoring, solving, and visualizing dynamic economic models.
+**Dyno Lab** (`jupyterlab-dyno`) is the official interactive web-based graphical user interface for DSGE modeling in Dyno. Developed and maintained as an **independent package** in the EconForge ecosystem, Dyno Lab is a native JupyterLab extension providing a live, synchronized side-by-side workspace for authoring, solving, and visualizing dynamic economic models.
 
 Dyno Lab natively supports both Dyno model specifications (`.dyno`, `.dyno.yaml`) and legacy Dynare files (`.mod`).
 
@@ -17,7 +17,7 @@ Previous computational economics tools often required switching between a code e
 
 ```mermaid
 graph LR
-    subgraph Frontend ["JupyterLab Frontend (jupyterlab_dyno)"]
+    subgraph Frontend ["JupyterLab Frontend (jupyterlab-dyno)"]
         ED["Code Editor<br/>(.dyno / .mod)"]
         OPT["Dyno Options Sidebar<br/>(Order, Horizon, IRF type)"]
         VIEW["Dyno Report Viewer<br/>(Steady state, Eigenvalues, IRFs)"]
@@ -40,33 +40,37 @@ graph LR
 
 ## Installation
 
-`jupyterlab_dyno` is distributed as a conda/pixi package through the EconForge channel on Prefix.dev.
+`jupyterlab-dyno` is distributed as a conda package on the **`econforge`** channel on prefix.dev (`https://prefix.dev/econforge`), like Dyno itself. It does not depend on JupyterLab, so install JupyterLab alongside it.
 
 ### With Pixi
 
-Add `jupyterlab_dyno` to your Pixi project:
+In a Pixi project (see [Install Dyno](../getting_started/installation.md) to create one), add the `econforge` channel if you have not already, then add JupyterLab and the extension:
 
 ```bash
-pixi add --channel https://repo.prefix.dev/econforge jupyterlab_dyno
+pixi workspace channel add --prepend https://prefix.dev/econforge
+pixi add jupyterlab jupyterlab-dyno
 ```
 
-Alternatively, add the channel permanently to your `pixi.toml`:
+`--prepend` puts the `econforge` channel before `conda-forge`, so Pixi installs the latest releases from `econforge`. Your `pixi.toml` then contains something like:
 
 ```toml
-[project]
-channels = ["https://repo.prefix.dev/econforge", "conda-forge"]
+[workspace]
+channels = ["https://prefix.dev/econforge", "conda-forge"]
 
 [dependencies]
-dyno = ">=0.0.1"
-jupyterlab_dyno = "*"
+dyno = ">=0.1.11,<0.2"
+jupyterlab = ">=4.5,<5"
+jupyterlab-dyno = ">=0.1.0,<0.2"
 ```
+
+(the exact version constraints depend on the current releases).
 
 ### With Micromamba
 
 Install directly into your existing conda/mamba environment:
 
 ```bash
-micromamba install -c https://repo.prefix.dev/econforge jupyterlab_dyno
+micromamba install -c https://prefix.dev/econforge -c conda-forge jupyterlab jupyterlab-dyno
 ```
 
 ### Building from Source
@@ -94,11 +98,13 @@ pixi run watch
 
 ## Launching Dyno Lab
 
-To start the environment, launch JupyterLab from your terminal:
+To start the environment, launch JupyterLab from your Pixi project:
 
 ```bash
-pixi run -e dev jupyter lab
+pixi run jupyter lab
 ```
+
+(When working on Dyno itself, the repository's `dev` environment already includes Dyno Lab: use `pixi run -e dev jupyter lab`; see [Develop Dyno](../getting_started/development.md).)
 
 Once JupyterLab opens in your browser:
 
