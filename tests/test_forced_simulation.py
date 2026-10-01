@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
-from dyno import DynoModel, simulate
+from dyno import DynoModel
+from dyno.simul import simulate
 
 
 def test_rbc_simulation_forces_initial_shocks_and_k0():
