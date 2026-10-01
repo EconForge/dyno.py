@@ -378,16 +378,134 @@ class AbstractModel(ABC):
         """Convergence statistics and algorithm details from the most recent steady-state calculation."""
         return getattr(self, "_steady_stats", None)
 
+    def _variable_occurrences(self: Self) -> dict[str, tuple[int, int, int | None]]:
+        """Map each variable to ``(n_equations, n_occurrences, first_line)``.
+
+        ``n_equations`` counts the equations a variable appears in,
+        ``n_occurrences`` counts every ``name[...]`` reference, and
+        ``first_line`` is the source line of the first reference (if known).
+        Only parse trees (``DynoFile``/``LModFile`` equations) are inspected;
+        other equation representations yield an empty mapping.
+        """
+        occurrences: dict[str, tuple[int, int, int | None]] = {}
+        for eq in getattr(self.symbolic, "equations", []):
+            iter_subtrees = getattr(eq, "iter_subtrees_topdown", None)
+            if not callable(iter_subtrees):
+                continue
+            eq_line = getattr(getattr(eq, "meta", None), "line", None)
+            in_eq: set[str] = set()
+            for subtree in iter_subtrees():
+                if getattr(subtree, "data", None) not in ("variable", "value"):
+                    continue
+                try:
+                    name = str(subtree.children[0].children[0])
+                except (AttributeError, IndexError):
+                    continue
+                n_eq, n_occ, line = occurrences.get(name, (0, 0, None))
+                if name not in in_eq:
+                    in_eq.add(name)
+                    n_eq += 1
+                if line is None:
+                    line = getattr(getattr(subtree, "meta", None), "line", None)
+                    line = line if line is not None else eq_line
+                occurrences[name] = (n_eq, n_occ + 1, line)
+        return occurrences
+
+    def _suspicious_endogenous(
+        self: Self, require_single_occurrence: bool = False
+    ) -> list[str]:
+        """Describe endogenous variables that look like typos.
+
+        By default a variable is reported when it has no steady-state value
+        or appears in at most one equation; if some variables lack a steady
+        state, only those are reported. With ``require_single_occurrence``,
+        only variables referenced exactly once in the whole model *and*
+        lacking a steady state are reported. Each description suggests the
+        closest declared symbol (variables with a steady state, parameters,
+        exogenous).
+        """
+        import difflib
+        import math
+
+        endogenous = list(self.symbols.get("endogenous", []))
+        steady_states = self.context.get("steady_states", {})
+        # Empty when equations are not parse trees (e.g. DynareModel): then
+        # occurrence counts are unknown and only steady states are used.
+        occurrences = self._variable_occurrences()
+
+        def has_steady_state(name: str) -> bool:
+            value = steady_states.get(name)
+            if value is None:
+                return False
+            try:
+                return not math.isnan(float(value))
+            except (TypeError, ValueError):
+                return True
+
+        declared = [v for v in endogenous if has_steady_state(v)]
+        declared += list(self.symbols.get("parameters", []))
+        declared += list(self.symbols.get("exogenous", []))
+
+        flagged: list[tuple[bool, str]] = []
+        for name in endogenous:
+            missing_ss = not has_steady_state(name)
+            if occurrences:
+                n_eq, n_occ, line = occurrences.get(name, (0, 0, None))
+            else:
+                n_eq, n_occ, line = 2, 2, None  # unknown: never "rare"
+            if require_single_occurrence:
+                if not (missing_ss and n_occ == 1):
+                    continue
+            elif not (missing_ss or n_eq <= 1):
+                continue
+
+            line_txt = f" (line {line})" if line is not None else ""
+            facts: list[str] = []
+            if n_occ == 0:
+                facts.append("does not appear in any equation")
+            elif n_occ == 1:
+                facts.append(f"appears only once{line_txt}")
+            elif n_eq == 1:
+                facts.append(f"appears in a single equation{line_txt}")
+            if missing_ss:
+                facts.append("has no steady state")
+            desc = f"'{name}' " + " and ".join(facts) + "."
+            candidates = [c for c in dict.fromkeys(declared) if c != name]
+            matches = difflib.get_close_matches(name, candidates, n=1)
+            if matches:
+                desc += f" Did you mean '{matches[0]}'?"
+            flagged.append((missing_ss, desc))
+
+        # Variables without steady state are the most likely culprits: when
+        # there are any, the single-equation ones are only noise.
+        if any(missing_ss for missing_ss, _ in flagged):
+            flagged = [item for item in flagged if item[0]]
+        return [desc for _, desc in flagged]
+
     def _check_square(self: Self) -> None:
         """Raise ``SystemStructureError`` unless there are as many equations as endogenous variables."""
         neq = len(getattr(self.symbolic, "equations", []))
-        n_endo = len(self.symbols.get("endogenous", []))
+        endogenous = list(self.symbols.get("endogenous", []))
+        n_endo = len(endogenous)
         if neq != n_endo:
             from .errors import SystemStructureError
 
-            raise SystemStructureError(
-                f"Model has {neq} equation(s) but {n_endo} endogenous variable(s): {self.symbols.get('endogenous', [])}. The dynamic system must be square."
-            )
+            def plural(n: int, word: str) -> str:
+                return f"{n} {word}" if n == 1 else f"{n} {word}s"
+
+            lines = [
+                f"Model has {plural(neq, 'equation')} but "
+                f"{plural(n_endo, 'endogenous variable')}. "
+                "The dynamic system must be square."
+            ]
+            hints = self._suspicious_endogenous()
+            max_hints = 10
+            lines += [f"  {h}" for h in hints[:max_hints]]
+            if len(hints) > max_hints:
+                lines.append(f"  ... and {len(hints) - max_hints} more.")
+            if not hints:
+                lines.append(f"  Endogenous variables: {', '.join(endogenous)}")
+            raise SystemStructureError("\n".join(lines))
 
     def steady(
         self: Self,
