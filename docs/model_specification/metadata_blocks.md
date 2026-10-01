@@ -173,6 +173,8 @@ alpha <- 0.36
 ...
 ```
 
+The `@run:` command format is stable. See [Automated Pipelines & Reports](../analysis/reports.md) for the full list of commands and options.
+
 When you call `results = model.run()`, Dyno executes each command in sequence and packages the outputs into a `RunResults` container:
 
 ```python
