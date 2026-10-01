@@ -16,7 +16,17 @@ Dyno offers two distinct approaches for loading `.mod` files:
 2. **`DynareModel` (Official Preprocessor)**:
    - Uses the official Dynare preprocessor C++ library (`dynare-preprocessor-pylib`).
    - Ensures 100% adherence to Dynare preprocessing syntax and rules.
-   - Requires the optional `dynare` feature in Pixi.
+   - **Not part of the default installation.** It needs the optional
+     `dynare-preprocessor-pylib` package from the EconForge channel on prefix.dev:
+
+     ```bash
+     pixi add --channel https://prefix.dev/econforge dynare-preprocessor-pylib
+     ```
+
+     In this repository, use an environment that includes the `dynare` feature
+     (`pixi run -e dev-dynare ...`). Without the package, `DynareModel` raises a
+     `ModuleNotFoundError` explaining what to install; `DynoModel` still reads
+     `.mod` files.
 
 Both classes expose the exact same high-level Python API: `model.solve()`, `model.residuals`, `model.steady_state`, `model.recalibrate()`, and `model.run()`.
 
@@ -146,6 +156,43 @@ model_alt = model.recalibrate(rho=0.98, alpha=0.36)
 solution_alt = model_alt.solve()
 solution_alt.plot().show()
 ```
+
+---
+
+## Perfect Foresight (Deterministic) Models
+
+Both backends read the deterministic workflow of Dynare. A `.mod` file is
+treated as a perfect-foresight model when it declares no shock variances and
+does not call `stoch_simul`. The following constructs are interpreted:
+
+| Dynare construct | Meaning in Dyno |
+|---|---|
+| `shocks; var x; periods 1:3, 5; values 1.1, 0.9; end;` | Forced path of the exogenous variable (`model.context["values"]`) |
+| `initval; ... end;` | Steady state and state at date 0 |
+| `endval; ... end;` | Terminal steady state; `initval` then pins date 0 |
+| `histval; k(0) = 10; end;` | Initial condition at date 0 |
+| `perfect_foresight_setup(periods=N); perfect_foresight_solver;` | `simul` run command with `mode="deterministic"` and `T=N` |
+| `simul(periods=N);` | Same as above |
+| `rplot c k;` | `plot` run command |
+
+```python
+from dyno import DynoModel
+
+model = DynoModel("examples/modfiles/ramst.mod")
+model.is_deterministic        # True
+model.context["values"]       # {'x': {1: 1.2}}
+
+results = model.run()         # steady, check, simul(T=200), plot
+path = results.simulation.to_df()
+```
+
+With `DynoModel`, `steady_state_model` blocks are evaluated once all
+`initval`/`endval` blocks have been read, so they can refer to exogenous
+variables set in `initval`. With `DynareModel`, the preprocessor handles the
+blocks and Dyno reads the resulting shock trajectories (`endval` and `histval`
+are not interpreted there yet). Not supported yet: `perfect_foresight_with_expectation_errors_*` and the
+`learnt_in` option of `shocks`/`endval`, `histval` entries at dates other
+than 0, and leads or lags beyond one period.
 
 ---
 

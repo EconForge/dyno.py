@@ -30,7 +30,7 @@ OUTPUT_FORMATS: tuple[OutputFormat, ...] = ("text", "html", "markdown")
 
 def _dynare_model_class() -> type | None:
     try:
-        from dyno.dynare_model import DynareModel
+        from dyno.dynare import DynareModel
     except ModuleNotFoundError as error:
         if error.name != "dynare_preprocessor":
             raise

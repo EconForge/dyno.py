@@ -153,7 +153,7 @@ x[t] = alpha*x[t-1] + beta
 
 
 def test_dyno_run_is_experimental_and_executes_commands() -> None:
-    from dyno import DynoRunResults
+    from dyno import RunResults
 
     txt = """
 run:
@@ -173,7 +173,7 @@ model: |
     with pytest.warns(UserWarning, match="experimental"):
         result = model.run()
 
-    assert isinstance(result, DynoRunResults)
+    assert isinstance(result, RunResults)
     assert result.model is not model
     assert abs(result.model.context["steady_states"]["x"]) < 1e-8
     assert result.solution is not None
@@ -221,7 +221,7 @@ model: |
 
 
 def test_dyno_run_accumulates_repeated_metadata_assignments() -> None:
-    from dyno import DynoRunResults
+    from dyno import RunResults
 
     txt = """
 rho <- 0.8
@@ -242,6 +242,6 @@ e[t] <- N(0.1)
     with pytest.warns(UserWarning, match="experimental"):
         result = model.run()
 
-    assert isinstance(result, DynoRunResults)
+    assert isinstance(result, RunResults)
     assert result.solution is not None
     assert result.simulation is not None

@@ -210,7 +210,7 @@ class DynoModel(AbstractModel):
                     sim_options = {
                         k: v
                         for k, v in options.items()
-                        if k in {"shocks", "initial_states"}
+                        if k in {"shocks", "initial_states", "rng"}
                     }
                     results.simulation = solution.simulate(
                         T=horizon,
@@ -570,6 +570,31 @@ class DynoModel(AbstractModel):
                     D[n, i] = v
 
         return r, A, B, C, D
+
+    def _dynamic_point(self, v_prev, v_curr, v_next, diff=False):
+        from dyno.dynspec.analyze import EquationsEvaluator
+        from dyno.dynspec.autodiff import DNumber as DN
+
+        variables = self.symbols["variables"]
+        cc = copy.deepcopy(self.symbolic.context)
+        for i, name in enumerate(variables):
+            if diff:
+                cc["variables"][name] = {
+                    -1: DN(v_prev[i], {(name, -1): 1}),
+                    0: DN(v_curr[i], {(name, 0): 1}),
+                    1: DN(v_next[i], {(name, 1): 1}),
+                }
+            else:
+                cc["variables"][name] = {-1: v_prev[i], 0: v_curr[i], 1: v_next[i]}
+        results = [EquationsEvaluator(cc).visit(eq) for eq in self.symbolic.equations]
+        if not diff:
+            return np.array([float(el) for el in results])
+        r = np.array([el.value for el in results])
+        J = np.zeros((len(results), len(variables), 3))
+        for n, eq in enumerate(results):
+            for (name, shift), value in eq.derivatives.items():
+                J[n, variables.index(name), shift + 1] = value
+        return r, J
 
     def deterministic_residuals(
         model,

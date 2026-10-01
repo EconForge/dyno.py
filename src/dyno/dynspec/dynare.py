@@ -252,6 +252,16 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
         self.steady_states: Dict[str, Any] = {}
         self.constants: Dict[str, Any] = {}
         self.covariances: Dict[Any, Any] = {}
+        # Perfect-foresight information collected from the file:
+        # ``initval`` values (initial state), ``endval`` values (terminal
+        # state), ``histval`` date-0 values and ``steady_state_model`` blocks,
+        # which are evaluated once every block has been read (see
+        # ``finalize``), as Dynare does when ``steady`` is called.
+        self.initvals: Dict[str, Any] = {}
+        self.endvals: Dict[str, Any] = {}
+        self.histvals: Dict[str, Any] = {}
+        self.has_endval = False
+        self._steady_blocks: List[Tree] = []
         self.unknown_as_nan = True
         self.symbols: Dict[str, Any] = dict(symbols) if symbols else {}
 
@@ -294,27 +304,109 @@ class InterpretModfile(AssignmentEvaluator, EquationsEvaluator):
     def pred_statement(self, tree):
         return tree
 
-    def initval_block(self, tree):
-        endogenous = self.symbols.get("endogenous", None)
-        res = evaluate_steady_block(
+    def _model_variables(self) -> Optional[List[str]]:
+        """Endogenous and exogenous names (``initval``/``endval`` may set both)."""
+        endo = self.symbols.get("endogenous", None)
+        if endo is None:
+            return None
+        return list(endo) + list(self.symbols.get("exogenous", []))
+
+    def _evaluate_block(self, tree, steady_states):
+        return evaluate_steady_block(
             tree,
             constants=self.constants,
-            steady_states=self.steady_states,
-            endogenous=endogenous,
+            steady_states=steady_states,
+            endogenous=self._model_variables(),
             function_table=self.function_table,
         )
+
+    def initval_block(self, tree):
+        res = self._evaluate_block(tree, self.steady_states)
+        self.initvals.update(res)
         self.steady_states.update(res)
 
-    def steady_block(self, tree):
-        endogenous = self.symbols.get("endogenous", None)
-        res = evaluate_steady_block(
-            tree,
-            constants=self.constants,
-            steady_states=self.steady_states,
-            endogenous=endogenous,
-            function_table=self.function_table,
-        )
+    def endval_block(self, tree):
+        res = self._evaluate_block(tree, self.steady_states)
+        self.endvals.update(res)
         self.steady_states.update(res)
+        self.has_endval = True
+
+    def histval_block(self, tree):
+        from dyno.errors import UnsupportedFeatureError
+
+        for child in tree.children:
+            if getattr(child, "data", None) != "histassignment":
+                continue
+            variable, formula = child.children
+            # ``variable`` nodes are normalised to (name, index, shift) by the
+            # modfile transformer.
+            name = _extract_name(variable.children[0])
+            shift_node = variable.children[-1]
+            shift = (
+                int(shift_node.children[0])
+                if getattr(shift_node, "children", None)
+                and shift_node.children[0] is not None
+                else 0
+            )
+            if shift != 0:
+                raise UnsupportedFeatureError(
+                    f"histval entry '{name}({shift})' is not supported by DynoModel: "
+                    "only date-0 values ('x(0) = ...') can be interpreted.",
+                    feature="histval",
+                )
+            self.histvals[name] = self.visit(formula)
+
+    def steady_block(self, tree):
+        # Deferred: evaluated in ``finalize`` once initval/endval are known.
+        self._steady_blocks.append(tree)
+
+    def finalize(self) -> None:
+        """Evaluate the deferred ``steady_state_model`` blocks.
+
+        With an ``endval`` block the steady state of the model is the terminal
+        one (``endval``), while the ``initval`` values give the state at date 0.
+        """
+        if self._steady_blocks:
+            for block in self._steady_blocks:
+                self.steady_states.update(
+                    self._evaluate_block(block, self.steady_states)
+                )
+            if self.has_endval:
+                initial_ss = dict(self.initvals)
+                for block in self._steady_blocks:
+                    initial_ss.update(self._evaluate_block(block, initial_ss))
+                self.initvals = initial_ss
+
+    def setdetvar_stmt(self, tree):
+        name = str(tree.children[0].children[0].children[0])
+        periods: List[List[int]] = []
+        values: List[float] = []
+        for child in tree.children[1:]:
+            data = getattr(child, "data", None)
+            if data == "period_item":
+                start = int(child.children[0])
+                stop = (
+                    int(child.children[1])
+                    if len(child.children) > 1 and child.children[1] is not None
+                    else start
+                )
+                periods.append(list(range(start, stop + 1)))
+            elif data == "value_number":
+                values.append(float(child.children[0]))
+            elif data == "value_neg_number":
+                values.append(-float(child.children[0]))
+            elif data == "value_expr":
+                values.append(float(self.visit(child.children[0])))
+        if len(periods) != len(values):
+            raise ValueError(
+                f"shocks block: variable '{name}' has {len(periods)} period "
+                f"specification(s) but {len(values)} value(s)."
+            )
+        series = self.values.setdefault(name, {})
+        for dates, value in zip(periods, values):
+            for t in dates:
+                series[t] = value
+        return tree
 
     def parassignment(self, tree):
         name = _extract_name(tree.children[0])

@@ -456,6 +456,7 @@ def simulate(
     N: int = 1,
     mode: SimulateMode = "random",
     units: UnitsType = "deviation",
+    rng: np.random.Generator | int | None = None,
 ) -> SimulationResult:
     """Simulate the evolution of endogenous variables from a solved decision rule.
 
@@ -475,12 +476,16 @@ def simulate(
         Simulation mode.
     units : {'deviation', 'level', 'percent', 'log-deviation'}, default 'deviation'
         Default output units for the returned ``SimulationResult``.
+    rng : numpy.random.Generator | int | None, optional
+        Random number generator, or a seed, used to draw the shocks when
+        ``mode='random'``. ``None`` draws from a fresh unseeded generator.
 
     Returns
     -------
     SimulationResult
         ``IRFSimulation`` when ``mode='irf'``, or ``RandomSimulation`` of shape ``(N, T+1, V)``.
     """
+    generator = np.random.default_rng(rng)
     if mode == "irf":
         model = getattr(dr, "_model", None) or getattr(
             getattr(dr, "decision_rule", None), "_model", None
@@ -560,7 +565,7 @@ def simulate(
                     e = shocks[t - 1, :].copy()
             else:
                 if n_exo > 0:
-                    e = np.random.multivariate_normal(m0, Σ)
+                    e = generator.multivariate_normal(m0, Σ)
                 else:
                     e = np.zeros(0, dtype=float)
                 for j, name in enumerate(exo_names):

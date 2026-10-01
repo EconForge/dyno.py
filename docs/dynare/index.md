@@ -9,14 +9,20 @@
 Dyno offers two ways to load and run Dynare `.mod` files:
 
 1. **`DynareModel` (`dyno.dynare.DynareModel`)**:
+   - Requires the optional `dynare-preprocessor-pylib` package (see
+     [Preprocessor Integration](#preprocessor-integration-dynare-preprocessor-pylib)
+     below); it is not installed with `dyno` itself.
    - Integrates directly with the C++ Dynare preprocessor Python bindings (`dynare-preprocessor-pylib`).
    - Provides full fidelity with official Dynare preprocessing, including macro-processor directives (`@#include`, `@#for`, `@#define`, `@#if`).
+   - Runs stochastic (`stoch_simul`) and perfect-foresight (`perfect_foresight_setup`/`_solver`, `simul`) files.
    - Available via conda-forge and prefix.dev.
 
 2. **`DynoModel` (`dyno.DynoModel`)**:
    - Pure-Python parser built with Lark.
    - Requires no external C++ dependencies or compiled binaries.
-   - Reads standard `.mod` files for perturbation and simulation workflows.
+   - Reads standard `.mod` files for perturbation and simulation workflows,
+     including perfect-foresight files (`shocks` with `periods`/`values`,
+     `initval`/`endval`/`histval`, `perfect_foresight_setup`/`_solver`, `simul`).
 
 ```mermaid
 graph TD
@@ -111,10 +117,6 @@ To guarantee backward compatibility across existing scripts and tutorials:
 - **Top-Level Re-Export**:
   ```python
   from dyno import DynareModel
-  ```
-- **Legacy Module Forwarding**:
-  ```python
-  from dyno.dynare_model import DynareModel  # Deprecated alias pointing to dyno.dynare.model
   ```
 
 ---

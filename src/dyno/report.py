@@ -1940,9 +1940,6 @@ class RunResults:
 # ---------------------------------------------------------------------------
 
 # Keep the old names importable; they now point to RunResults.
-Report = RunResults
-DynareRunResults = RunResults
-DynoRunResults = RunResults
 
 
 def _send_interface_notifications(

@@ -32,3 +32,31 @@ x[t] = rho * x[t-1] + e[t]
     with pytest.warns(RedefinitionWarning, match="rho"):
         model = DynoModel(txt=txt)
     assert model.context["constants"]["rho"] == 0.9
+
+
+def test_solve_without_steady_state_names_the_variables():
+    from dyno.errors import UndefinedSymbolError
+
+    model = DynoModel(txt="""
+rho <- 0.9
+e[t] <- N(0.01)
+x[t] = rho * x[t-1]^0.5 + e[t]
+""")
+    with pytest.raises(UndefinedSymbolError, match="without steady state: x"):
+        model.solve()
+    assert model.steady().solve() is not None
+
+
+def test_random_simulation_is_reproducible_with_rng():
+    import numpy as np
+
+    model = DynoModel("examples/rbc_stochastic.dyno")
+    sol = model.solve()
+    s1 = sol.simulate(T=10, mode="random", N=2, rng=123)
+    s2 = sol.simulate(T=10, mode="random", N=2, rng=np.random.default_rng(123))
+    s3 = sol.simulate(T=10, mode="random", N=2, rng=124)
+    assert np.allclose(np.asarray(s1), np.asarray(s2))
+    assert not np.allclose(np.asarray(s1), np.asarray(s3))
+
+    sim = model.simulate(T=10, mode="random", N=2, rng=123)
+    assert np.allclose(np.asarray(sim), np.asarray(s1))

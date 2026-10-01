@@ -120,6 +120,7 @@ class RecursiveDecisionRule:
         units: UnitsType = "deviation",
         shocks: dict[str, dict[int, float]] | np.ndarray | None = None,
         initial_states: dict[str, float] | np.ndarray | None = None,
+        rng: np.random.Generator | int | None = None,
     ) -> "SimulationResult":
         """Simulate the solved model.
 
@@ -134,6 +135,8 @@ class RecursiveDecisionRule:
             Number of Monte Carlo trajectories when ``mode='random'``.
         units : {'deviation', 'level', 'percent', 'log-deviation'}, default 'deviation'
             Default output units.
+        rng : numpy.random.Generator | int | None, optional
+            Generator or seed for the random shocks when ``mode='random'``.
         """
         from .simul import simulate
 
@@ -157,6 +160,7 @@ class RecursiveDecisionRule:
             N=N,
             mode="random",
             units=units,
+            rng=rng,
         )
 
     def plot(
@@ -279,8 +283,13 @@ def solve_ti(
     """
     n = A.shape[0]
 
-    # Reshape necessary for static type checking
-    X0 = np.random.randn(n, n).reshape((n, n))
+    # Deterministic initial guess: the solution of the backward-looking part
+    # (A = 0). Falls back to zeros when B is singular.
+    X0: TMatrix
+    try:
+        X0 = np.asarray(linsolve(B, -C), dtype=float).reshape((n, n))
+    except np.linalg.LinAlgError:
+        X0 = np.zeros((n, n))
 
     for t in range(T):
 
