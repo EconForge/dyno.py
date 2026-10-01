@@ -27,7 +27,7 @@ chi <- w[~]/c[~]^sigma/n[~]^eta
 e_z[t] <- N(0, sig_z^2)
 
 # Definitions: auxiliary variables (recursive block)
-[definitions] {
+[definitions] :: {
     y[t] = exp(z[t])*k[t]^alpha*n[t]^(1-alpha)
     c[t] = y[t] - i[t]
     rk[t] = alpha*y[t]/k[t]
@@ -35,13 +35,13 @@ e_z[t] <- N(0, sig_z^2)
 }
 
 # Transition equations: s[t] = f(m[t-1], s[t-1], x[t-1], M[t])
-[transition] {
+[transition] :: {
     z[t] = rho*z[t-1] + e_z[t]
     k[t] = (1-delta)*k[t-1] + i[t-1]
 }
 
 # Arbitrage equations: g(m[t], s[t], x[t], m[t+1], s[t+1], x[t+1]) = 0
-[arbitrage] {
+[arbitrage] :: {
     chi*n[t]^eta*c[t]^sigma - w[t]
     1 - beta*(c[t]/c[t+1])^sigma*(1-delta+rk[t+1])
 }
