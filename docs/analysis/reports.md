@@ -21,14 +21,30 @@ alpha <- 0.36
 ...
 ```
 
-Supported `@run:` commands include:
+The `@run:` command format is stable: models written with it will keep working in future releases.
+
+Commands are executed in the order they appear. Each `@run:` line holds one command, written as:
+
+| Form | Example |
+|---|---|
+| Bare command name | `@run: steady` |
+| Command with options (a YAML mapping) | `@run: simul: {T: 40}` |
+| Command with null options | `@run: steady: null` |
+
+Appending `;` to the command name (e.g. `@run: solve;`) mutes that command's output in reports. In YAML models, the same commands are listed under a top-level `run:` key, and the explicit form `{command: simul, options: {T: 40}}` is also accepted.
+
+Supported `@run:` commands:
 
 | Command | Action |
 |---|---|
-| `steady` | Solves for steady state numerically if needed (`model.steady()`) |
+| `steady` | Solves for steady state numerically if needed (`model.steady(**options)`) |
+| `resid` | Computes steady-state residuals |
 | `check` | Verifies residuals and checks Blanchard-Kahn eigenvalues |
-| `solve` | Computes first-order perturbation policy function |
-| `simul` | Generates impulse responses or deterministic simulations |
+| `solve` / `perturb` | Computes first-order perturbation policy function |
+| `simul` / `simulate` | Generates stochastic simulations, or a perfect-foresight path for deterministic models (options such as `T`, `N`, `mode`, `units`) |
+| `analyze` / `stoch_simul` | Solves the model, computes moments and impulse responses (options `T`/`irf`, `type`/`units`, `variables`, `nograph`) |
+| `plot` | Plots the current simulation (options such as `variables`, `engine`) |
+| `variants` | Runs the remaining commands on each calibration variant (e.g. `@run: variants: {beta: [0.95, 0.99]}`) |
 
 ---
 
