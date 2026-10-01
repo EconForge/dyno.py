@@ -2426,7 +2426,32 @@
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>alpha &lt;- 0.36
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>...
 </span></code></pre></div>
-<p>Supported <code>@run:</code> commands include:</p>
+<p>The <code>@run:</code> command format is stable: models written with it will keep working in future releases.</p>
+<p>Commands are executed in the order they appear. Each <code>@run:</code> line holds one command, written as:</p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bare command name</td>
+<td><code>@run: steady</code></td>
+</tr>
+<tr>
+<td>Command with options (a YAML mapping)</td>
+<td><code>@run: simul: {T: 40}</code></td>
+</tr>
+<tr>
+<td>Command with null options</td>
+<td><code>@run: steady: null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Appending <code>;</code> to the command name (e.g. <code>@run: solve;</code>) mutes that command's output in reports. In YAML models, the same commands are listed under a top-level <code>run:</code> key, and the explicit form <code>{command: simul, options: {T: 40}}</code> is also accepted.</p>
+<p>Supported <code>@run:</code> commands:</p>
 <table>
 <thead>
 <tr>
@@ -2437,19 +2462,35 @@
 <tbody>
 <tr>
 <td><code>steady</code></td>
-<td>Solves for steady state numerically if needed (<code>model.steady()</code>)</td>
+<td>Solves for steady state numerically if needed (<code>model.steady(**options)</code>)</td>
+</tr>
+<tr>
+<td><code>resid</code></td>
+<td>Computes steady-state residuals</td>
 </tr>
 <tr>
 <td><code>check</code></td>
 <td>Verifies residuals and checks Blanchard-Kahn eigenvalues</td>
 </tr>
 <tr>
-<td><code>solve</code></td>
+<td><code>solve</code> / <code>perturb</code></td>
 <td>Computes first-order perturbation policy function</td>
 </tr>
 <tr>
-<td><code>simul</code></td>
-<td>Generates impulse responses or deterministic simulations</td>
+<td><code>simul</code> / <code>simulate</code></td>
+<td>Generates stochastic simulations, or a perfect-foresight path for deterministic models (options such as <code>T</code>, <code>N</code>, <code>mode</code>, <code>units</code>)</td>
+</tr>
+<tr>
+<td><code>analyze</code> / <code>stoch_simul</code></td>
+<td>Solves the model, computes moments and impulse responses (options <code>T</code>/<code>irf</code>, <code>type</code>/<code>units</code>, <code>variables</code>, <code>nograph</code>)</td>
+</tr>
+<tr>
+<td><code>plot</code></td>
+<td>Plots the current simulation (options such as <code>variables</code>, <code>engine</code>)</td>
+</tr>
+<tr>
+<td><code>variants</code></td>
+<td>Runs the remaining commands on each calibration variant (e.g. <code>@run: variants: {beta: [0.95, 0.99]}</code>)</td>
 </tr>
 </tbody>
 </table>
