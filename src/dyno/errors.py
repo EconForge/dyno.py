@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from typing import TYPE_CHECKING, Any
 
 
@@ -48,6 +50,25 @@ from lark.exceptions import UnexpectedCharacters, UnexpectedToken, UnexpectedEOF
 # UnexpectedEOF: The parser expected a token, but the input ended
 
 
+_OLD_BLOCK_TAG = re.compile(r"^\s*\[[^\]]*\]\s*\{")
+_OLD_INLINE_TAG = re.compile(r"[^\s:]\s+\[[^\]]*\]\s*$")
+
+
+def _annotation_hint(txt: str, line: int | None) -> str | None:
+    """Suggest the `::` form when a line uses a former annotation syntax."""
+    lines = txt.splitlines()
+    if line is None or not 1 <= line <= len(lines):
+        return None
+    src = lines[line - 1].split("#", 1)[0]
+    if "::" in src:
+        return None
+    if _OLD_BLOCK_TAG.match(src):
+        return "Block annotations require `::`: write `[tags] :: { ... }`"
+    if _OLD_INLINE_TAG.search(src):
+        return "Statement annotations require `::`: write `<statement> :: [tags]`"
+    return None
+
+
 class LARKParserError(ParserError):
 
     def __init__(self, lark_error: UnexpectedInput, txt=None) -> None:
@@ -69,6 +90,9 @@ class LARKParserError(ParserError):
         if txt is not None:
             details = lark_error.get_context(txt)
             details += str(lark_error)
+            hint = _annotation_hint(txt, line)
+            if hint is not None:
+                message = f"{message}. {hint}"
         else:
             details = str(lark_error)
         super().__init__(message)
@@ -76,8 +100,6 @@ class LARKParserError(ParserError):
         self.line = line
         self.details = details
 
-
-import re
 
 if TYPE_CHECKING:
     from dynare_preprocessor import PreprocessorException

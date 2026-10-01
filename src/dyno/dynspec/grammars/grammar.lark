@@ -14,11 +14,11 @@ model_metadata: _AT NAME ":" METADATA_SCALAR
 
 
 # annotated_statement is ALWAYS present (never transparent).
-# Metadata is attached via :: content or bracketed [key=val] inline.
+# Metadata always follows ::  (statement :: [key=val, tag]).
 annotated_statement: statement_core statement_metadata?
 
-# annotated_block: [tag] { … }  or  [tag] :: { … }
-annotated_block: block_tag _COLONCOLON? block
+# annotated_block: [tag] :: { … }
+annotated_block: block_tag _COLONCOLON block
 
 ?statement_core: equation | assignment | quantified_assignment
 
@@ -46,33 +46,31 @@ quantified_assignment: _FORALL "t" ["," t_double_bound] ":" variable _ASSIGN for
 # ── Metadata annotation ───────────────────────────────────────────────────────
 #
 # One bracket grammar in every position; an entry is a bare tag, a
-# quoted tag, or key=value.
+# quoted tag, or key=value.  Annotations are always separated from what
+# they annotate by ::, so a bracket is never confused with indexing.
 #
-# Statement forms:  :: [entries]  |  :: free text  |  [entries] inline
-# Block forms:      [entries] { … }  |  [entries] :: { … }
-# (:: [entries] { … } is not valid: :: never precedes a block tag.)
+# Statement forms:  statement :: [entries]  |  statement :: free text
+# Block form:       [entries] :: { … }
 
 statement_metadata: _COLONCOLON_LB annotation "]"   // :: [entries]
                   | _COLONCOLON META_TEXT           // :: free text
-                  | _INLINE_LB annotation "]"       // [entries] inline
 
-# Block tag: the bracket prefixing an annotated_block (no leading space)
+# Block tag: the bracket prefixing an annotated_block, at the start of a line
 block_tag: _SOL_LB annotation "]"
 
 # Bracket interior: comma-separated entries
 annotation: (entry ("," entry)*)?
 ?entry: kv | strtag | baretag
 kv: cname "=" kval
-?kval: cname | NUMBER | ASTRING
+?kval: cname | SIGNED_NUMBER | ASTRING
 baretag: cname
 strtag: ASTRING
 
 # :: separator (filtered out of the tree)
 _COLONCOLON: /[ \t]*::/
 
-# The three anchors, unchanged; each match now ends at the opening [
+# The two anchors; each match ends at the opening [
 _SOL_LB.3: /^[ \t]*\[/m
-_INLINE_LB.3: /[ \t]+\[/
 _COLONCOLON_LB.4: /[ \t]*::[ \t]*\[/
 
 # Free text after :: (never begins with [)
@@ -136,6 +134,7 @@ NAME: UNICODE_LETTER ("_"|UNICODE_LETTER|DIGIT)*
 %import common.DIGIT
 %import common.INT
 %import common.NUMBER
+%import common.SIGNED_NUMBER
 %import common.WS_INLINE
 %import common.WS
 %import common.NEWLINE

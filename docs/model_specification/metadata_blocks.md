@@ -4,7 +4,7 @@ Dyno includes advanced capabilities for organizing equations into semantic group
 
 ---
 
-## 1. Equation Blocks (`[tag] { ... }`)
+## 1. Equation Blocks (`[tag] :: { ... }`)
 
 In larger models, equations can be grouped logically using block syntax:
 
@@ -28,24 +28,33 @@ In larger models, equations can be grouped logically using block syntax:
 }
 ```
 
-The double-colon `::` is optional; `[tag] { ... }` is also valid. Every equation defined inside the block inherits the enclosing block's tag in its metadata.
+The double-colon `::` is required between the tag and the block. Every equation defined inside the block inherits the enclosing block's tag in its metadata.
 
 ---
 
 ## 2. Statement Annotations & Inline Tags
 
-You can tag individual equations directly:
+You can tag individual equations directly. Annotations always follow `::`,
+so a bracket after a statement is never mistaken for a time index:
 
 ```text
-# Inline bracket tag
-1/c[t] = beta*(1/c[t+1])*(r[t+1] + 1 - delta)  [euler_equation]
+# Bracket tag
+1/c[t] = beta*(1/c[t+1])*(r[t+1] + 1 - delta)  :: [euler_equation]
 
-# Colon-colon notation
+# Bare tags
 k[t] = (1-delta)*k[t-1] + i[t]  :: capital_accumulation
 
 # Key-value metadata
-y[t] = exp(a[t])*k[t-1]^alpha  [type=production, sector=goods]
+y[t] = exp(a[t])*k[t-1]^alpha  :: [type=production, sector=goods, weight=-0.5]
+
+# Quoted string: sets the equation's label
+n[t] = 1/3  :: "Labor supply"
 ```
+
+Inside brackets, entries are comma-separated and each is a bare tag
+(`capital`), a quoted tag (`"steady state"`), or `key=value`, where the value
+is a name, a number (`-2`, `1.5e3`) or a quoted string. A key may appear only
+once per bracket.
 
 ### Accessing Equation Tags in Python
 

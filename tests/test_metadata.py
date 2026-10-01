@@ -5,6 +5,7 @@ import pytest
 from dyno import DynoModel
 from dyno.larkfiles import DynoFile
 from dyno.errors import ParserError
+from dyno.dynspec.analyze import DefinitionError
 
 
 def test_dyno_metadata_statements_are_parsed():
@@ -79,7 +80,7 @@ def test_inline_metadata_is_attached_to_equations():
     txt = """
 alpha := 0.3
 k[~] := 1
-y[t] = alpha * k[t-1] [production, source=paper]
+y[t] = alpha * k[t-1] :: [production, source=paper]
 """
 
     symbolic = DynoFile(txt)
@@ -152,10 +153,10 @@ def test_block_metadata_inherits_and_merges_into_statements():
     txt = """
 alpha := 0.3
 k[~] := 1
-[production, block=firms] {
+[production, block=firms] :: {
     y[t] = alpha * k[t-1]
-    [loglinear] {
-        y[t] = alpha * k[t-1] [equation, block=inner]
+    [loglinear] :: {
+        y[t] = alpha * k[t-1] :: [equation, block=inner]
     }
 }
 """
@@ -205,7 +206,7 @@ def test_print_equations_with_tags(capsys):
     txt = """
 alpha := 0.3
 k[~] := 1
-y[t] = alpha * k[t-1] [production]
+y[t] = alpha * k[t-1] :: [production]
 z[t] = y[t]
 """
 
@@ -238,7 +239,7 @@ def test_filter_equations_by_label():
 
 def test_unclosed_metadata_bracket_is_rejected():
     txt = """
-y[t] = 1 [production
+y[t] = 1 :: [production
 """
     with pytest.raises(ParserError):
         DynoFile(txt)
@@ -248,7 +249,7 @@ def test_empty_metadata_bracket_yields_no_metadata():
     txt = """
 alpha := 0.3
 k[~] := 1
-y[t] = alpha * k[t-1] []
+y[t] = alpha * k[t-1] :: []
 """
 
     symbolic = DynoFile(txt)
@@ -260,7 +261,7 @@ def test_metadata_entries_mix_in_any_order():
     txt = """
 alpha := 0.3
 k[~] := 1
-y[t] = alpha * k[t-1] [a, id=res, "note", k=2, v="x y", b]
+y[t] = alpha * k[t-1] :: [a, id=res, "note", k=2, v="x y", b]
 """
 
     symbolic = DynoFile(txt)
@@ -274,7 +275,7 @@ y[t] = alpha * k[t-1] [a, id=res, "note", k=2, v="x y", b]
 
 def test_junk_bracket_interior_is_rejected():
     txt = """
-y[t] = 1 [a + b]
+y[t] = 1 :: [a + b]
 """
     with pytest.raises(ParserError):
         DynoFile(txt)
@@ -282,7 +283,7 @@ y[t] = 1 [a + b]
 
 def test_junk_block_bracket_is_rejected():
     txt = """
-[the transition block] {
+[the transition block] :: {
     y[t] = 1
 }
 """
@@ -290,17 +291,72 @@ def test_junk_block_bracket_is_rejected():
         DynoFile(txt)
 
 
-def test_negative_metadata_value_is_rejected():
+def test_numeric_metadata_values_are_numbers():
     txt = """
-y[t] = 1 [k=-2]
+y[t] = 1 :: [k=-2, x=1.5e3, z=+0.5]
 """
-    with pytest.raises(ParserError):
+
+    symbolic = DynoFile(txt)
+
+    assert symbolic.equations[0].meta.statement_metadata == {
+        "k": -2,
+        "x": 1500.0,
+        "z": 0.5,
+    }
+
+
+def test_duplicate_metadata_key_is_rejected():
+    txt = """
+y[t] = 1 :: [id=a, id=b]
+"""
+    with pytest.raises(DefinitionError, match="Duplicate metadata key: id"):
         DynoFile(txt)
+
+
+def test_invalid_coloncolon_text_reports_position():
+    txt = """
+y[t] = 1 :: id=res
+"""
+    with pytest.raises(DefinitionError) as exc:
+        DynoFile(txt)
+    assert str(exc.value).startswith("(2, ")
+
+
+def test_inline_bracket_without_coloncolon_is_rejected():
+    txt = """
+alpha := 0.3
+y[t] = alpha [production, id=res]
+"""
+    with pytest.raises(ParserError, match="write `<statement> :: \\[tags\\]`"):
+        DynoFile(txt)
+
+
+def test_block_tag_without_coloncolon_is_rejected():
+    txt = """
+[production] {
+    y[t] = 1
+}
+"""
+    with pytest.raises(ParserError, match="write `\\[tags\\] :: \\{"):
+        DynoFile(txt)
+
+
+def test_space_before_index_is_indexing_not_annotation():
+    txt = """
+alpha := 0.3
+k[~] := 1
+y[t] = alpha * k [t-1]
+"""
+
+    model = DynoModel(txt=txt)
+
+    assert model.symbolic.equations[0].meta.statement_metadata == {}
+    assert "k" in model.symbols["variables"]
 
 
 @pytest.mark.parametrize(
     "name",
-    ["neo.dyno", "rbc.dyno", "ramst.dyno", "neoclassical_ramsey.dyno"],
+    ["neo.dyno", "rbc.dyno", "ramst.dyno", "neoclassical_ramsey.dyno", "rbc_dolo.dyno"],
 )
 def test_examples_still_parse(name):
     path = Path(__file__).parent.parent / "examples" / name
@@ -313,12 +369,12 @@ def test_file_with_every_annotation_position():
 
 alpha <- 0.3
 
-[block_a, id=g1, note="transition"] {
+[block_a, id=g1, note="transition"] :: {
     k[t] = (1-delta)*k[t-1] + i[t]   :: [id=lom, capital]
     y[t] = k[t-1]^alpha              :: "production"
 }
 
-c[t] = y[t] - i[t] [budget, id=res]
+c[t] = y[t] - i[t] :: [budget, id=res]
 """
 
     symbolic = DynoFile(txt)

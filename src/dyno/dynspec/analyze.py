@@ -18,8 +18,18 @@ class DefinitionError(Exception):
 
     def __str__(self):
 
-        meta = self.tree.meta
+        meta = getattr(self.tree, "meta", None)
+        if meta is None or getattr(meta, "empty", True):
+            return str(self.msg)
         return f"({meta.line}, {meta.column}): {self.msg}"
+
+
+def _to_number(text: str) -> Union[int, float]:
+    """Convert a numeric literal (e.g. ``-2``, ``1.5e3``) to int or float."""
+    try:
+        return int(text)
+    except ValueError:
+        return float(text)
 
 
 def _normal_distribution(*args: Any) -> Normal:
@@ -402,124 +412,37 @@ class AssignmentEvaluator(FormulaEvaluator):
             return str(parsed)
         return stripped
 
-    # NOTE: no longer called for parsed brackets. Remaining references:
-    # the unused function below, and an unreachable branch of
-    # _parse_inline_content (META_TEXT never begins with "[").
-    def _parse_canonical_metadata_token(self, token_value: str) -> Dict[str, Any]:
-        stripped = token_value.strip()
-        if not (stripped.startswith("[") and stripped.endswith("]")):
-            raise DefinitionError("Invalid metadata block format")
-
-        body = stripped[1:-1].strip()
-        if len(body) == 0:
-            return {"tags": []}
-
-        items = self._split_metadata_items(body)
-        normalized_items: List[tuple[str, Any]] = []
-
-        for item in items:
-            if "=" not in item:
-                tag = item.strip()
-                if tag and tag[0] in ('"', "'"):
-                    value = self._coerce_metadata_value(tag)
-                    if not isinstance(value, str):
-                        raise DefinitionError(f"Invalid metadata tag: {tag}")
-                    normalized_items.append(("tag", value))
-                    continue
-                if not tag.isidentifier():
-                    raise DefinitionError(f"Invalid metadata tag: {tag}")
-                normalized_items.append(("tag", tag))
-                continue
-
-            key, value = item.split("=", 1)
-            key = key.strip()
-            value = value.strip()
-            if len(key) == 0 or len(value) == 0:
-                raise DefinitionError(f"Invalid metadata item: {item}")
-            if not key.isidentifier():
-                raise DefinitionError(f"Invalid metadata key: {key}")
-            normalized_items.append(("kv", (key, self._coerce_metadata_value(value))))
-
-        return self._normalize_metadata(normalized_items)
-
-    # NOTE: unused; nothing in the package calls it. If called, it would
-    # read a quoted string after :: as a tag, whereas
-    # _parse_inline_content reads it as a label. Kept to keep this
-    # change minimal; removable separately.
-    def _parse_inline_metadata_token(self, token_value: str) -> Dict[str, Any]:
-        stripped = token_value.strip()
-
-        if stripped.startswith("["):
-            return self._parse_canonical_metadata_token(stripped)
-
-        if not stripped.startswith("::"):
-            raise DefinitionError("Invalid inline metadata format")
-
-        content = stripped[2:].strip()
-        if len(content) == 0:
-            raise DefinitionError("Invalid :: metadata usage")
-
-        if content.startswith("["):
-            if not content.endswith("]"):
-                raise DefinitionError("Malformed :: metadata list")
-            return self._parse_canonical_metadata_token(content)
-
-        if content[0] in ('"', "'"):
-            if len(content) < 2 or content[-1] != content[0]:
-                raise DefinitionError("Malformed :: metadata string")
-            value = self._coerce_metadata_value(content)
-            if not isinstance(value, str):
-                raise DefinitionError("Invalid :: metadata string")
-            # Keep :: "..." aligned with other tag syntaxes by treating the
-            # parsed string as an opaque tag value.
-            return self._normalize_metadata([("tag", value)])
-
-        items = self._split_metadata_items(content)
-        if len(items) == 0:
-            raise DefinitionError("Invalid :: metadata usage")
-
-        normalized_items: List[tuple[str, Any]] = []
-        for item in items:
-            candidate = item.strip()
-            if "=" in candidate:
-                raise DefinitionError(":: metadata only accepts tags or quoted string")
-            if not candidate.isidentifier():
-                raise DefinitionError(f"Invalid :: metadata tag: {candidate}")
-            normalized_items.append(("tag", candidate))
-
-        return self._normalize_metadata(normalized_items)
-
-    def _annotation_to_metadata(self, ann_tree) -> "Dict[str, Any]":
+    def _annotation_to_metadata(self, ann_tree: Tree) -> Dict[str, Any]:
         """Convert a parsed annotation node to a metadata dict.
 
         The grammar has already separated the entries (kv, baretag,
-        strtag), so no string splitting is needed. The dictionaries
-        are unchanged: a quoted string in bracket position is a tag,
-        and kv values receive the same YAML coercion as before.
+        strtag): a quoted string in bracket position is a tag, numbers
+        become int/float, and other kv values receive YAML coercion.
         """
-        normalized_items: "List[tuple[str, Any]]" = []
+        normalized_items: List[tuple[str, Any]] = []
+        seen_keys: set[str] = set()
         for entry in ann_tree.children:
-            if entry is None:
-                continue
             if entry.data == "kv":
                 key = str(entry.children[0].children[0])
+                if key in seen_keys:
+                    raise DefinitionError(f"Duplicate metadata key: {key}", ann_tree)
+                seen_keys.add(key)
                 valnode = entry.children[1]
+                value: Any
                 if isinstance(valnode, Tree):  # cname -> name
-                    value_text = str(valnode.children[0])
-                else:  # NUMBER or quoted-string token
-                    value_text = str(valnode)
-                normalized_items.append(
-                    ("kv", (key, self._coerce_metadata_value(value_text)))
-                )
+                    value = self._coerce_metadata_value(str(valnode.children[0]))
+                elif valnode.type == "SIGNED_NUMBER":
+                    value = _to_number(str(valnode))
+                else:  # quoted string
+                    value = self._coerce_metadata_value(str(valnode))
+                normalized_items.append(("kv", (key, value)))
             elif entry.data == "baretag":
-                normalized_items.append(
-                    ("tag", str(entry.children[0].children[0]))
-                )
+                normalized_items.append(("tag", str(entry.children[0].children[0])))
             else:  # strtag: a quoted string in a bracket is a tag
                 value = self._coerce_metadata_value(str(entry.children[0]))
                 if not isinstance(value, str):
                     raise DefinitionError(
-                        f"Invalid metadata tag: {entry.children[0]}"
+                        f"Invalid metadata tag: {entry.children[0]}", ann_tree
                     )
                 normalized_items.append(("tag", value))
         if not normalized_items:
@@ -530,21 +453,22 @@ class AssignmentEvaluator(FormulaEvaluator):
         """Handler for statement_metadata nodes.
 
         The node's single child is either an annotation subtree (a
-        parsed [entries] bracket, after :: or inline) or a META_TEXT
-        token (free text after ::; a bracket never produces this
-        token).
+        parsed `:: [entries]` bracket) or a META_TEXT token (free text
+        after ::, which never begins with a bracket).
         """
         child = tree.children[0]
         if isinstance(child, Tree):
             return self._annotation_to_metadata(child)
         # Bare text that came after :: — treat as tag(s) / quoted label
-        return self._parse_inline_content(str(child).strip())
+        try:
+            return self._parse_inline_content(str(child).strip())
+        except DefinitionError as e:
+            if e.tree is None:
+                e.tree = tree
+            raise
 
     def _parse_inline_content(self, content: str) -> "Dict[str, Any]":
         """Parse the text content that appears after :: (no :: prefix expected)."""
-        if content.startswith("["):
-            return self._parse_canonical_metadata_token(content)
-
         if not content:
             raise DefinitionError("Empty :: metadata")
 
