@@ -345,6 +345,28 @@ class DynoModel(AbstractModel):
             defines=defines,
             **kwargs,
         )
+        self._warn_suspicious_variables()
+
+    def _warn_suspicious_variables(self: Self) -> None:
+        """Warn about endogenous variables that are likely typos.
+
+        In Dyno syntax any name followed by ``[t]`` becomes a variable, so a
+        misspelled name silently adds an endogenous variable. Flag those that
+        appear in a single equation and have no steady-state declaration.
+        Dynare files are skipped: their variables are declared explicitly.
+        """
+        if not isinstance(self.symbolic, DynoFile):
+            return
+        hints = self._suspicious_endogenous(require_single_occurrence=True)
+        if hints:
+            from .errors import UndefinedSymbolWarning
+
+            warnings.warn(
+                "Possible typo in variable name:\n"
+                + "\n".join(f"  {h}" for h in hints),
+                UndefinedSymbolWarning,
+                stacklevel=3,
+            )
 
     def import_model(
         self: Self,
