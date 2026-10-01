@@ -15,7 +15,7 @@ unsupported = [
     "Gali_2015.mod",  # calls external funciton in steady-state
 ]
 
-from dyno import dynare_model
+from dyno.dynare import DynareModel
 from dyno.errors import DynareParserError
 import pytest
 
@@ -31,7 +31,7 @@ def test_modfile_import(filename):
 
     try:
 
-        mod = dynare_model.DynareModel(filename)
+        mod = DynareModel(filename)
         sol = mod.solve()
         print(sol)
 

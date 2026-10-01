@@ -72,7 +72,7 @@ end;
 
 
 def test_dynare_run_executes_commands_from_metadata() -> None:
-    from dyno import DynareRunResults
+    from dyno import RunResults
 
     txt = """
 var x;
@@ -108,7 +108,7 @@ stoch_simul;
 
     results = model.run()
 
-    assert isinstance(results, DynareRunResults)
+    assert isinstance(results, RunResults)
     # steady should have updated the model's steady state
     assert results.model.context["steady_states"]["x"] == pytest.approx(20.0)
     assert np.max(np.abs(results.model.residuals)) < 1e-8

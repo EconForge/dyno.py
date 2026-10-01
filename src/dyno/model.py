@@ -127,15 +127,6 @@ class AbstractModel(ABC):
         return self._render_repr_text(self._repr_data())
 
     @property
-    def data(self):
-        """Backward-compatible alias for `symbolic`."""
-        return self.symbolic
-
-    @data.setter
-    def data(self, value):
-        self.symbolic = value
-
-    @property
     def checks(self) -> dict[str, bool]:
         return {"deterministic": self.processes is None}
 
@@ -318,11 +309,8 @@ class AbstractModel(ABC):
         y, e = self.__steady_state_vectors__
         return self.compute_residuals(y, y, y, e)
 
-    _check_eigenvalues: bool = False
-
-    def check(
-        self: "Self", tol: float = 1e-6, compute_eigenvalues: bool | None = None
-    ) -> "Self":
+    def _check_defined(self: Self, action: str) -> None:
+        """Raise ``UndefinedSymbolError`` if a parameter or a steady state is still NaN."""
         constants = self.context.get("constants", {})
         steady_states = self.context.get("steady_states", {})
         unassigned_params = [
@@ -344,12 +332,20 @@ class AbstractModel(ABC):
             if unassigned_ss:
                 msgs.append(
                     f"variables without steady state: {', '.join(sorted(unassigned_ss))}"
+                    " (declare them with `x[~] <- ...` or call `model.steady()`)"
                 )
             from .errors import UndefinedSymbolError
 
             raise UndefinedSymbolError(
-                f"Cannot check model due to uninitialized symbols ({'; '.join(msgs)})."
+                f"Cannot {action} due to uninitialized symbols ({'; '.join(msgs)})."
             )
+
+    _check_eigenvalues: bool = False
+
+    def check(
+        self: "Self", tol: float = 1e-6, compute_eigenvalues: bool | None = None
+    ) -> "Self":
+        self._check_defined("check model")
 
         r = self.residuals
         if not all(abs(x) < tol for x in r):
@@ -577,6 +573,8 @@ class AbstractModel(ABC):
     def perturb(self: Self, method: Solver = "qz") -> "PerturbationSolution":
         from .solver import PerturbationSolution, RecursiveDecisionRule
         from .solver import solve as solve_quadratic_matrix
+
+        self._check_defined("solve the model")
 
         r, A, B, C, D = self.jacobians
 

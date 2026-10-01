@@ -16,7 +16,17 @@ Dyno offers two distinct approaches for loading `.mod` files:
 2. **`DynareModel` (Official Preprocessor)**:
    - Uses the official Dynare preprocessor C++ library (`dynare-preprocessor-pylib`).
    - Ensures 100% adherence to Dynare preprocessing syntax and rules.
-   - Requires the optional `dynare` feature in Pixi.
+   - **Not part of the default installation.** It needs the optional
+     `dynare-preprocessor-pylib` package from the EconForge channel on prefix.dev:
+
+     ```bash
+     pixi add --channel https://prefix.dev/econforge dynare-preprocessor-pylib
+     ```
+
+     In this repository, use an environment that includes the `dynare` feature
+     (`pixi run -e dev-dynare ...`). Without the package, `DynareModel` raises a
+     `ModuleNotFoundError` explaining what to install; `DynoModel` still reads
+     `.mod` files.
 
 Both classes expose the exact same high-level Python API: `model.solve()`, `model.residuals`, `model.steady_state`, `model.recalibrate()`, and `model.run()`.
 
