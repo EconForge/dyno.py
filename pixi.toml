@@ -13,6 +13,7 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 # of the runtime dependencies in `[dependencies]` and in the `min-deps` feature
 # below are checked against it by `ci/check_deps.py` (`pixi run check-deps`).
 [package]
+name = "dyno"
 
 [package.build]
 backend = { name = "pixi-build-python", version = ">=0.4.0" }
