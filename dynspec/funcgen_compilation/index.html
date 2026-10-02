@@ -368,30 +368,14 @@
   
   
   
-    
-      
-      
+    <li class="md-tabs__item">
+      <a href="../../dyno_lab/" class="md-tabs__link">
         
-          
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../dyno_lab/" class="md-tabs__link">
-          
   
   Dyno Lab (GUI)
 
-        </a>
-      </li>
-    
+      </a>
+    </li>
   
 
       
@@ -1680,36 +1664,9 @@
   
   
   
-    
-    
-      
+    <li class="md-nav__item">
+      <a href="../../dyno_lab/" class="md-nav__link">
         
-          
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../../dyno_lab/" class="md-nav__link ">
-              
   
   
   <span class="md-ellipsis">
@@ -1722,84 +1679,7 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  Dyno Lab (GUI)
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../dyno_lab/interface/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  The Dyno Lab Interface &amp; Reactive Workspace
-
-    
-  </span>
-  
-  
-
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../dyno_lab/options_and_settings/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Dyno Lab Options &amp; Settings
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -2409,18 +2289,31 @@
 <p>The <code>compile_equation_group()</code> function compiles a list of AST equation nodes into a unified, vectorized Python callable:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.funcgen</span><span class="w"> </span><span class="kn">import</span> <span class="n">compile_equation_group</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.recipe</span><span class="w"> </span><span class="kn">import</span> <span class="n">DTCC_RECIPE</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">spec</span> <span class="o">=</span> <span class="n">DTCC_RECIPE</span><span class="o">.</span><span class="n">get_group_spec</span><span class="p">(</span><span class="s2">"transition"</span><span class="p">)</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">conformity</span><span class="p">,</span> <span class="n">func</span> <span class="o">=</span> <span class="n">compile_equation_group</span><span class="p">(</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">transition_equations</span><span class="p">,</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">spec</span><span class="o">=</span><span class="n">spec</span><span class="p">,</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">constants</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">context</span><span class="p">[</span><span class="s2">"constants"</span><span class="p">]</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">)</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="k">assert</span> <span class="n">conformity</span><span class="o">.</span><span class="n">ok</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.grammar</span><span class="w"> </span><span class="kn">import</span> <span class="n">parser</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">transition_equations</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">"""</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s2">z[t] = rho * z[t-1] + e_z[t]</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="s2">k[t] = (1-delta) * k[t-1] + i[t-1]</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="s2">"""</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"equation_block"</span><span class="p">)</span><span class="o">.</span><span class="n">children</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">variables</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="s2">"exogenous"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"e_z"</span><span class="p">],</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="s2">"states"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"z"</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">],</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="s2">"controls"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"n"</span><span class="p">,</span> <span class="s2">"i"</span><span class="p">],</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">}</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">constants</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"alpha"</span><span class="p">:</span> <span class="mf">0.33</span><span class="p">,</span> <span class="s2">"beta"</span><span class="p">:</span> <span class="mf">0.99</span><span class="p">,</span> <span class="s2">"delta"</span><span class="p">:</span> <span class="mf">0.025</span><span class="p">,</span> <span class="s2">"rho"</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">}</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">spec</span> <span class="o">=</span> <span class="n">DTCC_RECIPE</span><span class="o">.</span><span class="n">get_group_spec</span><span class="p">(</span><span class="s2">"transition"</span><span class="p">)</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="n">conformity</span><span class="p">,</span> <span class="n">func</span> <span class="o">=</span> <span class="n">compile_equation_group</span><span class="p">(</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">transition_equations</span><span class="p">,</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="n">spec</span><span class="o">=</span><span class="n">spec</span><span class="p">,</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>    <span class="n">constants</span><span class="o">=</span><span class="n">constants</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="p">)</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="k">assert</span> <span class="n">conformity</span><span class="o">.</span><span class="n">ok</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="2-function-execution-semantics">2. Function Execution Semantics<a class="headerlink" href="#2-function-execution-semantics" title="Permanent link">&para;</a></h2>
@@ -2446,20 +2339,30 @@
 <h3 id="b-residual-groups-eg-arbitrage-equilibrium">B. Residual Groups (e.g., Arbitrage &amp; Equilibrium)<a class="headerlink" href="#b-residual-groups-eg-arbitrage-equilibrium" title="Permanent link">&para;</a></h3>
 <p>For simultaneous equilibrium equations (<span class="arithmatex">\(0 = \mathbb{E}_t [ h(\dots) ]\)</span>):</p>
 <ul>
-<li><strong>Inputs</strong>: Current and lead variable arrays: <code>func(exo_0, states_0, controls_0, exo_1, states_1, controls_1)</code></li>
+<li><strong>Inputs</strong>: Current and lead variable arrays: <code>func(exo_0, states_0, controls_0, aux_0, exo_1, states_1, controls_1, aux_1)</code></li>
 <li><strong>Output</strong>: A 1-D NumPy array of residuals (<span class="arithmatex">\(LHS - RHS\)</span>).</li>
 <li><strong>Use Case</strong>: Fed directly into non-linear root finders (e.g. Newton-Krylov, Powell, or projection collocation).</li>
 </ul>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">arbitrage_spec</span> <span class="o">=</span> <span class="n">DTCC_RECIPE</span><span class="o">.</span><span class="n">get_group_spec</span><span class="p">(</span><span class="s2">"arbitrage"</span><span class="p">)</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">_</span><span class="p">,</span> <span class="n">arb_func</span> <span class="o">=</span> <span class="n">compile_equation_group</span><span class="p">(</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">arbitrage_equations</span><span class="p">,</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">spec</span><span class="o">=</span><span class="n">arbitrage_spec</span><span class="p">,</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">constants</span><span class="o">=</span><span class="n">constants</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">arbitrage_equations</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">"""</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="s2">1/c[t] = beta * (1/c[t+1]) * (alpha*k[t]^(alpha-1) + 1 - delta)</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="s2">"""</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"equation_block"</span><span class="p">)</span><span class="o">.</span><span class="n">children</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">arbitrage_spec</span> <span class="o">=</span> <span class="n">DTCC_RECIPE</span><span class="o">.</span><span class="n">get_group_spec</span><span class="p">(</span><span class="s2">"arbitrage"</span><span class="p">)</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">vars_arb</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"states"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"k"</span><span class="p">],</span> <span class="s2">"controls"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"c"</span><span class="p">],</span> <span class="s2">"exogenous"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"auxiliaries"</span><span class="p">:</span> <span class="p">[]}</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">consts_arb</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"alpha"</span><span class="p">:</span> <span class="mf">0.33</span><span class="p">,</span> <span class="s2">"beta"</span><span class="p">:</span> <span class="mf">0.99</span><span class="p">,</span> <span class="s2">"delta"</span><span class="p">:</span> <span class="mf">0.025</span><span class="p">}</span>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">residuals</span> <span class="o">=</span> <span class="n">arb_func</span><span class="p">(</span><span class="n">exo_0</span><span class="p">,</span> <span class="n">states_0</span><span class="p">,</span> <span class="n">controls_0</span><span class="p">,</span> <span class="n">exo_1</span><span class="p">,</span> <span class="n">states_1</span><span class="p">,</span> <span class="n">controls_1</span><span class="p">)</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Arbitrage equation residuals:"</span><span class="p">,</span> <span class="n">residuals</span><span class="p">)</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">_</span><span class="p">,</span> <span class="n">arb_func</span> <span class="o">=</span> <span class="n">compile_equation_group</span><span class="p">(</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">arbitrage_equations</span><span class="p">,</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">variables</span><span class="o">=</span><span class="n">vars_arb</span><span class="p">,</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">spec</span><span class="o">=</span><span class="n">arbitrage_spec</span><span class="p">,</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="n">constants</span><span class="o">=</span><span class="n">consts_arb</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="p">)</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="n">exo_0</span><span class="p">,</span> <span class="n">states_0</span><span class="p">,</span> <span class="n">controls_0</span><span class="p">,</span> <span class="n">aux_0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">9.35</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.75</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="n">exo_1</span><span class="p">,</span> <span class="n">states_1</span><span class="p">,</span> <span class="n">controls_1</span><span class="p">,</span> <span class="n">aux_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">9.35</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.75</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="n">residuals</span> <span class="o">=</span> <span class="n">arb_func</span><span class="p">(</span><span class="n">exo_0</span><span class="p">,</span> <span class="n">states_0</span><span class="p">,</span> <span class="n">controls_0</span><span class="p">,</span> <span class="n">aux_0</span><span class="p">,</span> <span class="n">exo_1</span><span class="p">,</span> <span class="n">states_1</span><span class="p">,</span> <span class="n">controls_1</span><span class="p">,</span> <span class="n">aux_1</span><span class="p">)</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Arbitrage equation residuals:"</span><span class="p">,</span> <span class="n">residuals</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="3-vectorization-and-solver-interoperability">3. Vectorization and Solver Interoperability<a class="headerlink" href="#3-vectorization-and-solver-interoperability" title="Permanent link">&para;</a></h2>

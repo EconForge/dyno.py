@@ -368,30 +368,14 @@
   
   
   
-    
-      
-      
+    <li class="md-tabs__item">
+      <a href="../../dyno_lab/" class="md-tabs__link">
         
-          
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../dyno_lab/" class="md-tabs__link">
-          
   
   Dyno Lab (GUI)
 
-        </a>
-      </li>
-    
+      </a>
+    </li>
   
 
       
@@ -1277,10 +1261,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#programmatic-report-generation" class="md-nav__link">
+  <a href="#programmatic-report-generation-export" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Programmatic Report Generation
+        Programmatic Report Generation &amp; Export
       </span>
     </span>
   </a>
@@ -1700,36 +1684,9 @@
   
   
   
-    
-    
-      
+    <li class="md-nav__item">
+      <a href="../../dyno_lab/" class="md-nav__link">
         
-          
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../../dyno_lab/" class="md-nav__link ">
-              
   
   
   <span class="md-ellipsis">
@@ -1742,84 +1699,7 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  Dyno Lab (GUI)
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../dyno_lab/interface/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  The Dyno Lab Interface &amp; Reactive Workspace
-
-    
-  </span>
-  
-  
-
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../dyno_lab/options_and_settings/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Dyno Lab Options &amp; Settings
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -2322,10 +2202,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#programmatic-report-generation" class="md-nav__link">
+  <a href="#programmatic-report-generation-export" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Programmatic Report Generation
+        Programmatic Report Generation &amp; Export
       </span>
     </span>
   </a>
@@ -2450,7 +2330,7 @@
 </tr>
 </tbody>
 </table>
-<p>Appending <code>;</code> to the command name (e.g. <code>@run: solve;</code>) mutes that command's output in reports. In YAML models, the same commands are listed under a top-level <code>run:</code> key, and the explicit form <code>{command: simul, options: {T: 40}}</code> is also accepted.</p>
+<p>Appending <code>;</code> to the end of a command line (e.g. <code>@run: solve;</code> or <code>@run: simul: {T: 40};</code>) mutes that command's output in reports. Semicolons are only permitted at the end of the line (for instance, <code>@run: simul:; {T: 40}</code> is invalid and raises an error). In YAML models, the same commands are listed under a top-level <code>run:</code> key, and the explicit form <code>{command: simul, options: {T: 40}}</code> is also accepted.</p>
 <p>Supported <code>@run:</code> commands:</p>
 <table>
 <thead>
@@ -2499,7 +2379,7 @@
 <p>In Python, execute the pipeline with one call:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynoModel</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">model</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"model.dyno"</span><span class="p">)</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">model</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"examples/RBC.dyno"</span><span class="p">)</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">results</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span></code></pre></div>
 <h3 id="inspecting-runresults">Inspecting <code>RunResults</code><a class="headerlink" href="#inspecting-runresults" title="Permanent link">&para;</a></h3>
@@ -2515,7 +2395,7 @@
 </span></code></pre></div>
 <hr />
 <h2 id="rich-display-in-notebooks-terminal">Rich Display in Notebooks &amp; Terminal<a class="headerlink" href="#rich-display-in-notebooks-terminal" title="Permanent link">&para;</a></h2>
-<p><code>RunResults</code> and <code>Report</code> automatically render clean, formatted summaries across all environments:</p>
+<p><code>RunResults</code> automatically renders clean, formatted summaries across all environments:</p>
 <h3 id="terminal-plain-text">Terminal (Plain Text)<a class="headerlink" href="#terminal-plain-text" title="Permanent link">&para;</a></h3>
 <p>Printing the result outputs a formatted diagnostic summary:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
@@ -2560,17 +2440,14 @@
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">results</span>
 </span></code></pre></div>
 <hr />
-<h2 id="programmatic-report-generation">Programmatic Report Generation<a class="headerlink" href="#programmatic-report-generation" title="Permanent link">&para;</a></h2>
-<p>You can build and export reports explicitly:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.report</span><span class="w"> </span><span class="kn">import</span> <span class="n">Report</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">report</span> <span class="o">=</span> <span class="n">Report</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">html_content</span> <span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">to_html</span><span class="p">()</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">markdown_content</span> <span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">to_markdown</span><span class="p">()</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1"># Save report to disk</span>
-</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"model_report.html"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">html_content</span><span class="p">)</span>
+<h2 id="programmatic-report-generation-export">Programmatic Report Generation &amp; Export<a class="headerlink" href="#programmatic-report-generation-export" title="Permanent link">&para;</a></h2>
+<p><code>RunResults</code> can be directly exported to HTML or Markdown strings:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">html_content</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">to_html</span><span class="p">()</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">markdown_content</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">to_markdown</span><span class="p">()</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># Save report to disk</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"model_report.html"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">html_content</span><span class="p">)</span>
 </span></code></pre></div>
 
 

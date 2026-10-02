@@ -368,30 +368,14 @@
   
   
   
-    
-      
-      
+    <li class="md-tabs__item">
+      <a href="../../dyno_lab/" class="md-tabs__link">
         
-          
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../dyno_lab/" class="md-tabs__link">
-          
   
   Dyno Lab (GUI)
 
-        </a>
-      </li>
-    
+      </a>
+    </li>
   
 
       
@@ -1700,36 +1684,9 @@
   
   
   
-    
-    
-      
+    <li class="md-nav__item">
+      <a href="../../dyno_lab/" class="md-nav__link">
         
-          
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../../dyno_lab/" class="md-nav__link ">
-              
   
   
   <span class="md-ellipsis">
@@ -1742,84 +1699,7 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  Dyno Lab (GUI)
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../dyno_lab/interface/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  The Dyno Lab Interface &amp; Reactive Workspace
-
-    
-  </span>
-  
-  
-
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../dyno_lab/options_and_settings/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Dyno Lab Options &amp; Settings
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -2432,10 +2312,12 @@
 <p>Dyno provides tools to verify that declared steady states satisfy the dynamic system:</p>
 <h3 id="1-modelresiduals">1. <code>model.residuals</code><a class="headerlink" href="#1-modelresiduals" title="Permanent link">&para;</a></h3>
 <p>Evaluates the absolute difference <span class="arithmatex">\(|LHS - RHS|\)</span> for each equation at the current steady-state point:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"my_model.dyno"</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynoModel</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">residuals</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Eq </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> residual: </span><span class="si">{</span><span class="n">res</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">model</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"examples/neo.dyno"</span><span class="p">)</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">residuals</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Eq </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> residual: </span><span class="si">{</span><span class="n">res</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="2-modelcheck">2. <code>model.check()</code><a class="headerlink" href="#2-modelcheck" title="Permanent link">&para;</a></h3>
 <p>Checks whether any residual exceeds the numerical tolerance (default: <span class="arithmatex">\(10^{-6}\)</span>). If so, it raises a <code>SteadyStateError</code>:</p>
@@ -2462,16 +2344,16 @@
 </span></code></pre></div></p>
 </li>
 <li>
-<p>Call <code>model.steady()</code> in Python:
-   <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Solves f(y_bar, y_bar, y_bar) = 0 numerically</span>
+<p>Call <code>model.steady()</code> in Python:</p>
+</li>
+</ol>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Solves f(y_bar, y_bar, y_bar) = 0 numerically</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">steady</span><span class="p">()</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Verify convergence</span>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">model</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Computed Steady State:"</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">steady_state</span><span class="p">)</span>
-</span></code></pre></div></p>
-</li>
-</ol>
+</span></code></pre></div>
 <p><code>model.steady()</code> uses SciPy's non-linear root-finding algorithms (<code>hybr</code> / Powell hybrid method) to solve the stationary system of equations simultaneously.</p>
 <hr />
 <h2 id="steady-state-diagnostics-and-error-handling">Steady State Diagnostics and Error Handling<a class="headerlink" href="#steady-state-diagnostics-and-error-handling" title="Permanent link">&para;</a></h2>

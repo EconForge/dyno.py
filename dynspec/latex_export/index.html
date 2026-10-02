@@ -368,30 +368,14 @@
   
   
   
-    
-      
-      
+    <li class="md-tabs__item">
+      <a href="../../dyno_lab/" class="md-tabs__link">
         
-          
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../dyno_lab/" class="md-tabs__link">
-          
   
   Dyno Lab (GUI)
 
-        </a>
-      </li>
-    
+      </a>
+    </li>
   
 
       
@@ -1691,36 +1675,9 @@
   
   
   
-    
-    
-      
+    <li class="md-nav__item">
+      <a href="../../dyno_lab/" class="md-nav__link">
         
-          
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../../dyno_lab/" class="md-nav__link ">
-              
   
   
   <span class="md-ellipsis">
@@ -1733,84 +1690,7 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  Dyno Lab (GUI)
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../dyno_lab/interface/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  The Dyno Lab Interface &amp; Reactive Workspace
-
-    
-  </span>
-  
-  
-
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../dyno_lab/options_and_settings/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Dyno Lab Options &amp; Settings
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -2430,10 +2310,12 @@
 <h2 id="the-latextransformer">The <code>LatexTransformer</code><a class="headerlink" href="#the-latextransformer" title="Permanent link">&para;</a></h2>
 <p>The <code>LatexTransformer</code> is a Lark visitor that walks expression and equation trees to construct canonical LaTeX formulas with correct mathematical typography.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.latex</span><span class="w"> </span><span class="kn">import</span> <span class="n">latex</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Convert an equation string directly</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">tex_code</span> <span class="o">=</span> <span class="n">latex</span><span class="p">(</span><span class="s2">"1/c[t] = beta * (1/c[t+1]) * (alpha*y[t+1]/k[t] + 1 - delta)"</span><span class="p">)</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">tex_code</span><span class="p">)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.grammar</span><span class="w"> </span><span class="kn">import</span> <span class="n">parser</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Convert an equation tree directly</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">tree</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">"1/c[t] = beta * (1/c[t+1]) * (alpha*y[t+1]/k[t] + 1 - delta)"</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"equation_block"</span><span class="p">)</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">tex_code</span> <span class="o">=</span> <span class="n">latex</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">tex_code</span><span class="p">)</span>
 </span></code></pre></div>
 <p><strong>Output:</strong>
 <div class="language-latex highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">\frac</span><span class="nb">{</span>1<span class="nb">}{</span>c<span class="nb">_{</span>t<span class="nb">}}</span> = <span class="k">\beta</span> <span class="k">\frac</span><span class="nb">{</span>1<span class="nb">}{</span>c<span class="nb">_{</span>t+1<span class="nb">}}</span> <span class="k">\left</span>(<span class="k">\frac</span><span class="nb">{</span><span class="k">\alpha</span> y<span class="nb">_{</span>t+1<span class="nb">}}{</span>k<span class="nb">_{</span>t<span class="nb">}}</span> + 1 - <span class="k">\delta\right</span>)
