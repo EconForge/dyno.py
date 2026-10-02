@@ -57,6 +57,10 @@ class DynoModel(AbstractModel):
                 if item.endswith(";"):
                     mute = True
                     item = item[:-1].rstrip()
+                if ";" in item:
+                    raise ValueError(
+                        f"Invalid run command '{item}': unexpected semicolon."
+                    )
                 commands.append({"command": item, "options": {}, "mute": mute})
             elif isinstance(item, dict):
                 mute = bool(item.get("mute", False))
@@ -69,6 +73,10 @@ class DynoModel(AbstractModel):
                     if command.endswith(";"):
                         mute = True
                         command = command[:-1].rstrip()
+                    if ";" in command:
+                        raise ValueError(
+                            f"Invalid run command '{command}': unexpected semicolon."
+                        )
                     options = item.get("options", {})
                     if not isinstance(options, dict):
                         raise TypeError("run command 'options' must be a dictionary")
@@ -82,9 +90,10 @@ class DynoModel(AbstractModel):
                         options = item[command]
                         if not isinstance(command, str):
                             raise TypeError("run command keys must be strings")
-                        if command.endswith(";"):
-                            mute = True
-                            command = command[:-1].rstrip()
+                        if ";" in command:
+                            raise ValueError(
+                                f"Invalid run command '{command}': semicolons are not permitted in command names."
+                            )
                         if options is None:
                             options = {}
                         if not isinstance(options, dict):
@@ -118,8 +127,9 @@ class DynoModel(AbstractModel):
           (``null`` options are allowed, e.g. ``steady: null``)
         - an explicit mapping: ``{command: simul, options: {T: 40}}``
 
-        A trailing ``;`` on the command name (``@run: solve;``) mutes that
-        command's output in reports.
+        A trailing ``;`` at the end of the command line (``@run: solve;``
+        or ``@run: simul: {T: 40};``) mutes that command's output in reports.
+        Semicolons are only permitted at the end of the line.
 
         Supported commands:
 

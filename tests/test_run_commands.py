@@ -282,3 +282,78 @@ def test_dynomodel_stoch_simul_nograph_and_irf0_skip_plot():
 
         assert results.solution is not None
         assert results.figure is None
+
+
+def test_dyno_run_semicolon_at_end_of_line_mutes_and_runs():
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+
+@run: simulate: {T: 100};
+"""
+    model = DynoModel(txt=txt)
+    cmds = model._normalize_run_commands()
+
+    assert len(cmds) == 1
+    assert cmds[0]["command"] == "simulate"
+    assert cmds[0]["options"] == {"T": 100}
+    assert cmds[0]["mute"] is True
+
+    results = model.run()
+    assert results.simulation is not None
+    assert results._should_render_simulation_tables is False
+
+
+def test_dyno_run_semicolon_not_at_end_raises_error():
+    import pytest
+    from dyno.errors import ParserError
+
+    # Invalid: semicolon after command name before options
+    txt_err1 = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+
+@run: simulate:; {T:100}
+"""
+    with pytest.raises(ParserError, match="unexpected ';'"):
+        DynoModel(txt=txt_err1)
+
+    # Invalid: semicolon after command name before colon/options
+    txt_err2 = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+
+@run: simulate; : {T: 100}
+"""
+    with pytest.raises(ParserError, match="unexpected ';'"):
+        DynoModel(txt=txt_err2)
+
+    # Invalid: multiple commands separated by semicolon on one line
+    txt_err3 = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+
+@run: steady; check;
+"""
+    with pytest.raises(ParserError, match="unexpected ';'"):
+        DynoModel(txt=txt_err3)
+
+    # Invalid: semicolon in middle and also trailing semicolon
+    txt_err4 = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+
+@run: simulate:; {T:100};
+"""
+    with pytest.raises(ParserError, match="unexpected ';'"):
+        DynoModel(txt=txt_err4)

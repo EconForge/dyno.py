@@ -31,7 +31,7 @@ Commands are executed in the order they appear. Each `@run:` line holds one comm
 | Command with options (a YAML mapping) | `@run: simul: {T: 40}` |
 | Command with null options | `@run: steady: null` |
 
-Appending `;` to the command name (e.g. `@run: solve;`) mutes that command's output in reports. In YAML models, the same commands are listed under a top-level `run:` key, and the explicit form `{command: simul, options: {T: 40}}` is also accepted.
+Appending `;` to the end of a command line (e.g. `@run: solve;` or `@run: simul: {T: 40};`) mutes that command's output in reports. Semicolons are only permitted at the end of the line (for instance, `@run: simul:; {T: 40}` is invalid and raises an error). In YAML models, the same commands are listed under a top-level `run:` key, and the explicit form `{command: simul, options: {T: 40}}` is also accepted.
 
 Supported `@run:` commands:
 

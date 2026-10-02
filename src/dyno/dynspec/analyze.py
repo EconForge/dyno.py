@@ -9,12 +9,20 @@ from .language import Normal
 import math
 
 
-class DefinitionError(Exception):
+from dyno.errors import ParserError
+
+
+class DefinitionError(ParserError):
 
     def __init__(self, msg, tree=None):
 
+        super().__init__(str(msg))
         self.msg = msg
         self.tree = tree
+        meta = getattr(tree, "meta", None)
+        if meta is not None and not getattr(meta, "empty", True):
+            self.line = getattr(meta, "line", None)
+            self.column = getattr(meta, "column", None)
 
     def __str__(self):
 
@@ -646,30 +654,74 @@ class AssignmentEvaluator(FormulaEvaluator):
         if raw_stripped.endswith(";"):
             mute = True
             raw_stripped = raw_stripped[:-1].rstrip()
-        try:
-            import yaml
-
-            value = yaml.safe_load(raw_stripped)
-        except Exception:
-            value = raw_stripped
-
         if key == "run":
-            if mute:
-                if isinstance(value, str):
+            if ";" in raw_stripped:
+                raise DefinitionError(
+                    f"Invalid @run command syntax: unexpected ';' in '{raw.strip()}'. Semicolons are only permitted at the end of the command line.",
+                    tree=tree,
+                )
+            try:
+                import yaml
+
+                value = yaml.safe_load(raw_stripped)
+            except Exception as e:
+                raise DefinitionError(
+                    f"Invalid @run command YAML syntax in '{raw.strip()}': {e}",
+                    tree=tree,
+                ) from e
+
+            # Validate run command structure
+            if isinstance(value, str):
+                if not value.isidentifier():
+                    raise DefinitionError(
+                        f"Invalid @run command name: '{value}' is not a valid identifier.",
+                        tree=tree,
+                    )
+                if mute:
                     value = {"command": value, "options": {}, "mute": True}
-                elif isinstance(value, dict):
-                    if "command" in value:
-                        value = dict(value)
+            elif isinstance(value, dict):
+                if "command" in value:
+                    cmd_val = value.get("command")
+                    if not isinstance(cmd_val, str) or not cmd_val.isidentifier():
+                        raise DefinitionError(
+                            f"Invalid @run command: 'command' must be a valid identifier string, got {cmd_val!r}.",
+                            tree=tree,
+                        )
+                    if "options" in value and not isinstance(value["options"], dict):
+                        raise DefinitionError(
+                            f"Invalid @run command: 'options' must be a dictionary, got {type(value['options']).__name__}.",
+                            tree=tree,
+                        )
+                    value = dict(value)
+                    if mute:
                         value["mute"] = True
-                    else:
-                        non_mute_keys = [k for k in value if k != "mute"]
-                        if len(non_mute_keys) == 1:
-                            cmd_k = non_mute_keys[0]
-                            opts = value[cmd_k] or {}
-                            value = {"command": cmd_k, "options": opts, "mute": True}
-                        else:
-                            value = dict(value)
-                            value["mute"] = True
+                else:
+                    non_mute_keys = [k for k in value if k != "mute"]
+                    if len(non_mute_keys) != 1:
+                        raise DefinitionError(
+                            f"Invalid @run command mapping: expected a single command name key, got {list(value.keys())}.",
+                            tree=tree,
+                        )
+                    cmd_k = non_mute_keys[0]
+                    if not isinstance(cmd_k, str) or not cmd_k.isidentifier():
+                        raise DefinitionError(
+                            f"Invalid @run command name: '{cmd_k}' is not a valid identifier.",
+                            tree=tree,
+                        )
+                    opts = value[cmd_k]
+                    if opts is not None and not isinstance(opts, dict):
+                        raise DefinitionError(
+                            f"Invalid options for @run command '{cmd_k}': options must be a dictionary or null, got {type(opts).__name__}.",
+                            tree=tree,
+                        )
+                    if mute:
+                        value = {"command": cmd_k, "options": opts or {}, "mute": True}
+            else:
+                raise DefinitionError(
+                    f"Invalid @run directive: command must be a name or a mapping, got {type(value).__name__}.",
+                    tree=tree,
+                )
+
             if key in self.metadata:
                 current = self.metadata[key]
                 if isinstance(current, list):
@@ -679,6 +731,12 @@ class AssignmentEvaluator(FormulaEvaluator):
             else:
                 self.metadata[key] = value
         else:
+            try:
+                import yaml
+
+                value = yaml.safe_load(raw_stripped)
+            except Exception:
+                value = raw_stripped
             self.metadata[key] = value
             if mute:
                 self.metadata[f"_muted_{key}"] = True
