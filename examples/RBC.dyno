@@ -1,3 +1,5 @@
+@name: RBC
+
 # parameters
 beta <- 0.985
 delta <- 0.025

@@ -55,11 +55,19 @@ def model_representation_gui(directory: str | Path = "examples"):
         )
         return v.VuetifyTemplate.element(template=template).key(content_hash)
 
-    files = discover_models(directory)
+    root_path = Path(directory)
+    files = discover_models(root_path)
     if not files:
         raise FileNotFoundError(f"No .dyno or .mod files found under {directory!r}")
 
-    file_labels = [str(path) for path in files]
+    def _relative_label(p: Path) -> str:
+        try:
+            return str(p.relative_to(root_path))
+        except ValueError:
+            return str(p)
+
+    file_map: dict[str, Path] = {_relative_label(p): p for p in files}
+    file_labels = list(file_map.keys())
 
     selected_file = solara.reactive(file_labels[0])
     source_text = solara.reactive(files[0].read_text())
@@ -71,7 +79,7 @@ def model_representation_gui(directory: str | Path = "examples"):
     search = solara.reactive("")
 
     def select_file(label: str) -> None:
-        path = Path(label)
+        path = file_map[label]
         selected_file.value = label
         source_text.value = path.read_text()
         available = list(available_backends(path))
@@ -98,6 +106,24 @@ def model_representation_gui(directory: str | Path = "examples"):
         visible_labels = visible_labels_for(search.value)
 
         with solara.Column(gap="4px", style="height:100%;"):
+            with rv.Sheet(
+                outlined=True,
+                class_="pa-2 mb-2",
+                style_="background:#f8fafc; border-radius:6px; border-color:#e2e8f0;",
+            ):
+                with solara.Row(
+                    gap="4px",
+                    style="align-items:center; color:#475569; font-size:0.75rem;",
+                ):
+                    rv.Icon(
+                        small=True,
+                        children=["mdi-folder-outline"],
+                        class_="mr-1 grey--text text--darken-1",
+                    )
+                    solara.Text(
+                        f"{root_path}",
+                        style="font-weight:600; font-family:monospace; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;",
+                    )
             search_field = rv.TextField(
                 v_model=search.value,
                 on_v_model=search.set,
@@ -170,7 +196,7 @@ def model_representation_gui(directory: str | Path = "examples"):
                     icon=True,
                     small=True,
                     on_click=lambda: source_text.set(
-                        Path(selected_file.value).read_text()
+                        file_map[selected_file.value].read_text()
                     ),
                     children=[rv.Icon(small=True, children=["mdi-refresh"])],
                     title="Reset source to original file content",
@@ -315,10 +341,10 @@ def model_representation_gui(directory: str | Path = "examples"):
 
     @solara.component
     def Page():
-        path = Path(selected_file.value)
+        path = file_map[selected_file.value]
 
         with solara.Head():
-            solara.Title(f"Dyno: {path}")
+            solara.Title(f"Dyno: {selected_file.value}")
         with solara.AppBar():
             solara.AppBarTitle(str(path))
 

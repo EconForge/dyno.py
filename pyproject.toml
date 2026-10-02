@@ -1,8 +1,14 @@
 [project]
 name = "dyno"
-version = "0.1.11"
+version = "0.1.12"
 requires-python = ">= 3.12,<3.14"
 license = "BSD-3-Clause"
+classifiers = [
+    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+]
 dependencies = [
     "altair>=5.0.0,<7",
     "interegular>=0.3.3,<0.4",

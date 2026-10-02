@@ -1,3 +1,5 @@
+@name: Neoclassical_Ramsey
+
 # neoclassical model for deterministic Ramsey prototype
 # This removes the household Euler equation so the planner FOC can close the system.
 

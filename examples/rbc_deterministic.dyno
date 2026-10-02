@@ -1,3 +1,4 @@
+@name: RBC_Deterministic
 # Deterministic RBC Model
 # Parameters
 alpha <- 0.36

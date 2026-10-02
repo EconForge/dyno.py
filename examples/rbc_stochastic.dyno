@@ -1,3 +1,4 @@
+@name: RBC_Stochastic
 # Stochastic RBC Model
 # Parameters
 alpha <- 0.36

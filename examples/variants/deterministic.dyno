@@ -1,3 +1,4 @@
+@name: Ramsey_Deterministic_Variants
 # Neoclassical Ramsey Model with Perfect Foresight / Deterministic Transition
 # Parameters
 alph <- 0.50     # Capital share

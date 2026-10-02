@@ -5,8 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-10-02
+
 ### Added
 
+- `@name:` annotation in model files to name models and display their name in
+  `model.name` and generated reports.
+- Solara model representation explorer GUI supports browsing model files in
+  nested subdirectories with breadcrumb/path headers and relative labels.
+- New example models: `new_keynesian_fg.dyno` (forward guidance with
+  deterministic solver), `soe_mendoza.dyno` (small open economy), and
+  `examples/dolo/rbc_dolo.dyno`.
+- Multi-OS CI workflows for Linux, macOS, and Windows.
 - `RedefinitionWarning`, emitted when a constant is assigned more than once
   (previously printed to stdout).
 - `rng` argument (a `numpy.random.Generator` or a seed) on

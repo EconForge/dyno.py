@@ -38,7 +38,13 @@ def markdown_to_html(markdown_text: str) -> str:
 
 
 def model_repr_data(model: Any) -> dict[str, Any]:
-    name = model.name if model.name is not None else "Unnamed"
+    meta = getattr(model, "metadata", {})
+    metadata_name = meta.get("name") if isinstance(meta, dict) else None
+    name = (
+        metadata_name if isinstance(metadata_name, str) and metadata_name else None
+    ) or model.name
+    if not name:
+        name = "Unnamed"
     filename = getattr(model, "filename", None)
     constants = model.context.get("constants", {})
     steady_states = model.context.get("steady_states", {})

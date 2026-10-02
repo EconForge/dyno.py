@@ -1,0 +1,71 @@
+@name: SOE_Mendoza
+
+# =============================================================================
+# Small Open Economy Model with Debt-Elastic Interest Rate Premium
+# =============================================================================
+# Based on Mendoza (1991) and Schmitt-Grohé & Uribe (2003).
+#
+# Framework:
+# A small open economy facing an exogenous world interest rate. To close the model
+# and ensure stationarity under incomplete markets, the country borrowing rate
+# includes an endogenous risk premium that increases with foreign indebtedness:
+#     r[t] = r_w + psi*(exp(-b[t]) - 1)
+#
+# Experiment:
+# A persistent commodity export price boom (e.g. copper, oil, agricultural goods)
+# where export prices jump 25% and gradually normalize over 10 periods.
+# Demonstrates current account dynamics, terms-of-trade effects, and external debt.
+# =============================================================================
+
+# Parameters
+beta  <- 0.96   :: "Discount factor"
+gamma <- 2.0    :: "Coefficient of relative risk aversion"
+alpha <- 0.32   :: "Capital share in production"
+delta <- 0.10   :: "Depreciation rate of capital"
+r_w   <- 1/beta - 1.0 :: "World real interest rate"
+psi   <- 0.001  :: "Debt elasticity of risk premium"
+b_bar <- 0.0    :: "Steady-state net foreign assets"
+
+T     <- 40
+
+# Steady states
+r[~]   <- r_w
+k[~]   <- ((r_w + delta)/alpha)^(1/(alpha - 1))
+y[~]   <- k[~]^alpha
+i[~]   <- delta*k[~]
+b[~]   <- b_bar
+c[~]   <- y[~] - i[~] + r_w*b[~]
+p_x[~] <- 1.0
+
+# Dynamic Equations
+# -----------------
+# 1. Resource Constraint / Balance of Payments (Current Account):
+b[t] = (1 + r[t-1])*b[t-1] + p_x[t]*y[t] - c[t] - i[t] :: "Current Account"
+
+# 2. Production Function:
+y[t] = k[t-1]^alpha :: "Production"
+
+# 3. Capital Accumulation:
+k[t] = (1 - delta)*k[t-1] + i[t] :: "Capital Transition"
+
+# 4. Consumption Euler Equation:
+c[t]^(-gamma) = beta*(1 + r[t])*c[t+1]^(-gamma) :: "Consumption Euler"
+
+# 5. Investment Arbitrage Condition:
+c[t]^(-gamma) = beta*c[t+1]^(-gamma)*(alpha*p_x[t+1]*k[t]^(alpha-1) + 1 - delta) :: "Investment Arbitrage"
+
+# 6. Country Borrowing Rate with Debt-Elastic Premium:
+r[t] = r_w + psi*(exp(-b[t]) - 1) :: "Country Interest Rate"
+
+# Exogenous Terms-of-Trade / Export Price Shock
+# ---------------------------------------------
+# Commodity export boom: +25% for 2 periods, followed by smooth exponential decay
+forall t, 0 <= t < 2   : p_x[t] <- 1.25
+forall t, 2 <= t < 10  : p_x[t] <- 1.0 + 0.25 * exp(-0.4*(t - 2))
+forall t, 10 <= t < T+1: p_x[t] <- 1.0
+
+# Pipeline execution
+@run: steady
+@run: check
+@run: simulate: {T: 35}
+@run: plot: {vars: [c, y, b, i, r]}

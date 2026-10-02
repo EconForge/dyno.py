@@ -145,6 +145,12 @@ class AbstractModel(ABC):
                 "Cannot set metadata before symbolic model is initialized"
             )
         symbolic.metadata = value
+        if (
+            isinstance(value, dict)
+            and "name" in value
+            and isinstance(value["name"], str)
+        ):
+            self.name = value["name"]
 
     @property
     def is_deterministic(self) -> bool:
@@ -231,7 +237,17 @@ class AbstractModel(ABC):
     def _set_name(self: Self) -> None:
         import os.path
 
-        self.name = os.path.basename(self.filename).split(".")[0]
+        symbolic = getattr(self, "symbolic", None)
+        meta = getattr(symbolic, "metadata", {}) if symbolic is not None else {}
+        name = meta.get("name") if isinstance(meta, dict) else None
+        if name and isinstance(name, str):
+            self.name = name
+            return
+
+        if self.filename:
+            self.name = os.path.basename(self.filename).split(".")[0]
+        else:
+            self.name = "Unnamed"
 
     def _set_symbols(self: Self) -> None:
         c = self.context

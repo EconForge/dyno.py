@@ -4,8 +4,7 @@ description = "Macroeconomic model solver"
 channels = ["https://prefix.dev/econforge","conda-forge"]
 
 preview = ["pixi-build"]
-#platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"] # this doesn's work with jax
-platforms = ['linux-64']
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 
 # pyproject.toml is the single source of truth for the package name, version,
 # Python floor (`requires-python`) and runtime dependencies: hatchling builds
@@ -49,6 +48,10 @@ ripgrep = ">=15.1.0,<16"
 lark = ">=1.1.7,<2"
 pyyaml = ">=6.0.1,<7"
 plotext = ">=5.3.2,<6"
+
+[feature.dynare]
+# dynare-preprocessor-pylib has no osx-arm64 build yet (econforge or conda-forge)
+platforms = ["linux-64", "osx-64", "win-64"]
 
 [feature.dynare.dependencies]
 dynare-preprocessor-pylib = "0.0.1.dev0.*"
@@ -96,7 +99,7 @@ jupyterlab = ">=4.5.4,<5"
 ipykernel = ">=7.2.0,<8"
 matplotlib = ">=3.10.8,<4"
 notebook = ">=7.5.3,<8"
-jupyterlab-dyno = ">=0.0.3.5,<0.0.4"
+jupyterlab-dyno = ">=0.1.1,<0.2.0"
 
 [feature.jupyter.tasks]
 jlab = { cmd = "ipython kernel install --name $PIXI_ENVIRONMENT_NAME --user && jupyter lab", default-environment = "dev" }
@@ -143,10 +146,18 @@ scipy = "==1.11.3"
 tempita = "==0.6.0"
 typing_extensions = "==4.6.0"
 
+[feature.experimental]
+# jaxlib is not packaged for win-64 on conda-forge
+platforms = ["linux-64", "osx-64", "osx-arm64"]
+
 [feature.experimental.dependencies]
 sympy = ">=1.12,<2"
 python-symengine = "*"
 jax = "*"
+
+[feature.dev-experimental]
+# jaxlib is not packaged for win-64 on conda-forge
+platforms = ["linux-64", "osx-64", "osx-arm64"]
 
 [feature.dev-experimental.dependencies]
 jax = "*"

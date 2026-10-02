@@ -1,3 +1,5 @@
+@name: Ramsey_Deterministic
+
 alph <- 0.5
 gam <- 0.5
 delt <- 0.02

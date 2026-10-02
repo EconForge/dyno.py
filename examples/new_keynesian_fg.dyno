@@ -1,0 +1,65 @@
+@name: New_Keynesian_Forward_Guidance
+
+# =============================================================================
+# 3-Equation New Keynesian Model with Forward Guidance and Natural Rate Shock
+# =============================================================================
+# This model implements the canonical 3-equation New Keynesian framework
+# (Clarida, Galí & Gertler 1999; Woodford 2003; Galí 2015) under perfect foresight.
+#
+# Framework:
+# 1. Forward-looking Dynamic IS curve (Euler equation)
+# 2. Forward-looking New Keynesian Phillips Curve (NKPC)
+# 3. Taylor Rule with interest rate smoothing and forward guidance intervention
+#
+# Experiment:
+# A large recessionary demand shock (r_nat drops by 400 bps) accompanied by
+# an explicit Forward Guidance policy commitment: the central bank holds the policy
+# rate down for 6 quarters before liftoff back to the endogenous Taylor rule.
+# =============================================================================
+
+# Parameters
+beta   <- 0.99   :: "Discount factor (quarterly)"
+sigma  <- 1.00   :: "Intertemporal elasticity of substitution"
+kappa  <- 0.15   :: "Slope of New Keynesian Phillips curve"
+phi_pi <- 1.50   :: "Taylor rule response to inflation"
+phi_y  <- 0.125  :: "Taylor rule response to output gap"
+rho_r  <- 0.75   :: "Interest rate smoothing parameter"
+
+T      <- 40
+
+# Steady states (zero inflation, zero output gap, zero nominal rate in deviations)
+y[~]     <- 0.0
+pi[~]    <- 0.0
+i[~]     <- 0.0
+r_nat[~] <- 0.0
+eps_i[~] <- 0.0
+
+# Dynamic Equations
+# -----------------
+# 1. Dynamic IS Curve: y[t] = E_t y[t+1] - (1/sigma)*(i[t] - E_t pi[t+1] - r_nat[t])
+y[t] = y[t+1] - (1/sigma)*(i[t] - pi[t+1] - r_nat[t]) :: "IS Curve"
+
+# 2. New Keynesian Phillips Curve: pi[t] = beta*E_t pi[t+1] + kappa*y[t]
+pi[t] = beta*pi[t+1] + kappa*y[t] :: "Phillips Curve"
+
+# 3. Taylor Rule with interest rate smoothing and policy intervention:
+i[t] = rho_r*i[t-1] + (1-rho_r)*(phi_pi*pi[t] + phi_y*y[t]) + eps_i[t] :: "Taylor Rule"
+
+# Exogenous Shocks & Policy Paths
+# --------------------------------
+# Recessionary natural rate shock (negative demand shock lasting 4 quarters with decay)
+X <- 4
+forall t, 0 <= t < X   : r_nat[t] <- -0.04
+forall t, X <= t < 12  : r_nat[t] <- -0.04 * exp(-0.35*(t - X))
+forall t, 12 <= t < T+1: r_nat[t] <- 0.0
+
+# Forward guidance commitment: Central bank holds interest rate down until t=6
+forall t, 0 <= t < 6   : eps_i[t] <- -0.02
+forall t, 6 <= t < T+1 : eps_i[t] <- 0.0
+
+# Pipeline execution
+@run: variants: {X: [4,6]}
+@run: steady
+@run: check
+@run: simulate: {T: 35}
+@run: plot: {vars: [y, pi, i, r_nat]}
