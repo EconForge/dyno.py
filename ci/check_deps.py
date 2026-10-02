@@ -29,6 +29,13 @@ ROOT = Path(__file__).resolve().parent.parent
 # PyPI name -> conda-forge name, where they differ.
 CONDA_NAMES: dict[str, str] = {}
 
+# Packages where the pyproject.toml floor cannot be installed in the
+# min-deps environment (e.g. pyyaml 6.0 has no conda-forge build for
+# Python >=3.12).  Values are the pin that min-deps should use instead.
+MIN_DEPS_OVERRIDES: dict[str, str] = {
+    "pyyaml": "==6.0.1",
+}
+
 REQUIREMENT = re.compile(r"^\s*([A-Za-z0-9_.\-]+)\s*(.*?)\s*$")
 
 
@@ -95,11 +102,13 @@ def main() -> int:
         floor = lower_bound(spec)
         if floor is None:
             errors.append(f"{name}: no lower bound in pyproject.toml ({spec!r})")
-        elif min_deps.get(name) != f"=={floor}":
-            errors.append(
-                f"{name}: pixi.toml [feature.min-deps.dependencies] has "
-                f"{min_deps.get(name)!r}, expected '=={floor}'"
-            )
+        else:
+            expected_pin = MIN_DEPS_OVERRIDES.get(name, f"=={floor}")
+            if min_deps.get(name) != expected_pin:
+                errors.append(
+                    f"{name}: pixi.toml [feature.min-deps.dependencies] has "
+                    f"{min_deps.get(name)!r}, expected {expected_pin!r}"
+                )
     for name in sorted(set(min_deps) - set(requirements) - {"python"}):
         errors.append(
             f"{name}: pinned in [feature.min-deps.dependencies] "
