@@ -188,6 +188,27 @@ class DynoModel(AbstractModel):
                 {"command": "analyze", "options": {"T": 40}},
             ]
 
+        from .errors import BlanchardKahnError
+
+        bk_failed = False
+
+        def _solve_or_record(solve_options: dict[str, Any]) -> Any:
+            """Solve the model, or record a Blanchard-Kahn failure and return None.
+
+            Without a stable solution, later commands that need one are skipped
+            instead of aborting the whole report.
+            """
+            nonlocal bk_failed
+            if bk_failed:
+                return None
+            try:
+                return model.solve(**solve_options)
+            except BlanchardKahnError as e:
+                bk_failed = True
+                results.eigenvalues = e.evs
+                results.add_error(str(e))
+                return None
+
         for idx, cmd in enumerate(commands):
             name = str(cmd["command"]).lower()
             options = cmd.get("options", {})
@@ -226,8 +247,10 @@ class DynoModel(AbstractModel):
                     results.add_warning(str(e))
             elif name in {"solve", "perturb"}:
                 solution: PerturbationSolution | TransitionSimulation | None = (
-                    model.solve(**options)
+                    _solve_or_record(options)
                 )
+                if solution is None:
+                    continue
                 results.solution = solution
                 results.eigenvalues = getattr(solution, "evs", None)
             elif name in {"simul", "simulate"}:
@@ -251,7 +274,9 @@ class DynoModel(AbstractModel):
                     }
                     solution = results.solution
                     if solution is None or not hasattr(solution, "X"):
-                        solution = model.solve(**solve_options)
+                        solution = _solve_or_record(solve_options)
+                        if solution is None:
+                            continue
                         results.solution = solution
                     results.eigenvalues = getattr(solution, "evs", None)
                     horizon = int(
@@ -321,7 +346,9 @@ class DynoModel(AbstractModel):
                     }
                     solution = results.solution
                     if solution is None or not hasattr(solution, "X"):
-                        solution = model.solve(**solve_options)
+                        solution = _solve_or_record(solve_options)
+                        if solution is None:
+                            continue
                         results.solution = solution
                     results.eigenvalues = getattr(solution, "evs", None)
                     irf_type = options.get("units", options.get("type", "deviation"))

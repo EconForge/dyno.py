@@ -376,12 +376,16 @@ class AbstractModel(ABC):
         if compute_eigenvalues is None:
             compute_eigenvalues = self._check_eigenvalues
         if compute_eigenvalues:
+            from .errors import BlanchardKahnError
             from .solver import solve_qz
 
             jac = self.jacobians
-            A, B, C = jac[0], jac[1], jac[2]
+            A, B, C = jac[1], jac[2], jac[3]
             try:
                 _, evs = solve_qz(A, B, C)
+            except BlanchardKahnError as e:
+                # Keep the eigenvalues: they show why the conditions fail.
+                evs = e.evs
             except Exception:
                 evs = None
             self._eigenvalues = evs

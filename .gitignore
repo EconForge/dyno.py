@@ -25,4 +25,5 @@ demos/**
 !examples/**/*.m
 !examples/**/*.csv
 coverage.xml
-.ipynb_checkpoints/
+dist/
+.claude/

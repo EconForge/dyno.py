@@ -352,11 +352,13 @@ def solve_qz(
     l2 = evs[n]
     if l1 <= l2 < 1:
         raise BlanchardKahnError(
-            f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. Too many stable solutions."
+            f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. Too many stable solutions.",
+            evs=evs,
         )
     if 1 < l1 <= l2:
         raise BlanchardKahnError(
-            f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. No stable solution."
+            f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. No stable solution.",
+            evs=evs,
         )
 
     X = (Z21 @ np.linalg.inv(Z11)).reshape(

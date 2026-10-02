@@ -91,7 +91,7 @@ epsilon[t] <- N(0.009)
 from dyno import DynoModel
 
 # Load and verify
-rbc = DynoModel("rbc.dyno")
+rbc = DynoModel("examples/RBC.dyno")
 rbc.check()
 
 # Solve model

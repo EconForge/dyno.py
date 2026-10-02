@@ -61,6 +61,13 @@ To verify whether a model adheres to a recipe, use `check_equation_group()`:
 
 ```python
 from dyno.dynspec.recipe import DTCC_RECIPE, check_equation_group
+from dyno.dynspec.grammar import parser
+
+# Parse transition equations
+transition_equations = parser.parse("""
+z[t] = rho * z[t-1] + e_z[t]
+k[t] = (1-delta) * k[t-1] + i[t-1]
+""", start="equation_block").children
 
 # Define variable catalog
 variables = {
@@ -110,9 +117,18 @@ DynSpec implements **Kahn's topological sort algorithm** in `check_dag()`:
 
 ```python
 from dyno.dynspec.recipe import check_dag
+from dyno.dynspec.grammar import parser
+
+equations = parser.parse("""
+y[t] = exp(z[t]) * k[t-1]^alpha
+c[t] = y[t] - i[t]
+w[t] = (1-alpha)*y[t]
+""", start="equation_block").children
+
+variables = {"auxiliaries": ["y", "c", "w"]}
 
 # Computes valid evaluation sequence or returns None if a cycle exists
-evaluation_order = check_dag(equations, target_names=["y", "c", "rk", "w"])
+evaluation_order = check_dag(equations, target_group="auxiliaries", variables=variables)
 print("Evaluation order:", evaluation_order)
-# ['y', 'c', 'rk', 'w']
+# ['y', 'c', 'w']
 ```

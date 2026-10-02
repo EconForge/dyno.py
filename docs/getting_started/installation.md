@@ -40,7 +40,7 @@ pixi add dyno
 channels = ["https://prefix.dev/econforge", "conda-forge"]
 
 [dependencies]
-dyno = ">=0.1.12,<0.2"
+dyno = ">=0.1.13,<0.2"
 ```
 
 (the exact version constraint depends on the current release).

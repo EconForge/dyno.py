@@ -10,9 +10,11 @@ The `LatexTransformer` is a Lark visitor that walks expression and equation tree
 
 ```python
 from dyno.dynspec.latex import latex
+from dyno.dynspec.grammar import parser
 
-# Convert an equation string directly
-tex_code = latex("1/c[t] = beta * (1/c[t+1]) * (alpha*y[t+1]/k[t] + 1 - delta)")
+# Convert an equation tree directly
+tree = parser.parse("1/c[t] = beta * (1/c[t+1]) * (alpha*y[t+1]/k[t] + 1 - delta)", start="equation_block")
+tex_code = latex(tree)
 print(tex_code)
 ```
 

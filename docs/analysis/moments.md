@@ -87,5 +87,5 @@ You can also compute moments directly given arbitrary state-space matrices $(X, 
 ```python
 from dyno.solver import moments
 
-gamma_0, gamma = moments(X, Y, Sigma)
+gamma_0, gamma = moments(solution.X, solution.Y, solution.Σ)
 ```

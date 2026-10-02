@@ -84,6 +84,9 @@ Once instantiated, a model stores information across several structured containe
 The `context` dictionary is the mathematical engine room of Dyno. It contains five primary keys:
 
 ```python
+from dyno import DynoModel
+
+model = DynoModel("examples/neo.dyno")
 model.context.keys()
 # dict_keys(['constants', 'steady_states', 'values', 'processes', 'variables'])
 ```
@@ -137,9 +140,9 @@ Dyno provides functional methods for non-destructive model updates:
 Create a clone of the model with updated parameter values:
 
 ```python
-model_new = model.recalibrate(beta=0.985, alpha=0.35)
-assert model_new.context["constants"]["beta"] == 0.985
-assert model.context["constants"]["beta"] != 0.985  # Original untouched
+model_new = model.recalibrate(β=0.985, α=0.35)
+assert model_new.context["constants"]["β"] == 0.985
+assert model.context["constants"]["β"] != 0.985  # Original untouched
 ```
 
 ### Deep Copy

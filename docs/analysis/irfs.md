@@ -73,9 +73,15 @@ chart.properties(title="Impulse Response Analysis")
 
 Pass `engine="plotext"` to get a text chart for the terminal instead.
 
-### Exporting Static Figures
+### Exporting Figures
 
-Export publication-ready vector images (requires `vl-convert-python`):
+Export as interactive HTML:
+
+```python
+chart.save("irf_plots.html")
+```
+
+Or export publication-ready vector images (requires `vl-convert-python`):
 
 ```python
 chart.save("irf_plots.svg")

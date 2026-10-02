@@ -16,36 +16,28 @@ Suppose an economy at steady state suffers a sudden disaster that destroys 15% o
 
 ```text
 # Parameters
-alpha <- 0.33
-beta  <- 0.985
-delta <- 0.025
-gamma <- 2.0
-rho   <- 0.95
+alph <- 0.50
+gam  <- 0.50
+delt <- 0.02
+bet  <- 0.051
+aa   <- 0.511
+T    <- 50
 
-# Time horizon
-T <- 80
+# Steady-state values
+x[~] <- 1.0
+k[~] <- ((delt + bet) / (1.0 * aa * alph))^(1 / (alph - 1))
+c[~] <- aa * k[~]^alph - delt * k[~]
 
-# Steady State
-r_ss <- 1/beta - 1 + delta
-k[~] <- (alpha / r_ss)^(1/(1-alpha))
-y[~] <- k[~]^alpha
-i[~] <- delta * k[~]
-c[~] <- y[~] - i[~]
-a[~] <- 0.0
+# Dynamic equations
+0 = c[t] + k[t] - aa*x[t]*k[t-1]^alph - (1 - delt)*k[t-1]
+0 = c[t]^(-gam) - (1 + bet)^(-1) * (aa*alph*x[t+1]*k[t]^(alph-1) + 1 - delt) * c[t+1]^(-gam)
 
-# Dynamic Equations
-y[t] = exp(a[t]) * k[t-1]^alpha
-k[t] = (1-delta)*k[t-1] + i[t]
-c[t] + i[t] = y[t]
-beta * (c[t+1]/c[t])^(-gamma) * (alpha*y[t+1]/k[t] + 1 - delta) = 1
-a[t] = rho*a[t-1] + e[t]
+# Constant productivity path
+x[1] <- 1.0
+forall t, 2 <= t < T : x[t] <- 1.0
 
-# 15% Destruction of Initial Capital
-k[0] <- k[~] * 0.85
-
-# Exogenous Shocks remain zero
-e[0] <- 0.0
-forall t, 1 <= t < 80 : e[t] <- 0.0
+# Initial condition override: capital destroyed by 40%
+k[0] <- 0.60 * k[~]
 ```
 
 ---
@@ -55,16 +47,36 @@ forall t, 1 <= t < 80 : e[t] <- 0.0
 ```python
 from dyno import DynoModel
 
-model = DynoModel("transition.dyno")
+model = DynoModel(txt="""
+alph <- 0.50
+gam  <- 0.50
+delt <- 0.02
+bet  <- 0.051
+aa   <- 0.511
+T    <- 50
+
+x[~] <- 1.0
+k[~] <- ((delt + bet) / (1.0 * aa * alph))^(1 / (alph - 1))
+c[~] <- aa * k[~]^alph - delt * k[~]
+
+0 = c[t] + k[t] - aa*x[t]*k[t-1]^alph - (1 - delt)*k[t-1]
+0 = c[t]^(-gam) - (1 + bet)^(-1) * (aa*alph*x[t+1]*k[t]^(alph-1) + 1 - delt) * c[t+1]^(-gam)
+
+x[1] <- 1.0
+forall t, 2 <= t < T : x[t] <- 1.0
+
+k[0] <- 0.60 * k[~]
+""")
 
 # Solve non-linear stacked system
 trajectory = model.solve()
+df = trajectory.to_df()
 
 print("Initial period t=0:")
-print(trajectory.loc[0, ["k", "c", "i", "y"]])
+print(df.loc[0, ["k", "c"]])
 
-print("\nFinal period t=80:")
-print(trajectory.loc[80, ["k", "c", "i", "y"]])
+print("\nFinal period t=50:")
+print(df.loc[50, ["k", "c"]])
 ```
 
 ---
@@ -74,34 +86,21 @@ print(trajectory.loc[80, ["k", "c", "i", "y"]])
 ```python
 import matplotlib.pyplot as plt
 
-fig, axes = plt.subplots(2, 2, figsize=(11, 7))
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
 
 # 1. Capital
-axes[0, 0].plot(trajectory.index, trajectory["k"], lw=2, color="crimson")
-axes[0, 0].axhline(model.steady_state["k"], color="black", linestyle="--", alpha=0.7)
-axes[0, 0].set_title("Capital Stock $k_t$")
-axes[0, 0].grid(True, alpha=0.3)
+axes[0].plot(df["t"], df["k"], lw=2, color="crimson")
+axes[0].axhline(model.steady_state["k"], color="black", linestyle="--", alpha=0.7)
+axes[0].set_title("Capital Stock $k_t$")
+axes[0].grid(True, alpha=0.3)
 
 # 2. Consumption
-axes[0, 1].plot(trajectory.index, trajectory["c"], lw=2, color="navy")
-axes[0, 1].axhline(model.steady_state["c"], color="black", linestyle="--", alpha=0.7)
-axes[0, 1].set_title("Consumption $c_t$")
-axes[0, 1].grid(True, alpha=0.3)
-
-# 3. Investment
-axes[1, 0].plot(trajectory.index, trajectory["i"], lw=2, color="forestgreen")
-axes[1, 0].axhline(model.steady_state["i"], color="black", linestyle="--", alpha=0.7)
-axes[1, 0].set_title("Investment $i_t$")
-axes[1, 0].grid(True, alpha=0.3)
-
-# 4. Output
-axes[1, 1].plot(trajectory.index, trajectory["y"], lw=2, color="darkorange")
-axes[1, 1].axhline(model.steady_state["y"], color="black", linestyle="--", alpha=0.7)
-axes[1, 1].set_title("Output $y_t$")
-axes[1, 1].grid(True, alpha=0.3)
+axes[1].plot(df["t"], df["c"], lw=2, color="navy")
+axes[1].axhline(model.steady_state["c"], color="black", linestyle="--", alpha=0.7)
+axes[1].set_title("Consumption $c_t$")
+axes[1].grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.show()
 ```
 
 ### Transition Dynamics:

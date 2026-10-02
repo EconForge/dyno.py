@@ -55,7 +55,7 @@ In Python, execute the pipeline with one call:
 ```python
 from dyno import DynoModel
 
-model = DynoModel("model.dyno")
+model = DynoModel("examples/RBC.dyno")
 results = model.run()
 ```
 
@@ -78,7 +78,7 @@ results.simulation      # Dictionary of IRFs or simulation DataFrame
 
 ## Rich Display in Notebooks & Terminal
 
-`RunResults` and `Report` automatically render clean, formatted summaries across all environments:
+`RunResults` automatically renders clean, formatted summaries across all environments:
 
 ### Terminal (Plain Text)
 
@@ -137,16 +137,13 @@ results
 
 ---
 
-## Programmatic Report Generation
+## Programmatic Report Generation & Export
 
-You can build and export reports explicitly:
+`RunResults` can be directly exported to HTML or Markdown strings:
 
 ```python
-from dyno.report import Report
-
-report = Report(model)
-html_content = report.to_html()
-markdown_content = report.to_markdown()
+html_content = results.to_html()
+markdown_content = results.to_markdown()
 
 # Save report to disk
 with open("model_report.html", "w") as f:

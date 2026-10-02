@@ -52,11 +52,7 @@ nav = [
           "dynare/index.md",
       ]},
   ]},
-  { "Dyno Lab (GUI)" = [
-      "dyno_lab/index.md",
-      "dyno_lab/interface.md",
-      "dyno_lab/options_and_settings.md",
-  ]},
+  { "Dyno Lab (GUI)" = "dyno_lab/index.md" },
   { "Tutorials" = [
       "tutorials/rbc_model.md",
       "tutorials/transition_dynamics.md",

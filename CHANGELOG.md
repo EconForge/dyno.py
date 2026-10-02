@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-10-02
+
+### Changed
+
+- PyPI release configuration: set distribution package name to `dynopy` while keeping `import dyno`.
+- Cleaned up build configuration in `pyproject.toml` and sdist inclusions.
+- Configured GitHub Actions CI workflow to automatically publish to PyPI via Trusted Publishing on version tags.
+
 ## [0.1.12] - 2026-10-02
 
 ### Added

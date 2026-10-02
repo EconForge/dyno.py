@@ -107,5 +107,4 @@ Dyno Lab flags syntax and mathematical errors directly in the editor:
 
 ## Next Steps
 
-- For an in-depth reference of all editor controls and options, read the [Dyno Lab Interface Guide](../dyno_lab/interface.md).
-- To configure preprocessors and default settings, see [Options & Settings](../dyno_lab/options_and_settings.md).
+- For an overview of Dyno Lab features and installation, see the [Dyno Lab Guide](../dyno_lab/index.md).

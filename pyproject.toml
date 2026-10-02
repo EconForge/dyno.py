@@ -1,6 +1,12 @@
 [project]
-name = "dyno"
-version = "0.1.12"
+name = "dynopy"
+version = "0.1.13"
+description = "Macroeconomic model solver"
+readme = "README.md"
+authors = [
+    { name = "Pablo Winant", email = "pablo.winant@gmail.com" },
+    { name = "Ousema Bouaneni", email = "ousema.bouaneni@polytechnique.edu" },
+]
 requires-python = ">= 3.12,<3.14"
 license = "BSD-3-Clause"
 classifiers = [
@@ -36,8 +42,7 @@ requires = ["hatchling"]
 packages = ["src/dyno"]
 
 [tool.hatch.build.targets.wheel.force-include]
-"src/dyno/py.typed" = "dyno/py.typed"
 "examples" = "dyno/examples"
 
-[tool.hatch.build.targets.sdist.force-include]
-"src/dyno/py.typed" = "dyno/py.typed"
+[tool.hatch.build.targets.sdist]
+only-include = ["src", "examples", "tests", "README.md", "LICENSE", "pyproject.toml"]

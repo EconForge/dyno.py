@@ -59,7 +59,9 @@ once per bracket.
 ### Accessing Equation Tags in Python
 
 ```python
-model = DynoModel("my_model.dyno")
+from dyno import DynoModel
+
+model = DynoModel("examples/neo.dyno")
 
 for i, eq_tree in enumerate(model.symbolic.equations):
     meta = getattr(eq_tree.meta, "statement_metadata", {})
@@ -86,8 +88,8 @@ alpha <- 0.36
 Access model metadata via `model.metadata`:
 
 ```python
-print(model.metadata["name"])        # 'RBC Baseline'
-print(model.metadata["description"]) # 'Standard Hansen...'
+print(model.metadata.get("name"))
+print(model.metadata.get("description"))
 ```
 
 ---
@@ -134,13 +136,18 @@ model: |
 ### Loading YAML Models
 
 ```python
-# From a .yaml file
-model = DynoModel("model.yaml")
+from dyno import DynoModel
 
-# Or directly from a YAML string
-model = DynoModel(yaml=yaml_content)
+yaml_content = """
+name: RBC Baseline
+tags: [dsge, baseline, closed-economy]
+model: |
+  alpha <- 0.36
+  x[t] = alpha * x[t-1]
+"""
+model_yaml = DynoModel(yaml=yaml_content)
 
-print(model.metadata["tags"])  # ['dsge', 'baseline', 'closed-economy']
+print(model_yaml.metadata["tags"])  # ['dsge', 'baseline', 'closed-economy']
 ```
 
 ### Precedence Rules
@@ -178,7 +185,9 @@ The `@run:` command format is stable. See [Automated Pipelines & Reports](../ana
 When you call `results = model.run()`, Dyno executes each command in sequence and packages the outputs into a `RunResults` container:
 
 ```python
-model = DynoModel("model.dyno")
+from dyno import DynoModel
+
+model = DynoModel("examples/RBC.dyno")
 results = model.run()
 
 # Access pipeline products

@@ -88,7 +88,8 @@ check;
 
     assert isinstance(results, RunResults)
     assert results.residuals is not None
-    assert results.eigenvalues == getattr(results.model, "_eigenvalues", None)
+    assert results.eigenvalues is not None
+    assert results.eigenvalues is getattr(results.model, "_eigenvalues", None)
 
 
 def test_dyno_run_check_semicolon_mutes_check_section_when_clean():
@@ -357,3 +358,78 @@ x[t] = alpha * x[t-1] + e[t]
 """
     with pytest.raises(ParserError, match="unexpected ';'"):
         DynoModel(txt=txt_err4)
+
+
+# An explosive backward root: no stable solution (Blanchard-Kahn violated).
+BK_VIOLATION = """
+alpha := 2.0
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+"""
+
+
+def test_dyno_run_check_computes_eigenvalues_without_solve():
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+
+@run: steady
+@run: check
+"""
+    results = DynoModel(txt=txt).run()
+    assert results.solution is None
+    assert results.eigenvalues is not None
+    assert results.bk_check is True
+    md = results._repr_markdown_()
+    assert md is not None
+    assert ":::{tip} Blanchard-Kahn conditions are met" in md
+
+
+def test_dyno_run_check_reports_blanchard_kahn_violation():
+    results = DynoModel(txt=BK_VIOLATION + "\n@run: steady\n@run: check\n").run()
+    assert results.eigenvalues is not None
+    assert results.bk_check is False
+    assert results.errors == []
+    md = results._repr_markdown_()
+    assert md is not None
+    assert ":::{warning} Blanchard-Kahn conditions are not met" in md
+
+
+def test_dyno_run_solve_records_blanchard_kahn_violation():
+    txt = BK_VIOLATION + """
+@run: steady
+@run: check;
+@run: solve
+@run: simulate
+@run: plot
+"""
+    results = DynoModel(txt=txt).run()
+
+    # The run completes: the failure is recorded, later commands are skipped.
+    assert results.solution is None
+    assert results.simulation is None
+    assert results.figure is None
+    assert results.eigenvalues is not None
+    assert results.bk_check is False
+    assert len(results.errors) == 1
+    assert "Eigenvalue condition not satisfied" in results.errors[0]["message"]
+
+    # The (muted) check section is shown, with the Blanchard-Kahn warning.
+    assert results._should_render_check is True
+    md = results._repr_markdown_()
+    assert md is not None
+    assert ":::{warning} Blanchard-Kahn conditions are not met" in md
+    assert "Blanchard-Kahn conditions: NOT met" in results.to_text()
+
+
+def test_solve_raises_blanchard_kahn_error_with_eigenvalues():
+    import pytest
+    from dyno.errors import BlanchardKahnError
+
+    with pytest.raises(BlanchardKahnError) as info:
+        DynoModel(txt=BK_VIOLATION).solve()
+    assert info.value.evs is not None
+    assert len(info.value.evs) == 2

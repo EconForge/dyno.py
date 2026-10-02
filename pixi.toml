@@ -27,7 +27,7 @@ ignore-pypi-mapping = false
 hatchling = "==1.26.3"
 
 [pypi-dependencies]
-dyno = { path = "." , editable = true}
+dynopy = { path = "." , editable = true}
 
 [dependencies]
 python = ">=3.12,<3.14"
@@ -121,6 +121,15 @@ zensical = ">=0.0.52,<0.1"
 docs = "zensical serve"
 build-docs = "zensical build"
 
+[feature.release.dependencies]
+twine = ">=6.0.0"
+
+[feature.release.tasks]
+build-dist = "uv build --out-dir dist"
+check-dist = "twine check dist/*"
+publish-testpypi = "uv publish --publish-url https://test.pypi.org/legacy/ dist/*"
+publish-pypi = "uv publish dist/*"
+
 [feature.py312.dependencies]
 python = ">=3.12.0,<3.13"
 
@@ -177,4 +186,4 @@ py313 = ["test", "lint", "py313"]
 min-deps = ["test", "min-deps"]
 
 [environments.dev]
-features = ["test", "lint", "jupyter", "docs", "specta"]
+features = ["test", "lint", "jupyter", "docs", "specta", "release"]

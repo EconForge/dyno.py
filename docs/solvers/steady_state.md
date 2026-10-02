@@ -36,7 +36,9 @@ Dyno provides tools to verify that declared steady states satisfy the dynamic sy
 Evaluates the absolute difference $|LHS - RHS|$ for each equation at the current steady-state point:
 
 ```python
-model = DynoModel("my_model.dyno")
+from dyno import DynoModel
+
+model = DynoModel("examples/neo.dyno")
 
 for i, res in enumerate(model.residuals, start=1):
     print(f"Eq {i} residual: {res:.2e}")
@@ -74,14 +76,15 @@ For complex models where an analytical steady state is intractable, Dyno provide
    ```
 
 2. Call `model.steady()` in Python:
-   ```python
-   # Solves f(y_bar, y_bar, y_bar) = 0 numerically
-   model = model.steady()
 
-   # Verify convergence
-   model.check()
-   print("Computed Steady State:", model.steady_state)
-   ```
+```python
+# Solves f(y_bar, y_bar, y_bar) = 0 numerically
+model = model.steady()
+
+# Verify convergence
+model.check()
+print("Computed Steady State:", model.steady_state)
+```
 
 `model.steady()` uses SciPy's non-linear root-finding algorithms (`hybr` / Powell hybrid method) to solve the stationary system of equations simultaneously.
 

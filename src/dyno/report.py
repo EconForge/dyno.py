@@ -668,9 +668,13 @@ class RunResults:
 
     @property
     def bk_check(self) -> bool | None:
-        if self.solution is None or self.solution.evs is None:
+        # ``check`` and a failed ``solve`` set the eigenvalues without a solution.
+        evs = self.eigenvalues
+        if evs is None and self.solution is not None:
+            evs = getattr(self.solution, "evs", None)
+        if evs is None:
             return None
-        evs = abs(self.solution.evs)
+        evs = np.abs(np.asarray(evs).reshape(-1))
         n = len(evs) // 2
         if n == 0:
             return None
@@ -1517,12 +1521,12 @@ class RunResults:
             else:
                 print(f"Residuals: max |r| = {abs(r).max():.2e}")
 
+        bk = self.bk_check
+        if bk is True:
+            print("Blanchard-Kahn conditions: met")
+        elif bk is False:
+            print("Blanchard-Kahn conditions: NOT met")
         if self.solution is not None:
-            bk = self.bk_check
-            if bk is True:
-                print("Blanchard-Kahn conditions: met")
-            elif bk is False:
-                print("Blanchard-Kahn conditions: NOT met")
             print(f"Solution: computed")
 
         if self.simulation is not None:

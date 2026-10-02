@@ -164,7 +164,15 @@ class SteadyStateError(DynoError):
 
 
 class BlanchardKahnError(DynoError):
-    """Raised when Blanchard-Kahn eigenvalue conditions are not satisfied."""
+    """Raised when Blanchard-Kahn eigenvalue conditions are not satisfied.
+
+    ``evs`` holds the generalized eigenvalues sorted by modulus, so that
+    callers can still report them.
+    """
+
+    def __init__(self, message: str, evs: Any = None) -> None:
+        self.evs = evs
+        super().__init__(message)
 
 
 class UnsupportedFeatureError(ParserError):

@@ -23,6 +23,7 @@ The parser supports multiple start symbols depending on what is being parsed:
 from dyno.dynspec.grammar import parser
 
 # Parse a complete model
+full_text = "y[t] = c[t] + i[t]\nk[t] = (1-d)*k[t-1] + i[t]"
 tree_full = parser.parse(full_text, start="free_block")
 
 # Parse an equation block
@@ -93,6 +94,8 @@ In the raw Lark grammar, `time_shift` is an optional rule:
 When no shift is written (as in `k[t]`), `time_shift` initially yields `None`. To prevent downstream analyzers from needing null-checks everywhere, DynSpec integrates a built-in `TimeFixer` transformer:
 
 ```python
+from lark import Transformer, Tree, v_args
+
 class TimeFixer(Transformer):
     @v_args(tree=True)
     def shift(self, tree):

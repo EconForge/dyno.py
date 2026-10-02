@@ -11,6 +11,19 @@ The `compile_equation_group()` function compiles a list of AST equation nodes in
 ```python
 from dyno.dynspec.funcgen import compile_equation_group
 from dyno.dynspec.recipe import DTCC_RECIPE
+from dyno.dynspec.grammar import parser
+
+transition_equations = parser.parse("""
+z[t] = rho * z[t-1] + e_z[t]
+k[t] = (1-delta) * k[t-1] + i[t-1]
+""", start="equation_block").children
+
+variables = {
+    "exogenous": ["e_z"],
+    "states": ["z", "k"],
+    "controls": ["n", "i"],
+}
+constants = {"alpha": 0.33, "beta": 0.99, "delta": 0.025, "rho": 0.95}
 
 spec = DTCC_RECIPE.get_group_spec("transition")
 
@@ -18,7 +31,7 @@ conformity, func = compile_equation_group(
     transition_equations,
     variables=variables,
     spec=spec,
-    constants=model.context["constants"]
+    constants=constants
 )
 
 assert conformity.ok
@@ -56,20 +69,30 @@ print("Updated states [z_t, k_t]:", new_states)
 
 For simultaneous equilibrium equations ($0 = \mathbb{E}_t [ h(\dots) ]$):
 
-- **Inputs**: Current and lead variable arrays: `func(exo_0, states_0, controls_0, exo_1, states_1, controls_1)`
+- **Inputs**: Current and lead variable arrays: `func(exo_0, states_0, controls_0, aux_0, exo_1, states_1, controls_1, aux_1)`
 - **Output**: A 1-D NumPy array of residuals ($LHS - RHS$).
 - **Use Case**: Fed directly into non-linear root finders (e.g. Newton-Krylov, Powell, or projection collocation).
 
 ```python
+arbitrage_equations = parser.parse("""
+1/c[t] = beta * (1/c[t+1]) * (alpha*k[t]^(alpha-1) + 1 - delta)
+""", start="equation_block").children
+
 arbitrage_spec = DTCC_RECIPE.get_group_spec("arbitrage")
+vars_arb = {"states": ["k"], "controls": ["c"], "exogenous": [], "auxiliaries": []}
+consts_arb = {"alpha": 0.33, "beta": 0.99, "delta": 0.025}
+
 _, arb_func = compile_equation_group(
     arbitrage_equations,
-    variables=variables,
+    variables=vars_arb,
     spec=arbitrage_spec,
-    constants=constants
+    constants=consts_arb
 )
 
-residuals = arb_func(exo_0, states_0, controls_0, exo_1, states_1, controls_1)
+exo_0, states_0, controls_0, aux_0 = np.array([]), np.array([9.35]), np.array([0.75]), np.array([])
+exo_1, states_1, controls_1, aux_1 = np.array([]), np.array([9.35]), np.array([0.75]), np.array([])
+
+residuals = arb_func(exo_0, states_0, controls_0, aux_0, exo_1, states_1, controls_1, aux_1)
 print("Arbitrage equation residuals:", residuals)
 ```
 

@@ -21,7 +21,11 @@ from dyno import DynoModel, examples_path
 
 package_dir = Path(dyno.__file__).resolve().parent
 assert "site-packages" in package_dir.parts, f"dyno imported from {package_dir}"
-print(f"dyno {version('dyno')} imported from {package_dir}")
+try:
+    pkg_ver = version("dynopy")
+except Exception:
+    pkg_ver = version("dyno")
+print(f"dyno {pkg_ver} imported from {package_dir}")
 
 # Package data.
 grammars = sorted(p.name for p in (package_dir / "dynspec" / "grammars").glob("*.lark"))

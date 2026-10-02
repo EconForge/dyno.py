@@ -9,9 +9,11 @@ When analyzing non-linear transition dynamics, anticipated policy reforms, or de
 The `deterministic_solve` method solves the non-linear perfect foresight system:
 
 ```python
+from dyno import DynoModel
 from dyno.solver import deterministic_solve
 
-df_trajectory = deterministic_solve(model, T=100)
+model = DynoModel("examples/ramst.dyno")
+trajectory = deterministic_solve(model, T=50)
 ```
 
 **Parameters:**
@@ -126,52 +128,42 @@ graph TD
 
 ## Practical Example: A Permanent Shock
 
-Consider a model with a permanent technology improvement:
+Consider a deterministic Ramsey model with an anticipated technology shock (`examples/ramst.dyno`):
 
 ```text
-# neo_det.dyno
-alpha <- 0.36
-beta  <- 0.99
-delta <- 0.025
-rho   <- 0.95
+@name: Ramsey_Deterministic
 
-# Horizon
+alph <- 0.5
+gam  <- 0.5
+delt <- 0.02
+bet  <- 0.05
+aa   <- 0.5
+
 T <- 50
 
-# Steady states
-k[~] <- 10.0
-c[~] <- 0.80
-y[~] <- 1.05
-a[~] <- 0.0
+# Dynamic Equations
+0 = c[t] + k[t] - aa*x[t]*k[t-1]^alph - (1-delt)*k[t-1]
+0 = c[t]^(-gam) - (1+bet)^(-1)*(aa*alph*x[t+1]*k[t]^(alph-1) + 1 - delt)*c[t+1]^(-gam)
 
-# Dynamic equations
-y[t] = exp(a[t]) * k[t-1]^alpha
-k[t] = y[t] - c[t] + (1-delta)*k[t-1]
-1/c[t] = beta * (1/c[t+1]) * (alpha*y[t+1]/k[t] + 1 - delta)
-a[t] = rho*a[t-1] + e[t]
+# Steady state
+x[~] <- 1
+k[~] <- ((delt+bet)/(1.0*aa*alph))^(1/(alph-1))
+c[~] <- aa*k[~]^alph-delt*k[~]
 
-# Initial capital perturbed 5% below steady state
-k[0] <- k[~] * 0.95
-
-# Permanent shock path
-e[0] <- 0.05
-forall t, 1 <= t < 50 : e[t] <- 0.0
+# Anticipated technology shock in period 1
+x[1] <- 1.2
 ```
 
-Solve and plot the transition trajectory:
+Solve and inspect the transition trajectory:
 
 ```python
 from dyno import DynoModel
 
-model = DynoModel("neo_det.dyno")
+model = DynoModel("examples/ramst.dyno")
 trajectory = model.solve()  # Automatically detects deterministic model
 
-print(trajectory[["k", "c", "y", "a"]].head(10))
+print(trajectory[["k", "c"]].head(10))
 
 # Plot transition
-import matplotlib.pyplot as plt
-trajectory[["k", "c", "y"]].plot(title="Deterministic Transition Path")
-plt.xlabel("Period t")
-plt.grid(True)
-plt.show()
+trajectory[["k", "c"]].plot(title="Deterministic Transition Path")
 ```

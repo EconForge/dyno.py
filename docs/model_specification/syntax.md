@@ -183,19 +183,26 @@ By default, Dyno accommodates incremental model authoring and interactive explor
   ^ uninitialized (steady-state) value: defaults to nan
   ```
 - Unassigned parameters can be supplied later using `recalibrate()`:
-  ```python
-  model = DynoModel("model.dyno")  # Emits UndefinedSymbolWarning
-  model = model.recalibrate(alpha=0.35)  # Now fully calibrated
-  ```
+
+```python
+from dyno import DynoModel
+
+model = DynoModel(txt="x[t] = alpha * x[t-1]")  # Emits UndefinedSymbolWarning
+model = model.recalibrate(alpha=0.35)            # Now fully calibrated
+```
 
 ### Strict Mode (`strict=True`)
 
 For automated pipelines and continuous integration, pass `strict=True` to reject incomplete models immediately:
 
 ```python
-model = DynoModel("model.dyno", strict=True)
-# Raises dyno.errors.UndefinedSymbolError:
-# Undefined parameter(s) used in equation definitions: alpha
+from dyno import DynoModel
+from dyno.errors import UndefinedSymbolError
+
+try:
+    model = DynoModel(txt="x[t] = alpha * x[t-1]", strict=True)
+except UndefinedSymbolError as e:
+    print("Caught expected error:", e)
 ```
 
 ### Fast-Fail Validation in `check()` and `solve()`

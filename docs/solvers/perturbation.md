@@ -60,6 +60,9 @@ The QZ decomposition transforms the matrix pencil into upper triangular forms:
 - Computes $X$ directly using the stable subspace.
 
 ```python
+from dyno import DynoModel
+
+model = DynoModel("examples/neo.dyno")
 solution = model.solve(method="qz")
 ```
 
@@ -72,7 +75,7 @@ $$X_{k+1} = -(B + A X_k)^{-1} C$$
 Starting from an initial guess $X_0 = 0$, iteration continues until $\|X_{k+1} - X_k\|_\infty < \text{tol}$.
 
 ```python
-solution = model.solve(method="ti", options={"maxiter": 1000, "tol": 1e-10})
+solution = model.solve(method="ti")
 ```
 
 ---
