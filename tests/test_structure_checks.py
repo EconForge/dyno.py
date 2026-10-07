@@ -173,3 +173,42 @@ def test_dynare_model_structure_error_still_works():
     model.symbols["endogenous"] = model.symbols["endogenous"] + ["zz"]
     with pytest.raises(SystemStructureError, match="'zz' has no steady state"):
         model._check_square()
+
+
+def test_model_with_only_comments_or_empty():
+    from dyno.report import dsge_report
+
+    # Only comments
+    m_comments = DynoModel(txt="##> hi there\n# rho <- 0.85\n")
+    assert len(m_comments.equations) == 0
+    assert m_comments.symbols == {
+        "variables": [],
+        "endogenous": [],
+        "exogenous": [],
+        "parameters": [],
+    }
+    res = m_comments.run()
+    assert res.errors == []
+
+    # Comments with blank lines and whitespace
+    m_blanks = DynoModel(txt="\n  \n# only comment\n\t\n# another\n  \n")
+    assert len(m_blanks.equations) == 0
+
+    # Completely empty string
+    m_empty = DynoModel(txt="")
+    assert len(m_empty.equations) == 0
+
+    # Only whitespace and newlines
+    m_ws = DynoModel(txt="   \n\n\t\n")
+    assert len(m_ws.equations) == 0
+
+    # dsge_report with only comments
+    rep = dsge_report(txt="# just a comment\n")
+    assert rep.errors == []
+
+
+def test_statements_separated_by_blank_lines():
+    txt = "a := 1\n  \nb := 2\n"
+    model = DynoModel(txt=txt)
+    assert model.context["constants"]["a"] == 1
+    assert model.context["constants"]["b"] == 2

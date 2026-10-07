@@ -433,3 +433,63 @@ def test_solve_raises_blanchard_kahn_error_with_eigenvalues():
         DynoModel(txt=BK_VIOLATION).solve()
     assert info.value.evs is not None
     assert len(info.value.evs) == 2
+
+
+def test_check_on_model_without_equations():
+    txt = """
+@name: EmptyModel
+alpha := 0.9
+
+@run: check
+"""
+    model = DynoModel(txt=txt)
+    # Direct model.check calls should not raise error
+    model.check()
+    model.check(compute_eigenvalues=True)
+
+    # model.run with check command should not raise error
+    results = model.run()
+    assert isinstance(results, RunResults)
+    assert results.residuals is not None
+    assert len(results.residuals) == 0
+    assert results.eigenvalues is None
+
+    # Front-end representations should not raise error
+    text = results.to_text()
+    assert "Residuals: computed (empty)" in text
+    assert results._repr_markdown_() is not None
+    assert results._render_html_report() is not None
+
+    r_df = results.residuals_dataframe()
+    assert r_df is not None
+    assert len(r_df.columns) == 0
+
+
+def test_check_on_model_with_variables_but_no_equations():
+    txt = """
+@name: VarNoEq
+x[0] := 1
+
+@run: check
+"""
+    model = DynoModel(txt=txt)
+    results = model.run()
+    assert isinstance(results, RunResults)
+    assert results.residuals is not None
+    assert len(results.residuals) == 0
+    assert results.eigenvalues is None
+    assert results._repr_markdown_() is not None
+
+
+def test_resid_on_model_without_equations():
+    txt = """
+@name: EmptyModelResid
+alpha := 0.9
+
+@run: resid
+"""
+    model = DynoModel(txt=txt)
+    results = model.run()
+    assert isinstance(results, RunResults)
+    assert results.residuals is not None
+    assert len(results.residuals) == 0

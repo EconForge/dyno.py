@@ -1578,8 +1578,16 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
             blocks.append("\n".join(st_lines))
 
         # 3. Check section (Residuals and Blanchard-Kahn / Eigenvalues)
-        has_residuals = any(r.residuals is not None for r in self.items)
-        has_eigenvalues = any(r.eigenvalues is not None for r in self.items)
+        has_residuals = any(
+            r.residuals is not None
+            and getattr(r.residuals, "size", len(r.residuals)) > 0
+            for r in self.items
+        )
+        has_eigenvalues = any(
+            r.eigenvalues is not None
+            and getattr(r.eigenvalues, "size", len(r.eigenvalues)) > 0
+            for r in self.items
+        )
         if self._should_render_check and (has_residuals or has_eigenvalues):
             check_lines = ["## Check", ""]
 
@@ -1588,6 +1596,7 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
                     bool(np.max(np.abs(r.residuals)) < 1e-6)
                     for r in self.items
                     if r.residuals is not None
+                    and getattr(r.residuals, "size", len(r.residuals)) > 0
                 )
                 admonition = (
                     ":::{tip} Residuals are zero"

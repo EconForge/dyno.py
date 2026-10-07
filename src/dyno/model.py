@@ -381,14 +381,17 @@ class AbstractModel(ABC):
 
             jac = self.jacobians
             A, B, C = jac[1], jac[2], jac[3]
-            try:
-                _, evs = solve_qz(A, B, C)
-            except BlanchardKahnError as e:
-                # Keep the eigenvalues: they show why the conditions fail.
-                evs = e.evs
-            except Exception:
-                evs = None
-            self._eigenvalues = evs
+            if A.shape[0] == 0:
+                self._eigenvalues = None
+            else:
+                try:
+                    _, evs = solve_qz(A, B, C)
+                except BlanchardKahnError as e:
+                    # Keep the eigenvalues: they show why the conditions fail.
+                    evs = e.evs
+                except Exception:
+                    evs = None
+                self._eigenvalues = evs
         else:
             self._eigenvalues = None
         return self

@@ -242,7 +242,7 @@ class DynareModel(AbstractModel):
 
         # Add line-level warnings for non-zero residuals where we can map lines.
         r = results.residuals
-        if r is not None and abs(r).max() >= 1e-6:
+        if r is not None and r.size > 0 and abs(r).max() >= 1e-6:
             inds = np.where(abs(r) >= 1e-6)[0]
             eq_lines = model._equation_line_numbers()
             for i in inds:

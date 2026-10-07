@@ -332,6 +332,8 @@ def solve_qz(
     from scipy.linalg import ordqz
 
     n = A.shape[0]
+    if n == 0:
+        return np.zeros((0, 0)), np.array([], dtype=float)
     I = np.eye(n)
     Z = np.zeros((n, n))
 

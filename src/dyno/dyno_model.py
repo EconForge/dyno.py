@@ -384,7 +384,7 @@ class DynoModel(AbstractModel):
 
         # Add line-level warnings for non-zero residuals
         r = results.residuals
-        if r is not None and abs(r).max() >= 1e-6:
+        if r is not None and r.size > 0 and abs(r).max() >= 1e-6:
             inds = np.where(abs(r) >= 1e-6)[0]
             for i in inds:
                 tree = model.symbolic.equations[i]

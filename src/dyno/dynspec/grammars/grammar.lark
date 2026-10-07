@@ -1,11 +1,11 @@
 ?start: free_block
 
 
-equation_block: _NEWLINE? (equation) (_NEWLINE equation )* _NEWLINE?
-assignment_block: _NEWLINE? (assignment) (_NEWLINE assignment )* _NEWLINE?
+equation_block: _NEWLINE* (equation (_NEWLINE+ equation)* _NEWLINE*)?
+assignment_block: _NEWLINE* (assignment (_NEWLINE+ assignment)* _NEWLINE*)?
 
 # Allow top-level metadata assignments (e.g., @name: Demo)
-free_block: _NEWLINE? free_stmt (_NEWLINE free_stmt)* _NEWLINE?
+free_block: _NEWLINE* (free_stmt (_NEWLINE+ free_stmt)* _NEWLINE*)?
 
 ?free_stmt: model_metadata | annotated_statement | annotated_block
 
@@ -23,7 +23,7 @@ annotated_block: block_tag _COLONCOLON block
 ?statement_core: equation | assignment | quantified_assignment
 
 # block allows both annotated statements and nested annotated blocks
-block: "{" _NEWLINE? block_item (_NEWLINE block_item)* _NEWLINE? "}"
+block: "{" _NEWLINE* (block_item (_NEWLINE+ block_item)* _NEWLINE*)? "}"
 
 ?block_item: annotated_statement | annotated_block
 

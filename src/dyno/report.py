@@ -127,11 +127,11 @@ Steady state values
 ---
 {[endif]}
 
-{[if should_render_check and (residuals is not None or eigenvalues is not None)]}
+{[if should_render_check and ((residuals is not None and len(residuals) > 0) or (eigenvalues is not None and len(eigenvalues) > 0))]}
 
 ## Check
 
-{[if residuals is not None]}
+{[if residuals is not None and len(residuals) > 0]}
 {[py: import numpy as _np; _res_ok = bool(_np.max(_np.abs(residuals)) < 1e-6)]}
 {[if _res_ok]}
 :::{tip} Residuals are zero
@@ -143,7 +143,7 @@ Steady state values
 :::
 {[endif]}
 
-{[if eigenvalues is not None]}
+{[if eigenvalues is not None and len(eigenvalues) > 0]}
 {[py: import numpy as _np; _evs_mod = _np.abs(eigenvalues); _n = len(_evs_mod)//2; _bk = bool(_evs_mod[_n-1] < 1 < _evs_mod[_n]) if _n > 0 else None]}
 {[if _bk]}
 :::{tip} Blanchard-Kahn conditions are met
@@ -565,13 +565,13 @@ class RunResults:
         return True
 
     def _is_check_error(self) -> bool:
-        if self.residuals is not None:
+        if self.residuals is not None and len(self.residuals) > 0:
             try:
                 if np.max(np.abs(self.residuals)) >= 1e-6:
                     return True
             except Exception:
                 pass
-        if self.eigenvalues is not None:
+        if self.eigenvalues is not None and len(self.eigenvalues) > 0:
             try:
                 evs_mod = np.abs(self.eigenvalues)
                 n = len(evs_mod) // 2
@@ -1092,7 +1092,7 @@ class RunResults:
             )
 
         residuals_df_html: str | None = None
-        if self.residuals is not None:
+        if self.residuals is not None and len(self.residuals) > 0:
             r_df = self.residuals_dataframe(orientation="horizontal")
             if r_df is not None:
                 residuals_df_html = _inline_styler_styles(
@@ -1100,7 +1100,7 @@ class RunResults:
                 )
 
         eigenvalues_df_html: str | None = None
-        if self.eigenvalues is not None:
+        if self.eigenvalues is not None and len(self.eigenvalues) > 0:
             ev_df = self.eigenvalues_dataframe(orientation="horizontal")
             if ev_df is not None:
                 n_eq = (
@@ -1281,7 +1281,7 @@ class RunResults:
 
         check_parts: list[str] = []
         if self._should_render_check:
-            if self.residuals is not None:
+            if self.residuals is not None and len(self.residuals) > 0:
                 eq_labels: list[str] | None = None
                 if self.model is not None and hasattr(self.model, "symbolic"):
                     try:
@@ -1291,21 +1291,21 @@ class RunResults:
                         ]
                     except Exception:
                         pass
-                check_parts.append(
-                    self._vector_to_horizontal_html(
-                        self.residuals,
-                        title="Residuals",
-                        tol=1e-6,
-                        labels=eq_labels,
-                    )
+                res_html = self._vector_to_horizontal_html(
+                    self.residuals,
+                    title="Residuals",
+                    tol=1e-6,
+                    labels=eq_labels,
                 )
-            if self.eigenvalues is not None:
-                check_parts.append(
-                    self._vector_to_horizontal_html(
-                        self.eigenvalues,
-                        title="Generalized Eigenvalues",
-                    )
+                if res_html:
+                    check_parts.append(res_html)
+            if self.eigenvalues is not None and len(self.eigenvalues) > 0:
+                evs_html = self._vector_to_horizontal_html(
+                    self.eigenvalues,
+                    title="Generalized Eigenvalues",
                 )
+                if evs_html:
+                    check_parts.append(evs_html)
             if check_parts:
                 parts.append("<h3>Check</h3>")
                 parts.extend(check_parts)
@@ -1514,7 +1514,7 @@ class RunResults:
             conv = "converged" if self.steady_stats.get("converged") else "failed"
             print(f"Steady-state calculation: {algo} ({conv})")
 
-        if self.residuals is not None:
+        if self.residuals is not None and len(self.residuals) > 0:
             r = self.residuals
             if abs(r).max() < 1e-6:
                 print("Residuals: OK")
@@ -1976,7 +1976,7 @@ def _create_model(
 
     if txt is not None:
         if filename is None:
-            filename = "unknown"
+            filename = "*anonymous*.dyno"
     elif filename is not None:
         with open(filename, encoding="utf-8") as f:
             txt = f.read()
