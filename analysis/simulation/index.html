@@ -1189,6 +1189,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#direct-model-simulation-with-modelsimulate" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Direct Model Simulation with <code>model.simulate()</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deterministic-simulation-perfect-foresight" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2112,6 +2123,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#direct-model-simulation-with-modelsimulate" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Direct Model Simulation with <code>model.simulate()</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deterministic-simulation-perfect-foresight" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2251,16 +2273,27 @@
 </span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="n">p90</span> <span class="o">=</span> <span class="n">y_draws</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
-<h2 id="deterministic-simulation-perfect-foresight">Deterministic Simulation (Perfect Foresight)<a class="headerlink" href="#deterministic-simulation-perfect-foresight" title="Permanent link">&para;</a></h2>
-<p>For non-linear models without uncertainty, use <code>deterministic_solve</code> (or <code>model.solve()</code> on deterministic models):</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynoModel</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.solver</span><span class="w"> </span><span class="kn">import</span> <span class="n">deterministic_solve</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">model_det</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"examples/ramst.dyno"</span><span class="p">)</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">sim_det</span> <span class="o">=</span> <span class="n">deterministic_solve</span><span class="p">(</span><span class="n">model_det</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">df_det</span> <span class="o">=</span> <span class="n">sim_det</span><span class="o">.</span><span class="n">to_df</span><span class="p">()</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">df_det</span><span class="p">[[</span><span class="s2">"k"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"Deterministic Transition Path"</span><span class="p">)</span>
+<h2 id="direct-model-simulation-with-modelsimulate">Direct Model Simulation with <code>model.simulate()</code><a class="headerlink" href="#direct-model-simulation-with-modelsimulate" title="Permanent link">&para;</a></h2>
+<p>You can also simulate directly from a model instance without manually calling <code>model.solve()</code> first:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">sim</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">T</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
 </span></code></pre></div>
+<p><code>model.simulate()</code> is type-stable across all model families, always returning a <code>SimulationResult</code>.</p>
+<p>For stochastic models, <code>model.simulate()</code> solves perturbation under the hood and caches the solution. You can control solving behavior with the <code>solve</code> parameter:
+- <code>solve=None</code> (default): reuses the cached solution if already solved, otherwise solves automatically.
+- <code>solve=True</code>: forces solving the model freshly.
+- <code>solve=solution</code>: uses an explicitly passed <code>PerturbationSolution</code>.
+- <code>solve=False</code>: requires that the model has already been solved, raising <code>ValueError</code> otherwise.</p>
+<hr />
+<h2 id="deterministic-simulation-perfect-foresight">Deterministic Simulation (Perfect Foresight)<a class="headerlink" href="#deterministic-simulation-perfect-foresight" title="Permanent link">&para;</a></h2>
+<p>For non-linear models without uncertainty, use <code>model.simulate()</code> (or the lower-level <code>deterministic_solve</code>):</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynoModel</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">model_det</span> <span class="o">=</span> <span class="n">DynoModel</span><span class="p">(</span><span class="s2">"examples/ramst.dyno"</span><span class="p">)</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">sim_det</span> <span class="o">=</span> <span class="n">model_det</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">T</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">df_det</span> <span class="o">=</span> <span class="n">sim_det</span><span class="o">.</span><span class="n">to_df</span><span class="p">()</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">df_det</span><span class="p">[[</span><span class="s2">"k"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"Deterministic Transition Path"</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Because deterministic models under perfect foresight solve for a specific trajectory across <span class="arithmatex">\(t = 0 \dots T\)</span> rather than a state-space policy function, they are simulated directly via <code>model.simulate()</code>. Calling <code>model.solve()</code> on a deterministic model raises a <code>SystemStructureError</code>.</p>
 
 
 

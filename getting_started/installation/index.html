@@ -2236,7 +2236,7 @@
 
 <h1 id="install-dyno">Install Dyno<a class="headerlink" href="#install-dyno" title="Permanent link">&para;</a></h1>
 <p>This page explains how to use Dyno in your own project. If you want to work on Dyno itself (clone the repository, run the tests, build the documentation), see <a href="../development/">Develop Dyno</a>.</p>
-<p>Dyno is distributed as a conda package on the <strong><code>econforge</code></strong> channel on prefix.dev (<code>https://prefix.dev/econforge</code>). We recommend installing it with <a href="https://pixi.sh">Pixi</a>.</p>
+<p>Dyno is available on PyPI and as conda packages from both <a href="https://conda-forge.org/">conda-forge</a> and the <strong><code>econforge</code></strong> channel on <a href="https://prefix.dev/econforge">prefix.dev</a>. Conda packages are also built for WebAssembly (WASM) and are available inside <a href="https://notebook.link/">notebook.link</a>. Any conda-compatible tool can install the conda packages, including <code>conda</code> and <code>micromamba</code>; we recommend <a href="https://pixi.sh">Pixi</a> for a reproducible project environment.</p>
 <hr />
 <h2 id="install-pixi">Install Pixi<a class="headerlink" href="#install-pixi" title="Permanent link">&para;</a></h2>
 <p>If you do not have Pixi installed on your system:</p>
@@ -2268,19 +2268,23 @@
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">dyno</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&gt;=0.1.13,&lt;0.2"</span>
 </span></code></pre></div>
 <p>(the exact version constraint depends on the current release).</p>
+<p>If you prefer a different installer, the regular Python package can also be installed from PyPI:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>dynopy
+</span></code></pre></div>
+<p>The optional components described below are distributed only as conda packages and are not available on PyPI. Install them with a conda-compatible tool such as Pixi, <code>conda</code>, or <code>micromamba</code>.</p>
 <h3 id="optional-components">Optional components<a class="headerlink" href="#optional-components" title="Permanent link">&para;</a></h3>
 <p><strong>Dyno Lab</strong> (JupyterLab extension). The <code>jupyterlab-dyno</code> package provides the extension; add JupyterLab alongside it, then launch it:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pixi<span class="w"> </span>add<span class="w"> </span>jupyterlab<span class="w"> </span>jupyterlab-dyno
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pixi<span class="w"> </span>run<span class="w"> </span>jupyter<span class="w"> </span>lab
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pixi<span class="w"> </span>add<span class="w"> </span>jupyterlab<span class="w"> </span>jupyterlab-dyno
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pixi<span class="w"> </span>run<span class="w"> </span>jupyter<span class="w"> </span>lab
 </span></code></pre></div>
 <p>See the <a href="../../dyno_lab/">Dyno Lab documentation</a> for details.</p>
-<p><strong>Dynare preprocessor.</strong> Dyno reads Dynare <code>.mod</code> files with its own parser, which needs no extra package. To use <code>DynareModel</code>, which relies on the official Dynare preprocessor, add <code>dynare-preprocessor-pylib</code>:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pixi<span class="w"> </span>add<span class="w"> </span>dynare-preprocessor-pylib
+<p><strong>Dynare preprocessor.</strong> Dyno reads Dynare <code>.mod</code> files with its own parser, which needs no extra package. To use <code>DynareModel</code>, which relies on the official Dynare preprocessor, add the native <code>dynare-preprocessor-pylib</code> package:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pixi<span class="w"> </span>add<span class="w"> </span>dynare-preprocessor-pylib
 </span></code></pre></div>
 <p>See the <a href="../dynare_quickstart/">Dynare quickstart</a> for the differences between the two.</p>
 <hr />
 <h2 id="verify-the-installation">Verify the installation<a class="headerlink" href="#verify-the-installation" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pixi<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from dyno import DynoModel; print('Dyno is installed')"</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>pixi<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from dyno import DynoModel; print('Dyno is installed')"</span>
 </span></code></pre></div>
 <p>Then follow the <a href="../dyno_quickstart/">Dyno quickstart</a> to write and solve your first model.</p>
 <hr />
