@@ -68,8 +68,8 @@ forall t, 2 <= t < T : x[t] <- 1.0
 k[0] <- 0.60 * k[~]
 """)
 
-# Solve non-linear stacked system
-trajectory = model.solve()
+# Simulate non-linear stacked system
+trajectory = model.simulate()
 df = trajectory.to_df()
 
 print("Initial period t=0:")

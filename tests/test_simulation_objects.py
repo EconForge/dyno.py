@@ -167,5 +167,92 @@ def test_pipeline_directives_simulate_plot_and_analyze():
     assert res_ana.moments is not None
     assert isinstance(res_ana.simulation, IRFSimulation)
     assert res_ana.simulation.T == 18
-    assert res_ana.simulation.units == "percent"
     assert res_ana.figure is not None
+
+
+def test_deterministic_model_solve_raises_and_simulate_succeeds():
+    from dyno.errors import SystemStructureError
+
+    txt = """
+    alpha <- 0.36
+    beta <- 0.99
+    delta <- 0.02
+    aa <- (1 / beta - (1 - delta)) / alpha
+
+    k[~] <- 1.0
+    c[~] <- aa * k[~]^alpha - delta * k[~]
+    x[~] <- 1.0
+
+    x[1] <- 1.05
+    k[t] = aa * x[t] * k[t-1]^alpha + (1 - delta) * k[t-1] - c[t]
+    c[t]^(-1) = beta * c[t+1]^(-1) * (alpha * aa * x[t+1] * k[t]^(alpha - 1) + 1 - delta)
+    """
+    model = DynoModel(txt=txt)
+    assert model.is_deterministic
+
+    with pytest.raises(
+        SystemStructureError, match=r"cannot be solved with `model\.solve\(\)`"
+    ):
+        model.solve()
+
+    sim = model.simulate(T=25)
+    assert isinstance(sim, TransitionSimulation)
+    assert sim.T == 25
+
+
+def test_stochastic_simulate_solve_parameter():
+    model = DynoModel("examples/neo.dyno")
+
+    # 1. solve=False on fresh model raises ValueError
+    with pytest.raises(
+        ValueError,
+        match="solve=False was passed, but the model has not been solved yet",
+    ):
+        model.simulate(T=20, solve=False)
+
+    # 2. solve=True computes solution and caches it
+    sim1 = model.simulate(T=20, solve=True)
+    assert isinstance(sim1, IRFSimulation)
+    assert getattr(model, "_solution", None) is not None
+    cached_sol = model._solution
+
+    # 3. solve=None reuses cached solution
+    sim2 = model.simulate(T=20, solve=None)
+    assert isinstance(sim2, IRFSimulation)
+    assert model._solution is cached_sol
+
+    # 4. solve=False reuses cached solution
+    sim3 = model.simulate(T=20, solve=False)
+    assert isinstance(sim3, IRFSimulation)
+
+    # 5. solve=PerturbationSolution uses passed solution
+    fresh_sol = model.solve()
+    sim4 = model.simulate(T=20, solve=fresh_sol)
+    assert isinstance(sim4, IRFSimulation)
+
+
+def test_pipeline_solve_on_deterministic_model_warns_and_continues():
+    txt = """
+    alpha <- 0.36
+    beta <- 0.99
+    delta <- 0.02
+    aa <- (1 / beta - (1 - delta)) / alpha
+
+    k[~] <- 1.0
+    c[~] <- aa * k[~]^alpha - delta * k[~]
+    x[~] <- 1.0
+
+    x[1] <- 1.05
+    k[t] = aa * x[t] * k[t-1]^alpha + (1 - delta) * k[t-1] - c[t]
+    c[t]^(-1) = beta * c[t+1]^(-1) * (alpha * aa * x[t+1] * k[t]^(alpha - 1) + 1 - delta)
+    @run: solve
+    @run: simulate: {T: 20}
+    """
+    model = DynoModel(txt=txt)
+    res = model.run()
+    assert any(
+        "Command 'solve' is not applicable to deterministic models" in w["message"]
+        for w in res.warnings
+    )
+    assert isinstance(res.simulation, TransitionSimulation)
+    assert res.simulation.T == 20

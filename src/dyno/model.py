@@ -670,7 +670,24 @@ class AbstractModel(ABC):
     def _repr_html_(self: Self) -> str:
         return self._render_repr_html(self._repr_data())
 
-    def solve(self: Self, **args: Any) -> "PerturbationSolution | TransitionSimulation":
+    def solve(self: Self, **args: Any) -> "PerturbationSolution":
+        """Solve the model for its first-order perturbation decision rule.
+
+        Only stochastic models with an invariant state-space decision rule can be solved
+        using this method. For deterministic perfect-foresight models, use ``model.simulate()``
+        to compute transition trajectories.
+
+        Returns
+        -------
+        PerturbationSolution
+            First-order perturbation solution wrapping the recursive decision rule.
+
+        Raises
+        ------
+        SystemStructureError
+            If the model is deterministic, or if the model equations are not square or
+            have unsupported lag/lead timing.
+        """
         invalid_shifts = getattr(self, "_invalid_shifts", None)
         if invalid_shifts:
             from .errors import SystemStructureError
@@ -683,10 +700,15 @@ class AbstractModel(ABC):
 
         self._check_square()
         if self.is_deterministic:
-            from .solver import deterministic_solve
+            from .errors import SystemStructureError
 
-            return deterministic_solve(self, **args)
-        return self.perturb(**args)
+            raise SystemStructureError(
+                "Deterministic models do not have a perturbation decision rule and cannot be solved with `model.solve()`. "
+                "Use `model.simulate()` instead to compute the perfect-foresight transition trajectory."
+            )
+        sol = self.perturb(**args)
+        self._solution = sol
+        return sol
 
     def simulate(
         self: Self,
@@ -694,14 +716,34 @@ class AbstractModel(ABC):
         mode: SimulateMode = "auto",
         N: int = 1,
         units: UnitsType | None = None,
+        solve: bool | PerturbationSolution | None = None,
         **args: Any,
     ) -> "SimulationResult":
         """Simulate the model.
 
         For deterministic models (or when ``mode`` is ``'transition'`` or ``'deterministic'``),
         runs the stacked-time perfect foresight solver and returns a ``TransitionSimulation``.
-        For stochastic models, solves the first-order perturbation and delegates to
-        ``solution.simulate(...)``.
+        For stochastic models, solves the first-order perturbation (or reuses a supplied/cached
+        solution) and delegates to ``solution.simulate(...)``.
+
+        Parameters
+        ----------
+        T : int, optional
+            Simulation horizon. Default is 40 for stochastic, or model-configured/40 for deterministic.
+        mode : SimulateMode, default 'auto'
+            Simulation mode ('auto', 'random', 'irf', 'transition', 'deterministic').
+        N : int, default 1
+            Number of Monte Carlo simulations (for stochastic random simulation).
+        units : UnitsType, optional
+            Units for output ('level', 'deviation', 'percent', 'log-deviation').
+        solve : bool | PerturbationSolution | None, optional
+            For stochastic models, controls how the model is solved:
+            - ``None``: reuses an already cached solution on the model if present; otherwise solves automatically.
+            - ``True``: forces computing a fresh perturbation solution.
+            - ``PerturbationSolution``: uses the pre-computed solution directly without re-solving.
+            - ``False``: requires that a solution has already been cached on the model.
+        **args : Any
+            Additional options passed to the solver or simulation.
         """
         self._check_square()
         if self.is_deterministic or mode in ("transition", "deterministic"):
@@ -710,9 +752,32 @@ class AbstractModel(ABC):
             target_units: UnitsType = "level" if units is None else units
             return deterministic_solve(self, T=T, units=target_units, **args)
 
-        solve_kwargs = {k: v for k, v in args.items() if k in {"method"}}
+        from .solver import PerturbationSolution
+
+        sol: PerturbationSolution | None = None
+        if isinstance(solve, PerturbationSolution):
+            sol = solve
+        elif solve is False:
+            sol = getattr(self, "_solution", None)
+            if sol is None:
+                raise ValueError(
+                    "solve=False was passed, but the model has not been solved yet. "
+                    "Call model.solve() first or pass solve=True."
+                )
+        elif solve is True:
+            solve_kwargs = {k: v for k, v in args.items() if k in {"method"}}
+            sol = self.perturb(**solve_kwargs)
+            self._solution = sol
+        else:
+            # solve is None
+            if getattr(self, "_solution", None) is not None:
+                sol = self._solution
+            else:
+                solve_kwargs = {k: v for k, v in args.items() if k in {"method"}}
+                sol = self.perturb(**solve_kwargs)
+                self._solution = sol
+
         sim_kwargs = {k: v for k, v in args.items() if k not in {"method"}}
-        sol = self.perturb(**solve_kwargs)
         horizon = 40 if T is None else int(T)
         target_units = "deviation" if units is None else units
         return sol.simulate(T=horizon, mode=mode, N=N, units=target_units, **sim_kwargs)

@@ -246,9 +246,13 @@ class DynoModel(AbstractModel):
                     results.residuals = e.residuals
                     results.add_warning(str(e))
             elif name in {"solve", "perturb"}:
-                solution: PerturbationSolution | TransitionSimulation | None = (
-                    _solve_or_record(options)
-                )
+                if model.is_deterministic:
+                    results.add_warning(
+                        "Command 'solve' is not applicable to deterministic models. "
+                        "Use 'simulate' instead to compute the transition trajectory."
+                    )
+                    continue
+                solution: PerturbationSolution | None = _solve_or_record(options)
                 if solution is None:
                     continue
                 results.solution = solution

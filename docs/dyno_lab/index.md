@@ -2,6 +2,8 @@
 
 **Dyno Lab** (`jupyterlab_dyno`) is the official interactive extension for DSGE and macroeconomic modeling in JupyterLab. It provides a synchronized, side-by-side workspace: edit models in `.dyno` or Dynare `.mod` files on the left, and inspect live steady-state checks, decision rules, and simulation charts on the right.
 
+Dyno Lab supports Dynare models through either Dyno's native parser or the official Dynare parser, so you can choose between a pure-Python workflow and maximum compatibility with Dynare syntax.
+
 ![Dyno Lab Interface](../assets/images/jupyterlab_dyno.png)
 
 ---
@@ -40,4 +42,3 @@ micromamba install -c https://repo.prefix.dev/econforge jupyterlab_dyno
    ```
 2. Double-click any `.dyno` or `.mod` file in the file browser.
 3. Dyno Lab opens the model editor on the left and immediately displays the live interactive Dyno Report on the right.
-

@@ -154,16 +154,21 @@ c[~] <- aa*k[~]^alph-delt*k[~]
 x[1] <- 1.2
 ```
 
-Solve and inspect the transition trajectory:
+Simulate and inspect the transition trajectory:
 
 ```python
 from dyno import DynoModel
 
 model = DynoModel("examples/ramst.dyno")
-trajectory = model.solve()  # Automatically detects deterministic model
+# Deterministic models are simulated directly via model.simulate()
+trajectory = model.simulate(T=100)
 
 print(trajectory[["k", "c"]].head(10))
 
 # Plot transition
 trajectory[["k", "c"]].plot(title="Deterministic Transition Path")
 ```
+
+!!! note "Deterministic Models and `model.solve()`"
+    Because deterministic models under perfect foresight do not have an invariant state-space decision rule, `model.solve()` is reserved for stochastic models. Use `model.simulate()` to compute the stacked-time transition trajectory.
+

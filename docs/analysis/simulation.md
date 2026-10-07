@@ -68,16 +68,36 @@ p90 = y_draws.quantile(0.90, axis=1)
 
 ---
 
+## Direct Model Simulation with `model.simulate()`
+
+You can also simulate directly from a model instance without manually calling `model.solve()` first:
+
+```python
+sim = model.simulate(T=200, rng=42)
+```
+
+`model.simulate()` is type-stable across all model families, always returning a `SimulationResult`.
+
+For stochastic models, `model.simulate()` solves perturbation under the hood and caches the solution. You can control solving behavior with the `solve` parameter:
+- `solve=None` (default): reuses the cached solution if already solved, otherwise solves automatically.
+- `solve=True`: forces solving the model freshly.
+- `solve=solution`: uses an explicitly passed `PerturbationSolution`.
+- `solve=False`: requires that the model has already been solved, raising `ValueError` otherwise.
+
+---
+
 ## Deterministic Simulation (Perfect Foresight)
 
-For non-linear models without uncertainty, use `deterministic_solve` (or `model.solve()` on deterministic models):
+For non-linear models without uncertainty, use `model.simulate()` (or the lower-level `deterministic_solve`):
 
 ```python
 from dyno import DynoModel
-from dyno.solver import deterministic_solve
 
 model_det = DynoModel("examples/ramst.dyno")
-sim_det = deterministic_solve(model_det, T=100)
+sim_det = model_det.simulate(T=100)
 df_det = sim_det.to_df()
 df_det[["k", "c"]].plot(title="Deterministic Transition Path")
 ```
+
+Because deterministic models under perfect foresight solve for a specific trajectory across $t = 0 \dots T$ rather than a state-space policy function, they are simulated directly via `model.simulate()`. Calling `model.solve()` on a deterministic model raises a `SystemStructureError`.
+

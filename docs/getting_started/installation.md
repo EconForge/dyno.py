@@ -2,7 +2,7 @@
 
 This page explains how to use Dyno in your own project. If you want to work on Dyno itself (clone the repository, run the tests, build the documentation), see [Develop Dyno](development.md).
 
-Dyno is distributed as a conda package on the **`econforge`** channel on prefix.dev (`https://prefix.dev/econforge`). We recommend installing it with [Pixi](https://pixi.sh).
+Dyno is available on PyPI and as conda packages from both [conda-forge](https://conda-forge.org/) and the **`econforge`** channel on [prefix.dev](https://prefix.dev/econforge). Conda packages are also built for WebAssembly (WASM) and are available inside [notebook.link](https://notebook.link/). Any conda-compatible tool can install the conda packages, including `conda` and `micromamba`; we recommend [Pixi](https://pixi.sh) for a reproducible project environment.
 
 ---
 
@@ -45,6 +45,14 @@ dyno = ">=0.1.13,<0.2"
 
 (the exact version constraint depends on the current release).
 
+If you prefer a different installer, the regular Python package can also be installed from PyPI:
+
+```bash
+python -m pip install dynopy
+```
+
+The optional components described below are distributed only as conda packages and are not available on PyPI. Install them with a conda-compatible tool such as Pixi, `conda`, or `micromamba`.
+
 ### Optional components
 
 **Dyno Lab** (JupyterLab extension). The `jupyterlab-dyno` package provides the extension; add JupyterLab alongside it, then launch it:
@@ -56,7 +64,7 @@ pixi run jupyter lab
 
 See the [Dyno Lab documentation](../dyno_lab/index.md) for details.
 
-**Dynare preprocessor.** Dyno reads Dynare `.mod` files with its own parser, which needs no extra package. To use `DynareModel`, which relies on the official Dynare preprocessor, add `dynare-preprocessor-pylib`:
+**Dynare preprocessor.** Dyno reads Dynare `.mod` files with its own parser, which needs no extra package. To use `DynareModel`, which relies on the official Dynare preprocessor, add the native `dynare-preprocessor-pylib` package:
 
 ```bash
 pixi add dynare-preprocessor-pylib

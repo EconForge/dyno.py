@@ -2,6 +2,7 @@ import textwrap
 import numpy as np
 import pytest
 from dyno import DynoModel
+from dyno.errors import SystemStructureError
 from dyno.solver import deterministic_solve
 from tests.test_deterministic_ramsey import DISASTER_MODEL_TXT
 
@@ -119,13 +120,17 @@ def test_rbc_three_model_variants():
     assert "k" in m_det.symbols["endogenous"]
     assert set(m_det.symbols["exogenous"]) == {"e", "u"}
     assert len(m_det.equations) == 6
-    traj = m_det.solve()
+    with pytest.raises(
+        SystemStructureError, match=r"cannot be solved with `model\.solve\(\)`"
+    ):
+        m_det.solve()
+    traj = m_det.simulate()
     assert len(traj) == 21  # t = 0 to 20
     assert np.isclose(traj["k"].iloc[0], m_det.steady_state["k"] * 1.01, atol=1e-5)
 
 
-def test_disaster_model_direct_solve():
-    """Disaster model with k[0] <- 0.60 * k[~] solves directly with model.solve()."""
+def test_disaster_model_direct_simulate():
+    """Disaster model with k[0] <- 0.60 * k[~] simulates directly with model.simulate()."""
     model = DynoModel(txt=DISASTER_MODEL_TXT)
 
     assert "k" in model.symbols["endogenous"]
@@ -135,8 +140,14 @@ def test_disaster_model_direct_solve():
     # neq == n_endo
     assert len(model.equations) == len(model.symbols["endogenous"])
 
-    # Directly solve deterministic model
-    traj = model.solve()
+    # model.solve() raises SystemStructureError on deterministic model
+    with pytest.raises(
+        SystemStructureError, match=r"cannot be solved with `model\.solve\(\)`"
+    ):
+        model.solve()
+
+    # Directly simulate deterministic model
+    traj = model.simulate()
     k_ss = model.steady_state["k"]
 
     # Initial condition at t=0 matches 60% of steady state
