@@ -5,7 +5,6 @@ import numpy as np
 
 from dyno import DynoModel, deterministic_solve
 
-
 RAMSEY_MODEL_TXT = """
 # Neoclassical Ramsey Model with Perfect Foresight / Deterministic Transition
 # Parameters
@@ -188,7 +187,10 @@ def build_plot(output_path: Path) -> Path:
     ax.set_title("Terminal Effects")
     ax.legend(frameon=False)
 
-    fig.suptitle("Deterministic Solver Continuation Conditions on the Ramsey Example", fontsize=14)
+    fig.suptitle(
+        "Deterministic Solver Continuation Conditions on the Ramsey Example",
+        fontsize=14,
+    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=180)
     plt.close(fig)

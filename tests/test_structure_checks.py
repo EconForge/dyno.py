@@ -48,6 +48,7 @@ e[t] <- N(0.01)
     assert model.context["steady_states"]["x"] == 0.0
 
     import re
+
     clean_repr = re.sub(r"\x1b\[[0-9;]*m", "", repr(model))
     assert "x*" in clean_repr
     assert "* variable does not appear in any equation" in clean_repr

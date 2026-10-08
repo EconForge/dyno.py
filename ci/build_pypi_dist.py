@@ -33,7 +33,9 @@ def main() -> int:
     try:
         PYPROJECT.write_text(pypi_content)
         cmd = ["uv", "build", "--out-dir", args.out_dir] + unknown
-        print(f"Building PyPI distributions with package name 'dynopy': {' '.join(cmd)}")
+        print(
+            f"Building PyPI distributions with package name 'dynopy': {' '.join(cmd)}"
+        )
         res = subprocess.run(cmd, cwd=ROOT)
         return res.returncode
     finally:

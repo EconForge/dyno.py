@@ -215,4 +215,3 @@ x[t] = alpha * x[t-1] + e[t]
     results = model.run(default_pipeline=False)
     md_rep = results.to_markdown()
     assert "Sorted by modulus. Exactly 1 eigenvalue should be larger than 1" in md_rep
-

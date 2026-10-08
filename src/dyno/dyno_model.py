@@ -123,7 +123,8 @@ class DynoModel(AbstractModel):
                     "names to lists of values"
                 )
             commands.insert(
-                0, {"command": "variants", "options": dict(variants_spec), "mute": False}
+                0,
+                {"command": "variants", "options": dict(variants_spec), "mute": False},
             )
 
         return commands
@@ -428,7 +429,9 @@ class DynoModel(AbstractModel):
             if hasattr(eq, "iter_subtrees_topdown"):
                 for subtree in eq.iter_subtrees_topdown():
                     if getattr(subtree, "data", None) == "variable":
-                        if subtree.children and hasattr(subtree.children[0], "children"):
+                        if subtree.children and hasattr(
+                            subtree.children[0], "children"
+                        ):
                             names.add(str(subtree.children[0].children[0]))
         return names
 

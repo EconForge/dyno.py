@@ -121,7 +121,9 @@ class AbstractModel(ABC):
             if hasattr(eq, "iter_subtrees_topdown"):
                 for subtree in eq.iter_subtrees_topdown():
                     if getattr(subtree, "data", None) == "variable":
-                        if subtree.children and hasattr(subtree.children[0], "children"):
+                        if subtree.children and hasattr(
+                            subtree.children[0], "children"
+                        ):
                             names.add(str(subtree.children[0].children[0]))
         return names
 
