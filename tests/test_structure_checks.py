@@ -3,7 +3,7 @@ import warnings
 import pytest
 
 from dyno import DynoModel
-from dyno.errors import RedefinitionWarning, SystemStructureError
+from dyno.errors import SystemStructureError
 
 NON_SQUARE = """
 rho <- 0.9
@@ -21,17 +21,37 @@ def test_non_square_system_is_reported_before_scipy(method):
         getattr(model, method)()
 
 
-def test_constant_redefinition_warns():
+def test_constant_redefinition_raises():
+    from dyno.errors import DefinitionError
+
     txt = """
-rho <- 0.9
-rho <- 0.5
+rho <- -0.3
+rho <- -0.2
 x[~] <- 0.0
 e[t] <- N(0.01)
 x[t] = rho * x[t-1] + e[t]
 """
-    with pytest.warns(RedefinitionWarning, match="rho"):
-        model = DynoModel(txt=txt)
-    assert model.context["constants"]["rho"] == 0.9
+    with pytest.raises(DefinitionError, match="rho"):
+        DynoModel(txt=txt)
+
+
+def test_steady_state_variable_before_equation_categorized_and_flagged():
+    txt = """
+rho <- 0.9
+x[~] <- 0.0
+y[t] = rho * y[t-1] + e[t]
+e[t] <- N(0.01)
+"""
+    model = DynoModel(txt=txt)
+    assert "x" in model.symbols["variables"]
+    assert "x" in model.symbols["endogenous"]
+    assert model.context["steady_states"]["x"] == 0.0
+
+    import re
+
+    clean_repr = re.sub(r"\x1b\[[0-9;]*m", "", repr(model))
+    assert "x*" in clean_repr
+    assert "* variable does not appear in any equation" in clean_repr
 
 
 def test_solve_without_steady_state_names_the_variables():

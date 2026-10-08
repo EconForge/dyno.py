@@ -9,27 +9,7 @@ from .language import Normal
 import math
 
 
-from dyno.errors import ParserError
-
-
-class DefinitionError(ParserError):
-
-    def __init__(self, msg, tree=None):
-
-        super().__init__(str(msg))
-        self.msg = msg
-        self.tree = tree
-        meta = getattr(tree, "meta", None)
-        if meta is not None and not getattr(meta, "empty", True):
-            self.line = getattr(meta, "line", None)
-            self.column = getattr(meta, "column", None)
-
-    def __str__(self):
-
-        meta = getattr(self.tree, "meta", None)
-        if meta is None or getattr(meta, "empty", True):
-            return str(self.msg)
-        return f"({meta.line}, {meta.column}): {self.msg}"
+from dyno.errors import ParserError, DefinitionError
 
 
 def _to_number(text: str) -> Union[int, float]:
@@ -514,20 +494,15 @@ class AssignmentEvaluator(FormulaEvaluator):
                 # print(f"Warning: constant {name} calibrated to {self.__calibration__[name]}; assignment ignored.")
                 return
             if name in self.constants:
-                import warnings
-
-                from dyno.errors import RedefinitionWarning
-
                 meta = getattr(symbol_tree, "meta", None)
                 where = (
                     f" (line {meta.line})"
                     if meta is not None and not meta.empty
                     else ""
                 )
-                warnings.warn(
-                    f"Constant {name} redefined{where}; keeping its first value.",
-                    RedefinitionWarning,
-                    stacklevel=2,
+                raise DefinitionError(
+                    f"Constant {name} redefined{where}.",
+                    tree=symbol_tree,
                 )
             else:
                 self.constants[name] = value
@@ -540,6 +515,8 @@ class AssignmentEvaluator(FormulaEvaluator):
             self.values[name][time] = value
 
         elif symbol_tree.data == "variable":
+            if name not in self.variables:
+                self.variables[name] = {}
             index = str(symbol_tree.children[1].children[0])
             shift = int(symbol_tree.children[2].children[0])
 
@@ -735,8 +712,19 @@ class AssignmentEvaluator(FormulaEvaluator):
                 import yaml
 
                 value = yaml.safe_load(raw_stripped)
-            except Exception:
+            except Exception as e:
+                if key == "variants":
+                    raise DefinitionError(
+                        f"Invalid @variants YAML syntax in '{raw.strip()}': {e}",
+                        tree=tree,
+                    ) from e
                 value = raw_stripped
+            if key == "variants" and not isinstance(value, dict):
+                raise DefinitionError(
+                    "Invalid @variants directive: expected a mapping of "
+                    f"parameter names to lists of values, got {type(value).__name__}.",
+                    tree=tree,
+                )
             self.metadata[key] = value
             if mute:
                 self.metadata[f"_muted_{key}"] = True

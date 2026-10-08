@@ -194,8 +194,12 @@ class PerturbationSolution:
         self.evs = evs
 
     def __getattr__(self, name: str) -> Any:
-        # Delegate any other method/property access to the underlying decision_rule
-        return getattr(self.decision_rule, name)
+        if name.startswith("__") and name.endswith("__"):
+            raise AttributeError(name)
+        dr = self.__dict__.get("decision_rule")
+        if dr is None:
+            raise AttributeError(name)
+        return getattr(dr, name)
 
 
 def solve(

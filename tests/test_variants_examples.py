@@ -75,9 +75,9 @@ def test_variants_and_single_report_parity():
     res_var = stoch_model.run()
 
     # Compare against univariant model
-    txt_single = open("examples/variants/stochastic.dyno").read()
+    txt_single = open("examples/variants/stochastic.dyno", encoding="utf-8").read()
     txt_no_var = "\n".join(
-        line for line in txt_single.splitlines() if "@run: variants" not in line
+        line for line in txt_single.splitlines() if not line.startswith("@variants")
     )
     res_single = DynoModel(txt=txt_no_var).run()
     assert isinstance(res_single, RunResults)
@@ -145,7 +145,7 @@ def test_plot_options_vars_alias_filtering():
     y[t] = 0.5 * x[t]
     z[t] = 0.2 * x[t]
 
-    @run: variants: {a: [0.2, 0.8]}
+    @variants: {a: [0.2, 0.8]}
     @run: solve
     @run: simulate: {T: 10}
     @run: plot: {vars: [x, y]}

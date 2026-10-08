@@ -30,8 +30,9 @@ class LatexTransformer(Transformer):
 
     def name(self, children):
         # children: [Token(NAME,...)]
-        name_latex = self._greek(str(children[0]))
-        return self._with_precedence(name_latex, "atom")
+        # keep the raw identifier: conversion to LaTeX happens in the
+        # consumers (constant, value, variable) so it is applied only once
+        return self._with_precedence(str(children[0]), "atom")
 
     def number(self, children):
         return self._with_precedence(children[0].value, "atom")
@@ -60,16 +61,16 @@ class LatexTransformer(Transformer):
 
     def constant(self, children):
         # children: [name]
-        name_str = self._get_string(children[0])
-        return self._with_precedence(name_str, "atom")
+        base, sub = self._split_name(self._get_string(children[0]))
+        return self._with_precedence(self._subscripted(base, sub, None), "atom")
 
     def value(self, children):
         # children: [name, time]
         name = self._get_string(children[0])
-        name_latex = self._greek(name)
+        base, sub = self._split_name(name)
 
         time = children[1]
-        result = f"{name_latex}_{{{time}}}"
+        result = self._subscripted(base, sub, str(time))
         return self._with_precedence(result, "atom")
 
     def variable(self, children):
@@ -79,7 +80,7 @@ class LatexTransformer(Transformer):
         shift = children[2]
 
         # map greek letter names to LaTeX commands for variables
-        name_latex = self._greek(name)
+        base, sub = self._split_name(name)
 
         # shift may be like '+1' or '-2' or '0'
         try:
@@ -94,12 +95,19 @@ class LatexTransformer(Transformer):
             except Exception:
                 s = 0
 
+        if str(index).strip() == "~":
+            # steady state: rendered with a bar and no time subscript
+            # ('~' on its own is a LaTeX space, hence invisible)
+            result = self._subscripted(f"\\bar{{{base}}}", sub, None)
+            return self._with_precedence(result, "atom")
+
         if s == 0:
-            result = f"{name_latex}_{{{index}}}"
+            time = f"{index}"
         elif s > 0:
-            result = f"{name_latex}_{{{index}+{s}}}"
+            time = f"{index}+{s}"
         else:
-            result = f"{name_latex}_{{{index}{s}}}"
+            time = f"{index}{s}"
+        result = self._subscripted(base, sub, time)
 
         return self._with_precedence(result, "atom")
 
@@ -215,6 +223,19 @@ class LatexTransformer(Transformer):
             return self._with_precedence(joined, "atom")
         except Exception:
             return self._with_precedence(str(data), "atom")
+
+    def _split_name(self, name: str) -> tuple[str, str]:
+        """Split `pi_1` into (`\\pi`, `1`): the part before the first
+        underscore is the base (greek-mapped), the rest is a subscript."""
+        base, _, sub = name.partition("_")
+        return self._greek(base), sub.replace("_", ",")
+
+    @staticmethod
+    def _subscripted(base: str, sub: str, time: str | None) -> str:
+        parts = [p for p in (sub, time) if p]
+        if not parts:
+            return base
+        return f"{base}_{{{','.join(parts)}}}"
 
     def _greek(self, name: str) -> str:
         """If `name` is a Greek letter name, return the corresponding

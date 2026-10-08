@@ -151,7 +151,8 @@ Steady state values
 :::{warning} Blanchard-Kahn conditions are not met
 {[endif]}
 :class: dropdown
-Sorted by modulus:
+{[py: _n_unstable = int((_evs_mod > 1).sum()); _ev_word = 'eigenvalue' if _n == 1 else 'eigenvalues']}
+Sorted by modulus. Exactly {[ _n ]} {[ _ev_word ]} should be larger than 1 ({[ _n_unstable ]} found).
 {[ eigenvalues_df_html ]}
 :::
 {[endif]}

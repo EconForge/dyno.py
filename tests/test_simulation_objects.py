@@ -136,7 +136,7 @@ def test_deterministic_transition_simulation_and_chaining():
 
 
 def test_pipeline_directives_simulate_plot_and_analyze():
-    raw_lines = open("examples/neo.dyno").read().splitlines()
+    raw_lines = open("examples/neo.dyno", encoding="utf-8").read().splitlines()
     base_txt = (
         "\n".join(line for line in raw_lines if not line.strip().startswith("@run:"))
         + "\n"

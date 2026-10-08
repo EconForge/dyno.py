@@ -8,7 +8,9 @@ from .language import Normal
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-modfile_grammar = open(f"{dir_path}/grammars/modfile_grammar.lark").read()
+modfile_grammar = open(
+    f"{dir_path}/grammars/modfile_grammar.lark", "rt", encoding="utf-8"
+).read()
 
 from lark import Tree, Token
 from lark.visitors import Transformer

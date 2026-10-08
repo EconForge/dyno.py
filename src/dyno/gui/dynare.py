@@ -19,7 +19,7 @@ def dyno_gui(filename, parchoice={}):
 
         return ppdf
 
-    txt = open(filename).read()
+    txt = open(filename, "rt", encoding="utf-8").read()
 
     from dyno.dynare import DynareModel
 

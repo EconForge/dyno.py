@@ -31,7 +31,7 @@ k[t] = exp(b[t])*(y[t]-c[t])+(1-delta)*k[t-1]
 a[t] = rho*a[t-1]+tau*b[t-1] + e[t]
 b[t] = tau*a[t-1]+rho*b[t-1] + u[t]
 
-@run: variants: {rho: [0.80, 0.95]}
+@variants: {rho: [0.80, 0.95]}
 @run: steady
 @run: check
 @run: solve

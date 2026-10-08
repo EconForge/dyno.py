@@ -144,7 +144,8 @@ def test_variants_solve_simulate_and_plot_chain():
     )
 
     # Unified Altair chart (default engine)
-    ch = sims.plot(variables=["y", "c", "k", "n"], shocks="epsilon", units="percent")
+    first_shock = model.symbols["exogenous"][0]
+    ch = sims.plot(variables=["y", "c", "k"], shocks=first_shock, units="percent")
     assert isinstance(ch, alt.Chart)
     assert ch.to_dict()["encoding"]["color"]["title"] == "rho"
     assert {"rho=0.5", "rho=0.8", "rho=0.95"} == set(ch.data["variant"])
@@ -154,7 +155,7 @@ def test_variants_solve_simulate_and_plot_chain():
 
     # Unified Plotext chart
     txt_plot = sims.plot(
-        variables=["y", "c"], shocks="epsilon", engine="plotext", color=False
+        variables=["y", "c"], shocks=first_shock, engine="plotext", color=False
     )
     assert isinstance(txt_plot, str)
     assert "rho=0.5" in txt_plot
@@ -220,7 +221,7 @@ def test_variants_deterministic_transition_and_spaghetti():
 
 def test_variants_pipeline_run_results_variants():
     txt = """
-    @run: variants: {a: [0.2, 0.5, 0.8]}
+    @variants: {a: [0.2, 0.5, 0.8]}
     @run: solve
     @run: simulate: {T: 15}
     @run: plot: {engine: altair}
@@ -324,7 +325,7 @@ def test_pipeline_plot_keyword_effect():
 
     # 3. Variants without @run: plot -> no plot in HTML, Markdown, or Text
     var_no_plot = DynoModel(
-        txt="@run: variants: {a: [0.3, 0.7]}\n@run: solve\n@run: simulate: {T: 10}\n"
+        txt="@variants: {a: [0.3, 0.7]}\n@run: solve\n@run: simulate: {T: 10}\n"
         + base_eqs
     ).run()
     assert var_no_plot.figure is None
@@ -334,7 +335,7 @@ def test_pipeline_plot_keyword_effect():
 
     # 4. Variants with @run: plot -> plot rendered in HTML, Markdown, and Text
     var_with_plot = DynoModel(
-        txt="@run: variants: {a: [0.3, 0.7]}\n@run: solve\n@run: simulate: {T: 10}\n@run: plot: {variables: [x]}\n"
+        txt="@variants: {a: [0.3, 0.7]}\n@run: solve\n@run: simulate: {T: 10}\n@run: plot: {variables: [x]}\n"
         + base_eqs
     ).run()
     assert var_with_plot.figure is not None
@@ -354,7 +355,7 @@ def test_variants_muted_commands_render():
     """
 
     txt = (
-        "@run: variants: {a: [0.3, 0.7]}\n"
+        "@variants: {a: [0.3, 0.7]}\n"
         "@run: check;\n"
         "@run: solve;\n"
         "@run: simulate: {T: 10};\n"
@@ -406,6 +407,7 @@ def test_variants_muted_check_shows_on_error():
     y[t] = 0.5 * x[t]
     """
 
+    # legacy inline form, kept for backward compatibility
     txt = "@run: variants: {a: [0.3, 0.7]}\n" "@run: check;\n" + base_eqs
     res = DynoModel(txt=txt).run()
 
@@ -422,3 +424,71 @@ def test_variants_muted_check_shows_on_error():
 
     txt_out = res.to_text()
     assert "Checks\n------" in txt_out
+
+
+_VARIANTS_BASE = """
+a <- 0.5
+x[~] <- 0.0
+e[t] <- N(0.0, 1.0)
+x[t] = a * x[t-1] + e[t]
+"""
+
+
+def test_variants_metadata_parsed():
+    model = DynoModel(txt="@variants: {a: [0.2, 0.8]}\n@run: solve\n" + _VARIANTS_BASE)
+    assert model.metadata["variants"] == {"a": [0.2, 0.8]}
+
+
+def test_variants_metadata_equivalent_to_inline_run_variants():
+    pipeline = "@run: solve\n@run: simulate: {T: 10}\n"
+    res_meta = DynoModel(
+        txt="@variants: {a: [0.2, 0.8]}\n" + pipeline + _VARIANTS_BASE
+    ).run()
+    res_inline = DynoModel(
+        txt="@run: variants: {a: [0.2, 0.8]}\n" + pipeline + _VARIANTS_BASE
+    ).run()
+
+    assert isinstance(res_meta, RunResultsVariants)
+    assert isinstance(res_inline, RunResultsVariants)
+    assert res_meta.labels == res_inline.labels == ["a=0.2", "a=0.8"]
+    assert res_meta.errors == res_inline.errors == []
+
+
+def test_variants_metadata_position_independent_of_run():
+    # @variants may follow the @run lines: it is file-wide metadata
+    res = DynoModel(
+        txt="@run: solve\n@variants: {a: [0.2, 0.8]}\n" + _VARIANTS_BASE
+    ).run()
+    assert isinstance(res, RunResultsVariants)
+    assert res.labels == ["a=0.2", "a=0.8"]
+
+
+def test_variants_metadata_without_run_uses_default_pipeline():
+    res = DynoModel(txt="@variants: {a: [0.2, 0.8]}\n" + _VARIANTS_BASE).run(
+        default_pipeline=True
+    )
+    assert isinstance(res, RunResultsVariants)
+    assert len(res) == 2
+
+
+def test_variants_metadata_not_re_expanded_in_variants():
+    res = DynoModel(
+        txt="@variants: {a: [0.2, 0.8]}\n@run: solve\n" + _VARIANTS_BASE
+    ).run()
+    for m in res.model:
+        assert "variants" not in m.metadata
+
+
+def test_variants_metadata_inline_command_takes_precedence():
+    res = DynoModel(
+        txt="@variants: {a: [0.1, 0.2, 0.3]}\n"
+        "@run: variants: {a: [0.4, 0.6]}\n"
+        "@run: solve\n" + _VARIANTS_BASE
+    ).run()
+    assert res.labels == ["a=0.4", "a=0.6"]
+
+
+@pytest.mark.parametrize("bad", ["3", "[1, 2]", "foo", "{a: [1, 2]"])
+def test_variants_metadata_must_be_a_mapping(bad):
+    with pytest.raises(Exception):
+        DynoModel(txt=f"@variants: {bad}\n@run: solve\n" + _VARIANTS_BASE)

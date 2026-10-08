@@ -83,7 +83,7 @@ def test_default_backends_lists_every_available_backend():
 
 
 def test_render_variant_representation_across_formats():
-    source = RBC_DYNO.read_text()
+    source = RBC_DYNO.read_text(encoding="utf-8")
     variant = ImportVariant("DynoModel", False)
     for output_format in OUTPUT_FORMATS:
         ok, kind, content, line = render_variant(
@@ -99,7 +99,7 @@ def test_render_variant_report_across_formats():
     # examples/rbc.dyno is not square as-is (it's a calibration/estimation
     # style file), so `model.run(default_pipeline=True)` is expected to fail
     # here; render_variant must still degrade gracefully rather than raise.
-    source = RBC_DYNO.read_text()
+    source = RBC_DYNO.read_text(encoding="utf-8")
     variant = ImportVariant("DynoModel", False)
     for output_format in OUTPUT_FORMATS:
         ok, kind, content, _ = render_variant(
@@ -111,7 +111,7 @@ def test_render_variant_report_across_formats():
 
 
 def test_render_variant_report_for_solvable_model():
-    source = RBC_MOD.read_text()
+    source = RBC_MOD.read_text(encoding="utf-8")
     variant = ImportVariant("DynoModel", False)
     ok, kind, content, line = render_variant(RBC_MOD, source, variant, "report", "text")
     assert ok is True
@@ -215,7 +215,7 @@ def test_content_types_and_formats_are_stable():
 
 def test_render_variant_report_for_rbc_uppercase_dyno():
     rbc_path = Path("examples/RBC.dyno")
-    source = rbc_path.read_text()
+    source = rbc_path.read_text(encoding="utf-8")
     variant = ImportVariant("DynoModel", False)
     for output_format in OUTPUT_FORMATS:
         ok, kind, content, line = render_variant(

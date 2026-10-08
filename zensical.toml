@@ -20,6 +20,7 @@ nav = [
       "getting_started/dyno_quickstart.md",
       "getting_started/dynare_quickstart.md",
       "getting_started/development.md",
+      "getting_started/releasing.md",
   ]},
   { "Model Specification" = [
       "model_specification/syntax.md",
