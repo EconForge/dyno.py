@@ -144,7 +144,8 @@ def test_variants_solve_simulate_and_plot_chain():
     )
 
     # Unified Altair chart (default engine)
-    ch = sims.plot(variables=["y", "c", "k", "n"], shocks="epsilon", units="percent")
+    first_shock = model.symbols["exogenous"][0]
+    ch = sims.plot(variables=["y", "c", "k"], shocks=first_shock, units="percent")
     assert isinstance(ch, alt.Chart)
     assert ch.to_dict()["encoding"]["color"]["title"] == "rho"
     assert {"rho=0.5", "rho=0.8", "rho=0.95"} == set(ch.data["variant"])
@@ -154,7 +155,7 @@ def test_variants_solve_simulate_and_plot_chain():
 
     # Unified Plotext chart
     txt_plot = sims.plot(
-        variables=["y", "c"], shocks="epsilon", engine="plotext", color=False
+        variables=["y", "c"], shocks=first_shock, engine="plotext", color=False
     )
     assert isinstance(txt_plot, str)
     assert "rho=0.5" in txt_plot
