@@ -1,6 +1,6 @@
 [project]
 name = "dyno"
-version = "0.1.13"
+version = "0.1.14"
 description = "Macroeconomic model solver"
 readme = "README.md"
 authors = [

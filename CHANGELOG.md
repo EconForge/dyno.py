@@ -5,6 +5,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-10-08
+
+### Added
+
+- Support for Python 3.14 (`requires-python = ">= 3.12,<3.15"`) and `py314` CI test matrix.
+- Model variants API (`model.variants(...)`, `ModelVariants`, `SolutionVariants`, `SimulationVariants`, `RunResultsVariants`, `VariantCollection`) and `@variants:` pipeline directive.
+- LaTeX rendering improvements and release documentation (`RELEASING.md`, `docs/getting_started/releasing.md`).
+
+### Changed
+
+- Restored primary package name to `dyno` in `pyproject.toml` and `pixi.toml`; PyPI distributions are built under the `dynopy` package name via `ci/build_pypi_dist.py`.
+- Unified `model.solve()` type stability and `model.simulate(solve=...)`.
+
+### Fixed
+
+- Handled models without equations and comment-only models cleanly in parser and checks.
+- Fixed recursion in `Solution.__getattr__` during `deepcopy`.
+- Ensured explicit `encoding="utf-8"` when reading `.dyno` and `.lark` files on Windows.
+
 ## [0.1.13] - 2026-10-02
 
 ### Changed
