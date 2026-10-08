@@ -70,7 +70,7 @@ def model_representation_gui(directory: str | Path = "examples"):
     file_labels = list(file_map.keys())
 
     selected_file = solara.reactive(file_labels[0])
-    source_text = solara.reactive(files[0].read_text())
+    source_text = solara.reactive(files[0].read_text(encoding="utf-8"))
     selected_format = solara.reactive("markdown")
     show_source = solara.reactive(True)
     initial_backends = default_backends(files[0])
@@ -81,7 +81,7 @@ def model_representation_gui(directory: str | Path = "examples"):
     def select_file(label: str) -> None:
         path = file_map[label]
         selected_file.value = label
-        source_text.value = path.read_text()
+        source_text.value = path.read_text(encoding="utf-8")
         available = list(available_backends(path))
         if selected_backend.value not in available:
             selected_backend.value = available[0]
@@ -196,7 +196,7 @@ def model_representation_gui(directory: str | Path = "examples"):
                     icon=True,
                     small=True,
                     on_click=lambda: source_text.set(
-                        file_map[selected_file.value].read_text()
+                        file_map[selected_file.value].read_text(encoding="utf-8")
                     ),
                     children=[rv.Icon(small=True, children=["mdi-refresh"])],
                     title="Reset source to original file content",

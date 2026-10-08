@@ -75,7 +75,7 @@ def test_variants_and_single_report_parity():
     res_var = stoch_model.run()
 
     # Compare against univariant model
-    txt_single = open("examples/variants/stochastic.dyno").read()
+    txt_single = open("examples/variants/stochastic.dyno", encoding="utf-8").read()
     txt_no_var = "\n".join(
         line for line in txt_single.splitlines() if not line.startswith("@variants")
     )

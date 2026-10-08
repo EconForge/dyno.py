@@ -360,7 +360,7 @@ y[t] = alpha * k [t-1]
 )
 def test_examples_still_parse(name):
     path = Path(__file__).parent.parent / "examples" / name
-    DynoFile(path.read_text())
+    DynoFile(path.read_text(encoding="utf-8"))
 
 
 def test_file_with_every_annotation_position():

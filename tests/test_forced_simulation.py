@@ -62,7 +62,7 @@ def test_explicit_initial_states_parameter():
 
 def test_run_command_simul_with_forced_shocks():
     """Verify that @run: simul directive in model executes forced simulation."""
-    raw_lines = open("examples/rbc.dyno").read().splitlines()
+    raw_lines = open("examples/rbc.dyno", encoding="utf-8").read().splitlines()
     base_txt = "\n".join(
         line for line in raw_lines if not line.strip().startswith("@run:")
     )

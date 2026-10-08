@@ -821,7 +821,7 @@ def test_report_has_dedicated_plot_section():
 
 def _myst_report():
     path = "examples/rbc.dyno"
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         txt = f.read()
     return dsge_report(
         txt=txt, filename=path, output_type="myst", notify_interface=False
