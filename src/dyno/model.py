@@ -113,6 +113,18 @@ class AbstractModel(ABC):
         models = [self.recalibrate(**spec) for spec in specs]
         return VariantCollection(models, specs=specs, labels=labels)
 
+    def _variables_used_in_equations(self: Self) -> set[str]:
+        names: set[str] = set()
+        symbolic = getattr(self, "symbolic", None)
+        eqs = getattr(symbolic, "equations", []) if symbolic is not None else []
+        for eq in eqs:
+            if hasattr(eq, "iter_subtrees_topdown"):
+                for subtree in eq.iter_subtrees_topdown():
+                    if getattr(subtree, "data", None) == "variable":
+                        if subtree.children and hasattr(subtree.children[0], "children"):
+                            names.add(str(subtree.children[0].children[0]))
+        return names
+
     def _repr_data(self: Self) -> dict[str, Any]:
         return model_repr_data(self)
 

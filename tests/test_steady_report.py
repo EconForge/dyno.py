@@ -200,3 +200,19 @@ check;
     assert "<details" in results.to_html()
     assert "## Steady-state calculation" in results.to_markdown()
     assert ":class: dropdown" in results.to_markdown()
+
+
+def test_runresults_includes_bk_eigenvalue_explanation():
+    txt = """
+alpha := 0.9
+x[~] := 0
+e[t] := N(0, 1)
+x[t] = alpha * x[t-1] + e[t]
+
+@run: check
+"""
+    model = DynoModel(txt=txt)
+    results = model.run(default_pipeline=False)
+    md_rep = results.to_markdown()
+    assert "Sorted by modulus. Exactly 1 eigenvalue should be larger than 1" in md_rep
+

@@ -40,7 +40,7 @@ k[0] <- k[~]*1.01
 ∀ t, 0 <= t < 10 : e[t] <- 0.99/(t+1)
 ∀ t, 1 <= t < 10 : u[t] <- e[t-1]*1/2
 
-@run: variants: {rho: [0.80, 0.95]}
+@variants: {rho: [0.80, 0.95]}
 @run: steady
 @run: check
 @run: solve

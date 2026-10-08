@@ -43,6 +43,24 @@ class ParserError(DynoError):
         super().__init__(message)
 
 
+class DefinitionError(ParserError):
+
+    def __init__(self, msg: Any, tree: Any = None) -> None:
+        super().__init__(str(msg))
+        self.msg = msg
+        self.tree = tree
+        meta = getattr(tree, "meta", None)
+        if meta is not None and not getattr(meta, "empty", True):
+            self.line = getattr(meta, "line", None)
+            self.column = getattr(meta, "column", None)
+
+    def __str__(self) -> str:
+        meta = getattr(self.tree, "meta", None)
+        if meta is None or getattr(meta, "empty", True):
+            return str(self.msg)
+        return f"({meta.line}, {meta.column}): {self.msg}"
+
+
 from lark.exceptions import UnexpectedInput
 from lark.exceptions import UnexpectedCharacters, UnexpectedToken, UnexpectedEOF
 

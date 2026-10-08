@@ -110,6 +110,22 @@ class DynoModel(AbstractModel):
             else:
                 raise TypeError("run commands must be strings or dictionaries")
 
+        # File-wide ``@variants`` metadata replaces the model by a collection
+        # of models: equivalent to a leading ``variants`` command, so that the
+        # whole pipeline runs on each variant.
+        variants_spec = self.metadata.get("variants")
+        if variants_spec is not None and not any(
+            str(c["command"]).lower() == "variants" for c in commands
+        ):
+            if not isinstance(variants_spec, dict):
+                raise TypeError(
+                    "model.metadata['variants'] must be a mapping of parameter "
+                    "names to lists of values"
+                )
+            commands.insert(
+                0, {"command": "variants", "options": dict(variants_spec), "mute": False}
+            )
+
         return commands
 
     def run(self: Self, default_pipeline: bool = False) -> "RunResults":
@@ -143,6 +159,10 @@ class DynoModel(AbstractModel):
         - ``plot``: plot the current simulation
         - ``variants``: run the remaining commands on each calibration variant
           (``model.variants(**options)``)
+
+        The file-wide metadata ``@variants: {alpha: [1, 2]}`` is equivalent to
+        a leading ``variants`` command: it replaces the model by a collection
+        of models and the whole pipeline runs on each of them.
 
         Parameters
         ----------
@@ -218,6 +238,7 @@ class DynoModel(AbstractModel):
                 remaining = commands[idx + 1 :]
                 for m in model_variants:
                     m.metadata = dict(m.metadata)
+                    m.metadata.pop("variants", None)  # already expanded
                     m.metadata["run"] = remaining
                 return model_variants.run(default_pipeline=default_pipeline)  # type: ignore[return-value]
             elif name == "steady":
@@ -399,6 +420,16 @@ class DynoModel(AbstractModel):
             for subtree in eq.iter_subtrees_topdown():
                 if subtree.data == "constant":
                     names.add(str(subtree.children[0].children[0]))
+        return names
+
+    def _variables_used_in_equations(self: Self) -> set[str]:
+        names: set[str] = set()
+        for eq in getattr(self.symbolic, "equations", []):
+            if hasattr(eq, "iter_subtrees_topdown"):
+                for subtree in eq.iter_subtrees_topdown():
+                    if getattr(subtree, "data", None) == "variable":
+                        if subtree.children and hasattr(subtree.children[0], "children"):
+                            names.add(str(subtree.children[0].children[0]))
         return names
 
     def __init__(

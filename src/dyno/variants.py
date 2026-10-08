@@ -1649,7 +1649,11 @@ class RunResultsVariants(VariantCollection[RR], item_type=RunResults):
                     [
                         admonition,
                         ":class: dropdown",
-                        "Sorted by modulus:",
+                        (
+                            f"Sorted by modulus. Exactly {n_eq} {'eigenvalue' if n_eq == 1 else 'eigenvalues'} should be larger than 1."
+                            if n_eq is not None
+                            else "Sorted by modulus."
+                        ),
                         ev_html,
                         ":::",
                         "",

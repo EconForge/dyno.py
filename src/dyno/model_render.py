@@ -50,20 +50,29 @@ def model_repr_data(model: Any) -> dict[str, Any]:
     steady_states = model.context.get("steady_states", {})
     equations_count = len(getattr(model.symbolic, "equations", []))
 
+    vars_used = (
+        model._variables_used_in_equations()
+        if hasattr(model, "_variables_used_in_equations")
+        else set()
+    )
+
     def _is_nan(value: Any) -> bool:
         return isinstance(value, float) and np.isnan(value)
 
     endogenous = [
-        (v, _is_nan(steady_states.get(v, nan))) for v in model.symbols["endogenous"]
+        (v, _is_nan(steady_states.get(v, nan)), v not in vars_used)
+        for v in model.symbols["endogenous"]
     ]
     exogenous = [
-        (v, _is_nan(steady_states.get(v, nan))) for v in model.symbols["exogenous"]
+        (v, _is_nan(steady_states.get(v, nan)), v not in vars_used)
+        for v in model.symbols["exogenous"]
     ]
     parameters = [
         (p, _is_nan(constants.get(p, nan))) for p in model.symbols["parameters"]
     ]
 
-    has_uninitialized = any(flag for _, flag in endogenous + exogenous + parameters)
+    has_uninitialized = any(flag for _, flag, *_ in endogenous + exogenous + parameters)
+    has_unused = any(unused for _, _, unused in endogenous + exogenous)
 
     latex_equations: str | None = None
     equations_table: str | None = None
@@ -93,6 +102,7 @@ def model_repr_data(model: Any) -> dict[str, Any]:
         "exogenous": exogenous,
         "parameters": parameters,
         "has_uninitialized": has_uninitialized,
+        "has_unused": has_unused,
         "latex_equations": latex_equations,
         "equations_table": equations_table,
     }
@@ -107,18 +117,21 @@ def render_model_text(data: dict[str, Any]) -> str:
 
         orange_style = "orange3"
 
-        def _styled_list(items: list[tuple[str, bool]]) -> Text:
+        def _styled_list(items: list[tuple[Any, ...]]) -> Text:
             if len(items) == 0:
                 return Text("<none>")
             t = Text()
-            for i, (item, is_uninitialized) in enumerate(items):
+            for i, item_tuple in enumerate(items):
+                item = item_tuple[0]
+                is_uninitialized = item_tuple[1]
+                is_unused = item_tuple[2] if len(item_tuple) > 2 else False
                 if i > 0:
                     t.append(", ")
+                t.append(item)
                 if is_uninitialized:
-                    t.append(item)
                     t.append("^", style=orange_style)
-                else:
-                    t.append(item)
+                if is_unused:
+                    t.append("*", style=orange_style)
             return t
 
         table = Table(
@@ -154,22 +167,31 @@ def render_model_text(data: dict[str, Any]) -> str:
         console = Console(force_terminal=True, color_system="truecolor", width=120)
         with console.capture() as capture:
             console.print(table)
-            if data["has_uninitialized"]:
+            if data.get("has_uninitialized"):
                 console.print(
                     "[orange3]^[/orange3] uninitialized (steady-state) value: defaults to nan"
+                )
+            if data.get("has_unused"):
+                console.print(
+                    "[orange3]*[/orange3] variable does not appear in any equation"
                 )
         return capture.get().rstrip()
     except Exception:
 
-        def _fallback_join_with_mark(items: list[tuple[str, bool]]) -> str:
+        def _fallback_join_with_mark(items: list[tuple[Any, ...]]) -> str:
             if len(items) == 0:
                 return "<none>"
             out: list[str] = []
-            for item, is_uninitialized in items:
+            for item_tuple in items:
+                item = item_tuple[0]
+                is_uninitialized = item_tuple[1]
+                is_unused = item_tuple[2] if len(item_tuple) > 2 else False
+                suffix = ""
                 if is_uninitialized:
-                    out.append(f"{item}^")
-                else:
-                    out.append(item)
+                    suffix += "^"
+                if is_unused:
+                    suffix += "*"
+                out.append(f"{item}{suffix}")
             return ", ".join(out)
 
         endogenous = _fallback_join_with_mark(data["endogenous"])
@@ -185,8 +207,13 @@ def render_model_text(data: dict[str, Any]) -> str:
                 f"  constants: {parameters}",
             ]
         )
-        if data["has_uninitialized"]:
-            return base + "\n^ uninitialized (steady-state) value: defaults to nan"
+        notes = []
+        if data.get("has_uninitialized"):
+            notes.append("^ uninitialized (steady-state) value: defaults to nan")
+        if data.get("has_unused"):
+            notes.append("* variable does not appear in any equation")
+        if notes:
+            return base + "\n" + "\n".join(notes)
         return base
 
 
@@ -198,14 +225,19 @@ def render_model_html(
 ) -> str:
     resolved_filename = filename or data.get("filename")
 
-    def _html_list(items: list[tuple[str, bool]]) -> str:
+    def _html_list(items: list[tuple[Any, ...]]) -> str:
         if len(items) == 0:
             return "&lt;none&gt;"
         formatted: list[str] = []
-        for name, is_uninitialized in items:
+        for item_tuple in items:
+            name = item_tuple[0]
+            is_uninitialized = item_tuple[1]
+            is_unused = item_tuple[2] if len(item_tuple) > 2 else False
             badge = f"<code>{html.escape(name)}</code>"
             if is_uninitialized:
                 badge += '<sup style="color:#d97706">^</sup>'
+            if is_unused:
+                badge += '<sup style="color:#d97706">*</sup>'
             formatted.append(badge)
         return ", ".join(formatted)
 
@@ -215,11 +247,16 @@ def render_model_html(
         else ""
     )
 
-    footnote = (
-        '<p style="margin-top:6px; font-size:12px; color:#64748b;"><span style="color:#d97706">^</span> uninitialized (steady-state) value: defaults to nan</p>'
-        if data.get("has_uninitialized")
-        else ""
-    )
+    footnotes = []
+    if data.get("has_uninitialized"):
+        footnotes.append(
+            '<p style="margin-top:6px; font-size:12px; color:#64748b;"><span style="color:#d97706">^</span> uninitialized (steady-state) value: defaults to nan</p>'
+        )
+    if data.get("has_unused"):
+        footnotes.append(
+            '<p style="margin-top:4px; font-size:12px; color:#64748b;"><span style="color:#d97706">*</span> variable does not appear in any equation</p>'
+        )
+    footnote_str = "".join(footnotes)
 
     cell_style = "padding:6px 10px; border:1px solid #e2e8f0;"
     header_style = "padding:6px 10px; border:1px solid #e2e8f0; background:#f8fafc;"
@@ -279,7 +316,7 @@ def render_model_html(
     </tr>
   </tbody>
 </table>
-{footnote}
+{footnote_str}
 """
 
 
@@ -295,8 +332,15 @@ def render_model_overview_markdown(
         parts: list[str] = []
         for item in items:
             if isinstance(item, tuple):
-                name, is_uninit = item
-                parts.append(f"`{name}^`" if is_uninit else f"`{name}`")
+                name = item[0]
+                is_uninit = item[1]
+                is_unused = item[2] if len(item) > 2 else False
+                mark = ""
+                if is_uninit:
+                    mark += "^"
+                if is_unused:
+                    mark += "*"
+                parts.append(f"`{name}{mark}`" if mark else f"`{name}`")
             else:
                 parts.append(f"`{item}`")
         return ", ".join(parts)
@@ -337,6 +381,8 @@ def render_model_overview_markdown(
     )
     if data.get("has_uninitialized"):
         lines.extend(["", "`^` uninitialized (steady-state) value: defaults to `nan`"])
+    if data.get("has_unused"):
+        lines.extend(["", "`*` variable does not appear in any equation"])
     lines.extend(
         [
             "",

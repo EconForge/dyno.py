@@ -12,6 +12,7 @@ from .dynare import DynareModel
 from .errors import (
     BlanchardKahnError,
     ConvergenceWarning,
+    DefinitionError,
     DynareParserError,
     DynoError,
     LARKParserError,
