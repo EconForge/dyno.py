@@ -7,7 +7,7 @@ authors = [
     { name = "Pablo Winant", email = "pablo.winant@gmail.com" },
     { name = "Ousema Bouaneni", email = "ousema.bouaneni@polytechnique.edu" },
 ]
-requires-python = ">= 3.12,<3.14"
+requires-python = ">= 3.12,<3.15"
 license = "BSD-3-Clause"
 classifiers = [
     "Operating System :: OS Independent",
