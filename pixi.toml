@@ -28,7 +28,7 @@ ignore-pypi-mapping = false
 hatchling = "==1.26.3"
 
 [pypi-dependencies]
-dynopy = { path = "." , editable = true}
+dyno = { path = "." , editable = true}
 
 [dependencies]
 python = ">=3.12,<3.14"
@@ -126,7 +126,7 @@ build-docs = "zensical build"
 twine = ">=6.0.0"
 
 [feature.release.tasks]
-build-dist = "uv build --out-dir dist"
+build-dist = "python ci/build_pypi_dist.py --out-dir dist"
 check-dist = "twine check dist/*"
 publish-testpypi = "uv publish --publish-url https://test.pypi.org/legacy/ dist/*"
 publish-pypi = "uv publish dist/*"
