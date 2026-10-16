@@ -82,7 +82,7 @@ def _is_variable(tree) -> bool:
 
 
 def _is_current(tree: Tree) -> bool:
-    return int(tree.children[2].children[0]) == 0
+    return int(str(tree.children[2].children[0])) == 0
 
 
 def _infinity(meta) -> Tree:

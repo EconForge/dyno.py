@@ -69,7 +69,9 @@ def test_variables_come_from_residual_only():
 
 
 def test_latex_omits_infinite_bounds():
-    assert latex(parse_equation("a[t] ⟂ 0 <= n[t] <= inf")) == r"a_{t} \perp 0 \leq n_{t}"
+    assert (
+        latex(parse_equation("a[t] ⟂ 0 <= n[t] <= inf")) == r"a_{t} \perp 0 \leq n_{t}"
+    )
     assert latex(parse_equation("a[t] ⟂ i[t] <= h")) == r"a_{t} \perp i_{t} \leq h"
     assert latex(parse_equation("a[t] ⟂ -inf <= i[t]")) == r"a_{t} \perp i_{t}"
 
