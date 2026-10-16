@@ -421,6 +421,7 @@ class DynoModel(AbstractModel):
             for subtree in eq.iter_subtrees_topdown():
                 if subtree.data == "constant":
                     names.add(str(subtree.children[0].children[0]))
+        names.discard("inf")  # built-in (complementarity bounds)
         return names
 
     def _variables_used_in_equations(self: Self) -> set[str]:

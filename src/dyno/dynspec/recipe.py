@@ -169,6 +169,11 @@ class _VariableCollector(Interpreter):
     equality = bare_formula = number = _default
     constant = _default
 
+    # Only the residual of a complementarity is an equation; the bounds are
+    # checked separately.
+    def complementarity(self, tree: Tree) -> None:
+        self.visit(tree.children[0])
+
     # Leaf nodes that don't contain variables — do nothing.
     def name(self, tree: Tree) -> None:
         pass
