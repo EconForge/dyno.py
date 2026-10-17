@@ -186,6 +186,8 @@ class FormulaEvaluator(Interpreter):
         name = str(tree.children[0].children[0])
         if name in self.constants:
             return self.constants[name]
+        elif name == "inf":
+            return math.inf
         else:
             return self._undefined(f"Undefined value: {name}", tree)
 
@@ -268,6 +270,10 @@ class FormulaEvaluator(Interpreter):
 
     def bare_formula(self, tree):
         """Handle a standalone formula equation (implicitly `formula = 0`)"""
+        return self.visit(tree.children[0])
+
+    def complementarity(self, tree):
+        """Handle `res ⟂ lb <= x <= ub`: the residual is `res` (bounds are ignored)"""
         return self.visit(tree.children[0])
 
 
@@ -592,7 +598,7 @@ class AssignmentEvaluator(FormulaEvaluator):
         inherited = self._metadata_stack[-1]
         merged = self._merge_metadata(inherited, meta)
 
-        if statement.data in ("equality", "bare_formula", "formula"):
+        if statement.data in ("equality", "bare_formula", "formula", "complementarity"):
             self._attach_statement_metadata(statement, merged)
             self.equations.append(statement)
             self.equation_metadata.append(merged)

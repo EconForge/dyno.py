@@ -39,6 +39,68 @@ class TimeFixer(Transformer):
         else:
             return tree
 
+    @v_args(tree=True)
+    def complementarity(self, tree):
+        """Normalize `res ⟂ a <= b [<= c]` to `complementarity(res, lb, x, ub)`.
+
+        A missing bound is made explicit as `-inf` or `inf`. In the one-sided form,
+        the bounded variable is whichever side of `<=` is a variable; if both are,
+        it is the one dated `[t]`.
+        """
+        res, a, b, c = tree.children
+        if c is not None:
+            lb, x, ub = a, b, c
+            if not _is_variable(x):
+                raise _complementarity_error(
+                    "the middle term of `lb <= x <= ub` must be a variable", tree
+                )
+        else:
+            if _is_variable(a) and _is_variable(b):
+                if _is_current(a) == _is_current(b):
+                    raise _complementarity_error(
+                        "ambiguous one-sided bound: both sides of `<=` are variables; "
+                        "write `lb <= x <= ub` explicitly",
+                        tree,
+                    )
+                bounded_is_rhs = _is_current(b)
+            elif _is_variable(a) or _is_variable(b):
+                bounded_is_rhs = _is_variable(b)
+            else:
+                raise _complementarity_error(
+                    "the constraint must bound a variable (`lb <= x[t]` or `x[t] <= ub`)",
+                    tree,
+                )
+            if bounded_is_rhs:
+                lb, x, ub = a, b, _infinity(tree.meta)
+            else:
+                lb, x, ub = Tree("neg", [_infinity(tree.meta)], tree.meta), a, b
+        return Tree("complementarity", [res, lb, x, ub], tree.meta)
+
+
+def _is_variable(tree) -> bool:
+    return isinstance(tree, Tree) and tree.data == "variable"
+
+
+def _is_current(tree: Tree) -> bool:
+    return int(str(tree.children[2].children[0])) == 0
+
+
+def _infinity(meta) -> Tree:
+    return Tree("constant", [Tree("name", [Token("NAME", "inf")])], meta)
+
+
+def _complementarity_error(message: str, tree: Tree):
+    from dyno.errors import DefinitionError
+
+    # Positions are only propagated to `tree` after the inline transformer runs,
+    # so locate the error on the first child that has them (the residual).
+    located = next(
+        (c for c in tree.children if isinstance(c, Tree) and not c.meta.empty), tree
+    )
+    return DefinitionError(
+        f"Invalid complementarity condition: {message}", tree=located
+    )
+
 
 @functools.cache
 def get_parser() -> Lark:
@@ -138,16 +200,9 @@ class Printer(Interpreter):
         b = self.visit(tree.children[1])
         return f"{a} = {b}"
 
-    def double_complementarity(self, tree):
-        a = self.visit(tree.children[0])
-        b = self.visit(tree.children[1])
-        return f"{a} ⟂ {b}"
-
-    def double_inequality(self, tree):
-        a = self.visit(tree.children[0])
-        b = self.visit(tree.children[1])
-        c = self.visit(tree.children[2])
-        return f"{a} <= {b} <= {c}"
+    def complementarity(self, tree):
+        res, lb, x, ub = (self.visit(c) for c in tree.children)
+        return f"{res} ⟂ {lb} <= {x} <= {ub}"
 
     def assignment(self, tree):
         a = self.visit(tree.children[0])

@@ -1,0 +1,97 @@
+# Model recipes, in dolo's recipe format (dolo/compiler/recipes.yaml).
+#
+# Each recipe lists its variable groups (`symbols`) and, for each equation
+# group (`specs`), the variable groups allowed at each time shift (`eqs`).
+# An entry is [group, shift] or [group, shift, argument_name]; the argument
+# name is informative only.
+#
+# Optional keys of an equation group:
+#   target            [group, shift, name]: the group the equations define (one
+#                     `x[t] = ...` per variable); only the RHS is checked
+#   recursive         whether target equations must form a DAG
+#                     (default: True when there is a target)
+#   optional          whether the group may be absent (default: False)
+#   n_equations       group whose size is the number of equations (default:
+#                     the target group, or the complementarities' middle group)
+#   complementarities `left-right`: groups allowed in the bounds of
+#                     `res ⟂ lb <= x[t] <= ub`; `middle`: the bounded group. The
+#                     i-th complementarity must bound the i-th variable of it.
+#
+# Recipe-level keys (dyno extensions):
+#   processes         group receiving the variables declared as stochastic
+#                     processes (`e[t] <- N(...)`), when inferring variables
+
+dtcc:
+
+    model_spec: dtcc
+
+    symbols: [exogenous, states, controls, auxiliaries, parameters]
+
+    processes: exogenous
+
+    specs:
+
+        definitions:
+            optional: True
+            target: [auxiliaries, 0, y]
+            eqs:
+                - [exogenous, 0, m]
+                - [states, 0, s]
+                - [controls, 0, x]
+                - [auxiliaries, 0, y]
+                - [parameters, 0, p]
+
+        transition:
+            target: [states, 0, S]
+            eqs:
+                - [exogenous, -1, m]
+                - [states, -1, s]
+                - [controls, -1, x]
+                - [exogenous, 0, M]
+                - [parameters, 0, p]
+
+        arbitrage:
+            eqs:
+                - [exogenous, 0, m]
+                - [states, 0, s]
+                - [controls, 0, x]
+                - [auxiliaries, 0, y]
+                - [exogenous, 1, M]
+                - [states, 1, S]
+                - [controls, 1, X]
+                - [auxiliaries, 1, Y]
+                - [parameters, 0, p]
+            complementarities:
+                left-right:
+                    - [exogenous, 0, m]
+                    - [states, 0, s]
+                    - [parameters, 0, p]
+                middle: [controls, 0, x]
+
+        # Bounds of the arbitrage complementarities, as a group of its own.
+        arbitrage_bounds:
+            optional: True
+            n_equations: controls
+            eqs:
+                - [exogenous, 0, m]
+                - [states, 0, s]
+                - [parameters, 0, p]
+
+        # Standalone bounds sections: `x[t] = <bound>`, one per control.
+        controls_lb:
+            optional: True
+            target: [controls, 0, x]
+            recursive: False
+            eqs:
+                - [exogenous, 0, m]
+                - [states, 0, s]
+                - [parameters, 0, p]
+
+        controls_ub:
+            optional: True
+            target: [controls, 0, x]
+            recursive: False
+            eqs:
+                - [exogenous, 0, m]
+                - [states, 0, s]
+                - [parameters, 0, p]

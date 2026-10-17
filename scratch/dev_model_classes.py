@@ -4,13 +4,13 @@ from rich import inspect, print
 
 # TODO:  test that the two model classes give the same results
 
-# f = DynoFile(open(examples_path("RBC.dyno"), encoding="utf-8").read())
+# f = DynoFile(open(examples_path("rbc_basic.dyno"), encoding="utf-8").read())
 
 # f = LModFile(open(examples_path("modfiles", "RBC.mod"), encoding="utf-8").read())
 
 fname_mod = examples_path("modfiles", "RBC.mod")
-fname_dyno = examples_path("RBC.dyno")
-# f = LModFile(open(examples_path("RBC.dyno"), encoding="utf-8").read())
+fname_dyno = examples_path("rbc_basic.dyno")
+# f = LModFile(open(examples_path("rbc_basic.dyno"), encoding="utf-8").read())
 f = DynoFile(open(fname_dyno, encoding="utf-8").read())
 print(f.context)
 txt1 = f.latex_equations()

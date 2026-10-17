@@ -214,7 +214,7 @@ def test_content_types_and_formats_are_stable():
 
 
 def test_render_variant_report_for_rbc_uppercase_dyno():
-    rbc_path = Path("examples/RBC.dyno")
+    rbc_path = Path("examples/rbc_basic.dyno")
     source = rbc_path.read_text(encoding="utf-8")
     variant = ImportVariant("DynoModel", False)
     for output_format in OUTPUT_FORMATS:

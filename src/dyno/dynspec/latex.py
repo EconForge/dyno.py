@@ -61,6 +61,8 @@ class LatexTransformer(Transformer):
 
     def constant(self, children):
         # children: [name]
+        if self._get_string(children[0]) == "inf":
+            return self._with_precedence("\\infty", "atom")
         base, sub = self._split_name(self._get_string(children[0]))
         return self._with_precedence(self._subscripted(base, sub, None), "atom")
 
@@ -182,6 +184,17 @@ class LatexTransformer(Transformer):
         a = self._get_string(children[0])
         b = self._get_string(children[1])
         result = f"{a} = {b}"
+        return self._with_precedence(result, "atom")
+
+    def complementarity(self, children):
+        # children: [residual, lb, x, ub]; infinite bounds are omitted
+        res, lb, x, ub = (self._get_string(c) for c in children)
+        constraint = x
+        if lb != "-\\infty":
+            constraint = f"{lb} \\leq {constraint}"
+        if ub != "\\infty":
+            constraint = f"{constraint} \\leq {ub}"
+        result = f"{res} \\perp {constraint}"
         return self._with_precedence(result, "atom")
 
     def assignment(self, children):

@@ -6,7 +6,7 @@ def test_dynofile_modfile_equivalence():
     from dyno import DynoModel
     from dyno.dynare import DynareModel
 
-    model1 = DynoModel("examples/RBC.dyno")
+    model1 = DynoModel("examples/rbc_basic.dyno")
     model2 = DynareModel("examples/modfiles/RBC.mod")
 
     # d1 = (model1.get_calibration())

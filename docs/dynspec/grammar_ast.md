@@ -50,6 +50,7 @@ graph TD
 
     SC --> EQ[equality]
     SC --> BF[bare_formula]
+    SC --> CP[complementarity]
     SC --> ASG[assignment]
     SC --> QA[quantified_assignment]
 
@@ -68,6 +69,9 @@ graph TD
 # Equality vs. Residual (bare_formula)
 equality: formula "=" formula
 bare_formula: formula
+
+# Complementarity: residual ⟂ lb <= x[t] <= ub  (`|` is the legacy separator)
+complementarity: formula _PERP formula "<=" formula ["<=" formula]
 
 # Assignments
 assignment: symbol _ASSIGN formula
@@ -109,6 +113,29 @@ Every variable node in the resulting AST is guaranteed to possess a normalized s
 - `k[t]` $\implies$ `Tree('variable', [cname('k'), index('t'), shift('0')])`
 - `k[t-1]` $\implies$ `Tree('variable', [cname('k'), index('t'), shift('-1')])`
 - `k[~]` $\implies$ `Tree('variable', [cname('k'), index('~'), shift('0')])`
+
+### Complementarity conditions
+
+`TimeFixer` also normalizes complementarity conditions. Whatever the source
+form, a `complementarity` node always has four children `[residual, lb, x, ub]`,
+where `x` is a `variable` and a missing bound is made explicit as `-inf` or
+`inf` (`inf` is a built-in constant):
+
+| Source | `lb` | `x` | `ub` |
+|---|---|---|---|
+| `f ⟂ 0 <= n[t] <= inf` | `0` | `n[t]` | `inf` |
+| `f ⟂ x[t] <= h` | `-inf` | `x[t]` | `h` |
+| `f \| -inf <= i[t]` | `-inf` | `i[t]` | `inf` |
+| `f ⟂ k[t-1] <= i[t]` | `k[t-1]` | `i[t]` | `inf` |
+
+In the one-sided form, the bounded variable is the side of `<=` that is a
+variable; if both sides are variables, it is the one dated `[t]`. Anything
+else (no variable, two `[t]` variables, a non-variable middle term) raises a
+`DefinitionError` located on the offending line.
+
+Downstream, the residual of a complementarity is evaluated like a
+`bare_formula`: the bounds do not enter the residuals, and only the residual's
+variables are reported by `extract_variables_from_equation`.
 
 ---
 

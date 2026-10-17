@@ -4,7 +4,7 @@ from dyno import examples_path
 
 from rich import inspect, print
 
-model1 = DynoModel(examples_path("RBC.dyno"))
+model1 = DynoModel(examples_path("rbc_basic.dyno"))
 model2 = DynoModel(examples_path("modfiles", "RBC.mod"))
 model3 = DynareModel(examples_path("modfiles", "RBC.mod"))
 
@@ -91,7 +91,7 @@ import time
 
 t1 = time.time()
 for i in range(100):
-    model = DynoModel(examples_path("RBC.dyno"))
+    model = DynoModel(examples_path("rbc_basic.dyno"))
     model.solve()
 t2 = time.time()
 print("Elsapsed time (dyno/dyno):", t2 - t1)

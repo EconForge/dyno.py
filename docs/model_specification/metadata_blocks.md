@@ -187,7 +187,7 @@ When you call `results = model.run()`, Dyno executes each command in sequence an
 ```python
 from dyno import DynoModel
 
-model = DynoModel("examples/RBC.dyno")
+model = DynoModel("examples/rbc_basic.dyno")
 results = model.run()
 
 # Access pipeline products

@@ -28,9 +28,17 @@ block: "{" _NEWLINE* (block_item (_NEWLINE+ block_item)* _NEWLINE*)? "}"
 ?block_item: annotated_statement | annotated_block
 
 
-?equation: equality | bare_formula
+?equation: equality | bare_formula | complementarity
 
 equality: formula "=" formula
+
+# Complementarity condition:  residual ⟂ lb <= x[t] <= ub
+# Either bound may be omitted (one-sided: `lb <= x[t]` or `x[t] <= ub`).
+# `|` is accepted as the legacy (dolo) separator.  The constraint is parsed
+# loosely here and normalized (bounds made explicit) by `TimeFixer`.
+complementarity: formula _PERP formula "<=" formula ["<=" formula]
+
+_PERP: "⟂" | "|"
 
 # Stand-alone formula used as a residual equation (zero-form)
 bare_formula: formula

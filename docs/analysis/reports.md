@@ -55,7 +55,7 @@ In Python, execute the pipeline with one call:
 ```python
 from dyno import DynoModel
 
-model = DynoModel("examples/RBC.dyno")
+model = DynoModel("examples/rbc_basic.dyno")
 results = model.run()
 ```
 
