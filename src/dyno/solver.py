@@ -332,6 +332,12 @@ def solve_qz(
     ------
     LinAlgError :
         when Blanchard-Kahn conditions are not verified (less than N generalized eigenvalues inside the unit ball)
+
+    Notes
+    -----
+    Roots are classified with the ``tol_sort`` tolerance used for the QZ sort, so
+    a unit root (``|λ| ≈ 1``) is treated as non-explosive and accepted, and the
+    outcome does not depend on platform-specific floating-point rounding.
     """
     from scipy.linalg import ordqz
 
@@ -356,12 +362,19 @@ def solve_qz(
     n = len(evs) // 2
     l1 = evs[n - 1]
     l2 = evs[n]
-    if l1 <= l2 < 1:
+    # A root within ``tol_sort`` of the unit circle is a unit root: it does not
+    # diverge, so it is counted as non-explosive. The QZ sort above already uses
+    # the same tolerance to decide which side of the circle a root is on, so
+    # using it here keeps the two consistent and makes the outcome independent of
+    # platform-specific BLAS rounding (comparing exactly to 1 used to accept
+    # 1 - 1e-15 and reject 1 + 1e-15).
+    n_stable = int((evs <= 1 + tol_sort).sum())
+    if n_stable > n:
         raise BlanchardKahnError(
             f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. Too many stable solutions.",
             evs=evs,
         )
-    if 1 < l1 <= l2:
+    if n_stable < n:
         raise BlanchardKahnError(
             f"Eigenvalue condition not satisfied: l_(n)={l1}, l_(n+1)={l2}. No stable solution.",
             evs=evs,

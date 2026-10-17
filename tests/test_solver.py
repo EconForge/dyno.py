@@ -69,3 +69,26 @@ def test_dynomodel_run_warns_on_deterministic_non_convergence():
         and "incorrect" in w.get("message", "")
         for w in results.warnings
     )
+
+
+def test_solve_qz_accepts_unit_root_just_above_one():
+    """A unit root does not diverge, so it must be accepted as non-explosive.
+
+    ``solve_qz`` used to compare the borderline eigenvalue to 1 exactly, so a
+    root at ``1 + 9e-16`` was rejected as "No stable solution" while ``1 -
+    9e-16`` was accepted: the outcome depended on floating-point rounding, and
+    therefore on the platform.
+    """
+    import numpy as np
+    import pytest
+    from dyno.solver import solve_qz
+
+    A = np.zeros((1, 1))
+    B = np.array([[1 - 1e-15]])  # unit root at 1 / (1 - 1e-15) = 1 + 1e-15
+    C = -np.ones((1, 1))
+
+    X, evs = solve_qz(A, B, C)
+
+    assert evs[0] > 1
+    assert evs[0] == pytest.approx(1.0, abs=1e-6)
+    assert X == pytest.approx(np.ones((1, 1)))
