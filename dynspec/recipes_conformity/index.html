@@ -1491,22 +1491,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-the-dtcc_recipe" class="md-nav__link">
+  <a href="#2-recipes-files" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. The <code>DTCC_RECIPE</code>
+        2. Recipes Files
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="2. The DTCC_RECIPE">
+    <nav class="md-nav" aria-label="2. Recipes Files">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#the-three-dtcc-equation-groups" class="md-nav__link">
+  <a href="#the-dtcc-recipe" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        The Three DTCC Equation Groups
+        The DTCC recipe
       </span>
     </span>
   </a>
@@ -1519,15 +1519,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-conformity-checking" class="md-nav__link">
+  <a href="#3-checking-a-group-of-equations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Conformity Checking
+        3. Checking a Group of Equations
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="3. Conformity Checking">
+    <nav class="md-nav" aria-label="3. Checking a Group of Equations">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1541,16 +1541,38 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#complementarities" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Complementarities
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-directed-acyclic-graph-dag-topological-sorting" class="md-nav__link">
+  <a href="#4-checking-a-model" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Directed Acyclic Graph (DAG) Topological Sorting
+        4. Checking a Model
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-directed-acyclic-graph-dag-topological-sorting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Directed Acyclic Graph (DAG) Topological Sorting
       </span>
     </span>
   </a>
@@ -2163,22 +2185,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-the-dtcc_recipe" class="md-nav__link">
+  <a href="#2-recipes-files" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. The <code>DTCC_RECIPE</code>
+        2. Recipes Files
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="2. The DTCC_RECIPE">
+    <nav class="md-nav" aria-label="2. Recipes Files">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#the-three-dtcc-equation-groups" class="md-nav__link">
+  <a href="#the-dtcc-recipe" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        The Three DTCC Equation Groups
+        The DTCC recipe
       </span>
     </span>
   </a>
@@ -2191,15 +2213,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-conformity-checking" class="md-nav__link">
+  <a href="#3-checking-a-group-of-equations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Conformity Checking
+        3. Checking a Group of Equations
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="3. Conformity Checking">
+    <nav class="md-nav" aria-label="3. Checking a Group of Equations">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2213,16 +2235,38 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#complementarities" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Complementarities
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-directed-acyclic-graph-dag-topological-sorting" class="md-nav__link">
+  <a href="#4-checking-a-model" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Directed Acyclic Graph (DAG) Topological Sorting
+        4. Checking a Model
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-directed-acyclic-graph-dag-topological-sorting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Directed Acyclic Graph (DAG) Topological Sorting
       </span>
     </span>
   </a>
@@ -2349,7 +2393,7 @@
 
 <h1 id="model-recipes-conformity-checking">Model Recipes &amp; Conformity Checking<a class="headerlink" href="#model-recipes-conformity-checking" title="Permanent link">&para;</a></h1>
 <p>Different computational algorithms (perturbation, projection methods, value function iteration, global solving) require models to obey distinct mathematical structures and timing conventions.</p>
-<p>DynSpec introduces <strong>Model Recipes</strong> (<code>dyno.dynspec.recipe</code>): formal, programmatic specifications of model structure that validate whether a set of equations conforms to a target solution paradigm.</p>
+<p>DynSpec introduces <strong>Model Recipes</strong> (<code>dyno.dynspec.recipe</code>): formal, programmatic specifications of model structure that validate whether a set of equations conforms to a target solution paradigm. Recipes are read from YAML files, and checking only depends on DynSpec.</p>
 <hr />
 <h2 id="1-what-is-a-recipe">1. What is a Recipe?<a class="headerlink" href="#1-what-is-a-recipe" title="Permanent link">&para;</a></h2>
 <p>A <strong><code>Recipe</code></strong> defines:</p>
@@ -2370,18 +2414,45 @@
     G2 -.-&gt; V2["Allowed: exo[t-1], states[t-1], controls[t-1], exo[t]"]
     G3 -.-&gt; V3["Allowed: exo[t], states[t], controls[t], aux[t], exo[t+1], states[t+1], controls[t+1], aux[t+1]"]</code></pre>
 <hr />
-<h2 id="2-the-dtcc_recipe">2. The <code>DTCC_RECIPE</code><a class="headerlink" href="#2-the-dtcc_recipe" title="Permanent link">&para;</a></h2>
-<p>DynSpec includes a built-in recipe for <strong>Discrete Time Continuous Controls (DTCC)</strong> models (compatible with the Dolo framework):</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.recipe</span><span class="w"> </span><span class="kn">import</span> <span class="n">DTCC_RECIPE</span>
+<h2 id="2-recipes-files">2. Recipes Files<a class="headerlink" href="#2-recipes-files" title="Permanent link">&para;</a></h2>
+<p>Recipes are written in YAML, in the format of dolo's <code>recipes.yaml</code>. The
+bundled file (<code>dyno/dynspec/recipes.yaml</code>) defines the <code>dtcc</code> recipe; other
+files can be read with <code>load_recipes</code>:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_recipe</span><span class="p">,</span> <span class="n">load_recipes</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Recipe name:"</span><span class="p">,</span> <span class="n">DTCC_RECIPE</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Variable groups:"</span><span class="p">,</span> <span class="n">DTCC_RECIPE</span><span class="o">.</span><span class="n">variable_groups</span><span class="p">)</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># ['exogenous', 'states', 'controls', 'auxiliaries', 'parameters']</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">DTCC_RECIPE</span><span class="o">.</span><span class="n">equation_groups</span><span class="p">:</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Group '</span><span class="si">{</span><span class="n">group</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">': target=</span><span class="si">{</span><span class="n">group</span><span class="o">.</span><span class="n">target</span><span class="si">}</span><span class="s2">, recursive=</span><span class="si">{</span><span class="n">group</span><span class="o">.</span><span class="n">recursive</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">dtcc</span> <span class="o">=</span> <span class="n">get_recipe</span><span class="p">(</span><span class="s2">"dtcc"</span><span class="p">)</span>                 <span class="c1"># bundled recipe (same as DTCC_RECIPE)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">recipes</span> <span class="o">=</span> <span class="n">load_recipes</span><span class="p">(</span><span class="s2">"my_recipes.yaml"</span><span class="p">)</span>  <span class="c1"># {name: Recipe}</span>
 </span></code></pre></div>
-<h3 id="the-three-dtcc-equation-groups">The Three DTCC Equation Groups<a class="headerlink" href="#the-three-dtcc-equation-groups" title="Permanent link">&para;</a></h3>
+<p>An equation group lists the variable groups allowed at each time shift
+(<code>eqs</code>), and optionally the group its equations define (<code>target</code>):</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">dtcc</span><span class="p">:</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nt">symbols</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">exogenous</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">states</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">controls</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">auxiliaries</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">parameters</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">processes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">exogenous</span><span class="w">        </span><span class="c1"># group of the variables declared as processes</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">specs</span><span class="p">:</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="nt">transition</span><span class="p">:</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">            </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">states</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">S</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">            </span><span class="nt">eqs</span><span class="p">:</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">exogenous</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">-1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">m</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">states</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">-1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">s</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">controls</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">-1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">x</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">exogenous</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">M</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">parameters</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">p</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="nt">arbitrage</span><span class="p">:</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">            </span><span class="nt">eqs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">...</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">            </span><span class="nt">complementarities</span><span class="p">:</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">                </span><span class="nt">left-right</span><span class="p">:</span><span class="w">             </span><span class="c1"># allowed in the bounds</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">                    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">exogenous</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">m</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">                    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">states</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">s</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">                    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">parameters</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">p</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">                </span><span class="nt">middle</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">controls</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">x</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="c1"># the bounded variables</span>
+</span></code></pre></div>
+<p>Other keys: <code>optional</code> (the group may be absent), <code>recursive</code> (target
+equations must form a DAG; default when there is a target) and <code>n_equations</code>
+(the variable group whose size is the number of equations; defaults to the
+target, or to the bounded group of complementarities).</p>
+<h3 id="the-dtcc-recipe">The DTCC recipe<a class="headerlink" href="#the-dtcc-recipe" title="Permanent link">&para;</a></h3>
+<p>DynSpec bundles a recipe for <strong>Discrete Time Continuous Controls (DTCC)</strong>
+models, compatible with the dolo framework:</p>
 <table>
 <thead>
 <tr>
@@ -2393,7 +2464,7 @@
 </thead>
 <tbody>
 <tr>
-<td><code>definitions</code></td>
+<td><code>definitions</code> (optional)</td>
 <td><code>auxiliaries</code></td>
 <td>Recursive assignment</td>
 <td><span class="arithmatex">\(m_t, s_t, x_t, y_t\)</span></td>
@@ -2407,56 +2478,111 @@
 <tr>
 <td><code>arbitrage</code></td>
 <td>None</td>
-<td>Simultaneous residual <span class="arithmatex">\(= 0\)</span></td>
+<td>Simultaneous residual <span class="arithmatex">\(= 0\)</span>, with complementarities on <span class="arithmatex">\(x_t\)</span></td>
 <td><span class="arithmatex">\(m_t, s_t, x_t, y_t, m_{t+1}, s_{t+1}, x_{t+1}, y_{t+1}\)</span></td>
+</tr>
+<tr>
+<td><code>arbitrage_bounds</code> (optional)</td>
+<td>None</td>
+<td>Bound expressions</td>
+<td><span class="arithmatex">\(m_t, s_t\)</span></td>
+</tr>
+<tr>
+<td><code>controls_lb</code>, <code>controls_ub</code> (optional)</td>
+<td><code>controls</code></td>
+<td>Standalone bounds <code>x[t] = ...</code></td>
+<td><span class="arithmatex">\(m_t, s_t\)</span></td>
 </tr>
 </tbody>
 </table>
+<p>Parameters are allowed everywhere.</p>
 <hr />
-<h2 id="3-conformity-checking">3. Conformity Checking<a class="headerlink" href="#3-conformity-checking" title="Permanent link">&para;</a></h2>
-<p>To verify whether a model adheres to a recipe, use <code>check_equation_group()</code>:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.recipe</span><span class="w"> </span><span class="kn">import</span> <span class="n">DTCC_RECIPE</span><span class="p">,</span> <span class="n">check_equation_group</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.grammar</span><span class="w"> </span><span class="kn">import</span> <span class="n">parser</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Parse transition equations</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">transition_equations</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">"""</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="s2">z[t] = rho * z[t-1] + e_z[t]</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="s2">k[t] = (1-delta) * k[t-1] + i[t-1]</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s2">"""</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"equation_block"</span><span class="p">)</span><span class="o">.</span><span class="n">children</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># Define variable catalog</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">variables</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="s2">"exogenous"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"e_z"</span><span class="p">],</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="s2">"states"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"z"</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">],</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="s2">"controls"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"n"</span><span class="p">,</span> <span class="s2">"i"</span><span class="p">],</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="p">}</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="c1"># Verify transition equations</span>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="n">transition_spec</span> <span class="o">=</span> <span class="n">DTCC_RECIPE</span><span class="o">.</span><span class="n">get_group_spec</span><span class="p">(</span><span class="s2">"transition"</span><span class="p">)</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">result</span> <span class="o">=</span> <span class="n">check_equation_group</span><span class="p">(</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="n">transition_equations</span><span class="p">,</span>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">spec</span><span class="o">=</span><span class="n">transition_spec</span><span class="p">,</span>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>    <span class="n">constants</span><span class="o">=</span><span class="p">[</span><span class="s2">"alpha"</span><span class="p">,</span> <span class="s2">"beta"</span><span class="p">,</span> <span class="s2">"delta"</span><span class="p">,</span> <span class="s2">"rho"</span><span class="p">]</span>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="p">)</span>
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>
-</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"✓ Equations conform to recipe!"</span><span class="p">)</span>
-</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"Topological evaluation order:"</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">dag_order</span><span class="p">)</span>
-</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="k">else</span><span class="p">:</span>
-</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"✗ Violations detected:"</span><span class="p">)</span>
-</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>    <span class="k">for</span> <span class="n">violation</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">violations</span><span class="p">:</span>
-</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  - </span><span class="si">{</span><span class="n">violation</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<h2 id="3-checking-a-group-of-equations">3. Checking a Group of Equations<a class="headerlink" href="#3-checking-a-group-of-equations" title="Permanent link">&para;</a></h2>
+<p><code>check_group</code> checks the equations of one equation group of a recipe, given
+the variable names of each variable group. Equations can be given as source
+text, a list of strings, or parsed trees:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_group</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">variables</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="s2">"exogenous"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"e_z"</span><span class="p">],</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="s2">"states"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"z"</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">],</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="s2">"controls"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"n"</span><span class="p">,</span> <span class="s2">"i"</span><span class="p">],</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">}</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">result</span> <span class="o">=</span> <span class="n">check_group</span><span class="p">(</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="sd">"""</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="sd">    z[t] = rho*z[t-1] + e_z[t]</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="sd">    k[t] = (1-delta)*k[t-1] + i[t-1]</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="sd">    """</span><span class="p">,</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="s2">"transition"</span><span class="p">,</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="n">variables</span><span class="p">,</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="n">recipe</span><span class="o">=</span><span class="s2">"dtcc"</span><span class="p">,</span>  <span class="c1"># the default</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="p">)</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"Topological evaluation order:"</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">dag_order</span><span class="p">)</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="k">else</span><span class="p">:</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 </span></code></pre></div>
+<p><code>check_equation_group</code> is the lower-level function behind it: it takes parsed
+equation trees and an <code>EquationGroupSpec</code> instead of names.</p>
 <h3 id="violation-reporting">Violation Reporting<a class="headerlink" href="#violation-reporting" title="Permanent link">&para;</a></h3>
-<p>When equations violate recipe constraints, <code>ConformityResult</code> provides detailed diagnostics:</p>
+<p>A <code>ConformityResult</code> lists every <code>Violation</code>, with the position of the
+equation in the group, its source line, the offending variable and the
+reason, e.g.:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>✗ transition: 1 violation(s)
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  - Equation 1 (line 2): i[t] — 'controls' variables at shift +0 are not allowed in 'transition' equations
+</span></code></pre></div>
+<h3 id="complementarities">Complementarities<a class="headerlink" href="#complementarities" title="Permanent link">&para;</a></h3>
+<p>In a group with a <code>complementarities</code> spec (<code>arbitrage</code> in DTCC), equations
+may carry a condition <code>residual ⟂ lb &lt;= x[t] &lt;= ub</code> (see the grammar). The
+check verifies that:</p>
 <ul>
-<li>Which equation violated the rule.</li>
-<li>Offending variable and its timing shift (e.g. <code>k[t-1]</code>).</li>
-<li>Explanation of why that variable is prohibited in the given equation group.</li>
+<li>the i-th complementarity bounds the i-th variable of the bounded group
+  (<code>n</code> then <code>i</code> above): <code>expected the complementarity to bound 'n' ...</code>;</li>
+<li>the bounds only use the groups allowed by <code>left-right</code> (no controls, no
+  auxiliaries, no time shifts in DTCC);</li>
+<li>the residual satisfies the group's <code>eqs</code>, like any equation.</li>
 </ul>
+<p>In other groups, complementarities are reported as violations.
+<code>extract_complementarity(tree)</code> returns the parts of a condition
+(<code>residual</code>, <code>lower</code>, <code>variable</code>, <code>shift</code>, <code>upper</code>).</p>
 <hr />
-<h2 id="4-directed-acyclic-graph-dag-topological-sorting">4. Directed Acyclic Graph (DAG) Topological Sorting<a class="headerlink" href="#4-directed-acyclic-graph-dag-topological-sorting" title="Permanent link">&para;</a></h2>
+<h2 id="4-checking-a-model">4. Checking a Model<a class="headerlink" href="#4-checking-a-model" title="Permanent link">&para;</a></h2>
+<p><code>check_model</code> checks a whole model whose equations are tagged with the
+names of the recipe's equation groups, typically through tagged blocks:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_model</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">result</span> <span class="o">=</span> <span class="n">check_model</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s2">"examples/rbc_dolo_comp.dyno"</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>✓ recipe 'dtcc'
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  exogenous: e_z
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  states: z, k
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  controls: n, i
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  auxiliaries: y, c, rk, w
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>✓ definitions: OK (order: y → c → rk → w)
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>✓ transition: OK (order: z → k)
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>✓ arbitrage: OK
+</span></code></pre></div>
+<p>It only relies on DynSpec (the model source or its <code>free_block</code> tree), not
+on <code>DynoModel</code>. Variable groups are inferred from the model unless given in
+<code>variables=</code>:</p>
+<ul>
+<li>a group with a target defines its target group (<code>transition</code> → <code>states</code>,
+  <code>definitions</code> → <code>auxiliaries</code>);</li>
+<li>the variables bounded by complementarities give the bounded group
+  (<code>controls</code>), in order;</li>
+<li>variables declared as stochastic processes (<code>e_z[t] &lt;- N(...)</code>) go to the
+  recipe's <code>processes</code> group (<code>exogenous</code>).</li>
+</ul>
+<p>Besides the result of each group (<code>result.groups</code>), <code>result.violations</code>
+reports untagged equations, equations tagged with several groups, and
+missing required groups. Since inferred controls follow the order of the
+complementarities, pass <code>variables={"controls": [...]}</code> to check that order
+against a declaration.</p>
+<hr />
+<h2 id="5-directed-acyclic-graph-dag-topological-sorting">5. Directed Acyclic Graph (DAG) Topological Sorting<a class="headerlink" href="#5-directed-acyclic-graph-dag-topological-sorting" title="Permanent link">&para;</a></h2>
 <p>For recursive blocks (such as <code>definitions</code> and <code>transition</code>), equations must be evaluated in a valid causal sequence without circular dependencies.</p>
 <p>DynSpec implements <strong>Kahn's topological sort algorithm</strong> in <code>check_dag()</code>:</p>
 <ol>
@@ -2465,21 +2591,21 @@
 <li>Traverses the graph to produce a deterministic, ordered list of equations.</li>
 <li>Detects circular algebraic loops (e.g., <span class="arithmatex">\(A\)</span> depends on <span class="arithmatex">\(B\)</span> and <span class="arithmatex">\(B\)</span> depends on <span class="arithmatex">\(A\)</span>).</li>
 </ol>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.recipe</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_dag</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.grammar</span><span class="w"> </span><span class="kn">import</span> <span class="n">parser</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">equations</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">"""</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="s2">y[t] = exp(z[t]) * k[t-1]^alpha</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="s2">c[t] = y[t] - i[t]</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="s2">w[t] = (1-alpha)*y[t]</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="s2">"""</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"equation_block"</span><span class="p">)</span><span class="o">.</span><span class="n">children</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">variables</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"auxiliaries"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">]}</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># Computes valid evaluation sequence or returns None if a cycle exists</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="n">evaluation_order</span> <span class="o">=</span> <span class="n">check_dag</span><span class="p">(</span><span class="n">equations</span><span class="p">,</span> <span class="n">target_group</span><span class="o">=</span><span class="s2">"auxiliaries"</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Evaluation order:"</span><span class="p">,</span> <span class="n">evaluation_order</span><span class="p">)</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="c1"># ['y', 'c', 'w']</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.recipe</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_dag</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dyno.dynspec.grammar</span><span class="w"> </span><span class="kn">import</span> <span class="n">parser</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">equations</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">"""</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="s2">y[t] = exp(z[t]) * k[t-1]^alpha</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="s2">c[t] = y[t] - i[t]</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="s2">w[t] = (1-alpha)*y[t]</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="s2">"""</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s2">"equation_block"</span><span class="p">)</span><span class="o">.</span><span class="n">children</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="n">variables</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"auxiliaries"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">]}</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="c1"># Computes valid evaluation sequence or returns None if a cycle exists</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="n">evaluation_order</span> <span class="o">=</span> <span class="n">check_dag</span><span class="p">(</span><span class="n">equations</span><span class="p">,</span> <span class="n">target_group</span><span class="o">=</span><span class="s2">"auxiliaries"</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Evaluation order:"</span><span class="p">,</span> <span class="n">evaluation_order</span><span class="p">)</span>
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="c1"># ['y', 'c', 'w']</span>
 </span></code></pre></div>
 
 
