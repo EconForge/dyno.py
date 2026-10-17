@@ -5,6 +5,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-10-17
+
+### Added
+
+- Parsing of Dynare complementarity conditions `residual ⟂ lb <= x[t] <= ub` (and the legacy `|` separator) in the `dynspec` grammar; either bound may be omitted, and every condition is normalized to `complementarity(residual, lb, x, ub)`.
+- Recipe-based model checking: YAML recipes (dolo format) plus `check_group` and `check_model`, a bundled `recipes.yaml` (`DTCC_RECIPE`), and recipe documentation.
+- `examples/rbc_dolo_comp.dyno` example and recipe/conformity tests.
+
+### Fixed
+
+- `solve_qz` now classifies eigenvalues with the QZ tolerance, so a unit root on the unit circle is treated as non-explosive and accepted deterministically on every platform (previously the outcome depended on floating-point rounding).
+- Renamed `examples/RBC.dyno` to `rbc_basic.dyno` to avoid colliding with `rbc.dyno` on case-insensitive filesystems, which broke the Dynare backend tests on Windows and macOS.
+- The `.mod` import test no longer misreports a solve-time numerical failure as a parse error.
+
 ## [0.1.14] - 2026-10-08
 
 ### Added
