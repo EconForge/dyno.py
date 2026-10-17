@@ -703,7 +703,7 @@ def test_runresults_dataframe_properties_and_orientations():
         style_calibration_dataframe,
     )
 
-    model = DynoModel(filename="examples/RBC.dyno")
+    model = DynoModel(filename="examples/rbc_basic.dyno")
     res = model.run()
 
     # Properties return DataFrames

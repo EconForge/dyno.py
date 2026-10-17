@@ -5,7 +5,7 @@ from dyno import examples_path
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
-f_o = examples_path("RBC.dyno")
+f_o = examples_path("rbc_basic.dyno")
 f_r = examples_path("modfiles", "RBC.mod")
 
 from dyno.model import AbstractModel

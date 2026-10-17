@@ -1,45 +1,47 @@
-files = [
-    "example1.mod",
-    "example2.mod",
-    "NK_baseline.mod",
-    "example3.mod",
-    "Gali_2015.mod",
-]
+"""Import `.mod` files through the Dynare backend.
 
-# TODO: for excluded file, check the error is meaningful
-exclude = ["NK_baseline.mod"]  # uses an external steady_state file
+The two groups below encode distinct contracts that used to be conflated into a
+single `try/except`: a file is either rejected while parsing, or parsed and
+solved. Keeping them apart matters because a solve-time numerical failure is not
+a parse failure.
+"""
 
-unsupported = [
-    "example1.mod",  # Uses native statement
-    "example3.mod",  # calls steady_state function
-    "Gali_2015.mod",  # calls external funciton in steady-state
-]
+import pytest
 
 from dyno.dynare import DynareModel
 from dyno.errors import DynareParserError
-import pytest
 
-files = [f for f in files if not (f in exclude)]
+# Parsed and solved successfully.
+# `Gali_2015.mod` is rank deficient (its external steady state leaves `p` out),
+# so it has a unit root, which is accepted as a non-diverging root.
+supported = [
+    "example1.mod",
+    "example2.mod",
+    "Gali_2015.mod",  # calls external function in steady-state
+]
+
+# Not supported yet: rejected while parsing the source.
+unsupported = [
+    "example3.mod",  # calls steady_state function
+]
+
+# Not tested: `NK_baseline.mod` uses an external steady_state file.
+# TODO: for the excluded file, check the error is meaningful
 
 
-@pytest.mark.parametrize("filename", files)
+def _load(filename: str) -> DynareModel:
+    return DynareModel("examples/modfiles/" + filename)
+
+
+@pytest.mark.parametrize("filename", supported)
 def test_modfile_import(filename):
+    assert _load(filename).solve() is not None
 
-    f = filename
 
-    filename = "examples/modfiles/" + f
-
-    try:
-
-        mod = DynareModel(filename)
-        sol = mod.solve()
-        print(sol)
-
-        assert True
-
-    except Exception as e:
-        assert f in unsupported
-        assert isinstance(e, DynareParserError)
+@pytest.mark.parametrize("filename", unsupported)
+def test_unsupported_modfile_raises_parser_error(filename):
+    with pytest.raises(DynareParserError):
+        _load(filename)
 
 
 def test_dsge_report_dynare_syntax_error_highlighting():

@@ -102,7 +102,7 @@ def test_variants_multi_parameter_and_named_forms():
 
 
 def test_variants_solve_simulate_and_plot_chain():
-    model = DynoModel("examples/RBC.dyno")
+    model = DynoModel("examples/rbc_basic.dyno")
     variants = model.variants(rho=[0.5, 0.8, 0.95])
     assert isinstance(variants, ModelVariants)
 
