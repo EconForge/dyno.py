@@ -1,6 +1,7 @@
 *.pyc
 *.whl
 *.tar.gz
+*.prof
 .pixi/*
 .vscode/*
 pixi.lock
